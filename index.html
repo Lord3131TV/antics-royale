@@ -2603,22 +2603,27 @@ function et() {
       }
       // —— Sarı Tepe (hill): sadece süre bitince veya 1 kişi kalınca bit; en düşük 2 puan elenir ——
       if (n.id === "hill") {
-        let running = t.filter(m => l(m).st === "run");
+        let running = t.filter(m => {
+          let s = l(m) || {};
+          return s.st === "run";
+        });
         if (running.length > 1 && !u)
           return null; // süre dolmadan, 1'den fazla ayaktayken bitirme
-        // Katılımcılar: bu turda hâlâ roster'da olanlar (t)
         let needElim = Math.min(2, Math.max(0, t.length - 1));
         let scored = t.map(id => {
           let s = l(id) || {};
           let isOut = s.st === "out" || s.st === "spec";
+          let hpVal = typeof s.hp === "number" ? s.hp : 0;
+          // Düşenler elenme önceliği için -1; ama gerçek puanı not için sakla
           return {
             id: id,
-            hp: isOut ? -1 : (typeof s.hp === "number" ? s.hp : 0),
+            hp: isOut ? -1 : hpVal,
+            realHp: isOut ? hpVal : hpVal,
             out: isOut,
             ot: s.ot || 0
           };
         });
-        // Elenme sırası: düşük puan önce; düşmüşler önce; erken düşen önce; id ile stabil
+        // Düşük puan / düşmüş önce elenir; eşitlikte id (stabil, rastgele değil)
         scored.sort((A, B) => {
           if (A.hp !== B.hp) return A.hp - B.hp;
           if (A.out !== B.out) return A.out ? -1 : 1;
@@ -2626,11 +2631,14 @@ function et() {
           return String(A.id).localeCompare(String(B.id));
         });
         let elimSet = new Set(scored.slice(0, needElim).map(x => x.id));
-        let winners = scored.filter(x => !elimSet.has(x.id)).sort((A, B) => B.hp - A.hp || String(A.id).localeCompare(String(B.id)));
-        let topHp = winners.length ? winners[0].hp : 0;
-        let note = winners.length
-          ? ("Sarı Tepe: en yüksek puan " + Math.max(0, topHp) + " · " + (L(winners[0].id) || "") + (needElim ? " · " + needElim + " elendi" : ""))
-          : "Sarı Tepe bitti";
+        let winners = scored.filter(x => !elimSet.has(x.id)).sort((A, B) => (B.realHp - A.realHp) || String(A.id).localeCompare(String(B.id)));
+        let elimList = scored.filter(x => elimSet.has(x.id));
+        // Skor özeti: herkesin puanı görünsün
+        let scoreLine = scored.slice().sort((A, B) => B.realHp - A.realHp).map(x => (L(x.id) || "?") + ":" + Math.max(0, x.realHp)).join(" · ");
+        try {
+          console.log("[HILL END] needElim=" + needElim + " scores=" + scoreLine + " elim=" + elimList.map(x => L(x.id)).join(","));
+        } catch (_) {}
+        let note = scoreLine + (elimList.length ? (" → elenen: " + elimList.map(x => L(x.id) || "?").join(", ")) : "");
         return {
           q: winners.map(x => x.id),
           note: note
@@ -2721,8 +2729,27 @@ function et() {
             let t = Se(n.mg), l = t.hostTick ? t.hostTick(n, a) : null;
             l && y.setState(l);
             let r = Ae(n), u = mt(t, n, a, r, f => {
-                let d = C(f).state;
-                return d.rd === n.rid ? d : (d.st === "out" || d.st === "spec" ? { st: d.st, oc: d.oc, ot: d.ot } : { st: "run" });
+                // Yerel oyuncu: o state (hp senkron gecikmesin)
+                if (f === p.id) {
+                  return {
+                    st: o.st,
+                    hp: o.hp || 0,
+                    rd: o.rd,
+                    ot: o.ot,
+                    oc: o.oc,
+                    fa: o.fa,
+                    x: o.x,
+                    z: o.z,
+                    y: o.y
+                  };
+                }
+                let d = (C(f) && C(f).state) || {};
+                if (d.rd === n.rid) return d;
+                if (d.st === "out" || d.st === "spec") {
+                  return { st: d.st, oc: d.oc, ot: d.ot, hp: typeof d.hp === "number" ? d.hp : 0 };
+                }
+                // rid eşleşmese bile hp koru (Sarı Tepe)
+                return { st: d.st || "run", hp: typeof d.hp === "number" ? d.hp : 0, x: d.x, z: d.z, y: d.y };
               });
             u && pt(n, u);
           } else if (i === "roundEnd") {
@@ -3358,16 +3385,27 @@ function et() {
             }
           }
         }
-        if (o.st === "run" && l.id === "hill" && o.gr && Math.hypot(o.x, o.z) <= 3.2) {
-          o._hpAcc = (o._hpAcc || 0) + n;
-          if (o._hpAcc >= 0.2) {
-            o.hp = (o.hp || 0) + Math.floor(o._hpAcc / 0.2);
-            o._hpAcc %= 0.2;
-            o._hpSync = o._hpSync || 0;
-            if (performance.now() - o._hpSync > 300) {
-              o._hpSync = performance.now();
-              ee({ hp: o.hp });
+        if (o.st === "run" && l.id === "hill") {
+          // Sarı zirve: merkez yarıçap 3.2 (world'deki sarı daire)
+          if (o.gr && Math.hypot(o.x, o.z) <= 3.2) {
+            o._hpAcc = (o._hpAcc || 0) + n;
+            if (o._hpAcc >= 0.2) {
+              let gained = Math.floor(o._hpAcc / 0.2);
+              o.hp = (o.hp || 0) + gained;
+              o._hpAcc %= 0.2;
+              o._hpSync = o._hpSync || 0;
+              // Her puan artışında senkron (max 80ms) — host diğer oyuncunun puanını görsün
+              if (performance.now() - o._hpSync > 80) {
+                o._hpSync = performance.now();
+                ee({ hp: o.hp });
+              }
             }
+          }
+          // Periyodik heartbeat: host skor tablosunu güncel tutsun
+          o._hpBeat = o._hpBeat || 0;
+          if (performance.now() - o._hpBeat > 250) {
+            o._hpBeat = performance.now();
+            ee({ hp: o.hp || 0 });
           }
         }
         if (o.st === "run") {
