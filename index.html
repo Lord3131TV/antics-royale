@@ -376,7 +376,7 @@ body.ph-lobby #uiTopBtns{display:none}
         <div class="settings-row" style="margin-top:12px;text-align:left">
           <span style="font-size:12px;opacity:.85">Sunucu</span>
         </div>
-        <input id="menuServerUrl" placeholder="ws sunucu (örn. https://antics-royale.onrender.com)" style="width:100%;margin-top:4px;font-size:12px">
+        <input id="menuServerUrl" placeholder="ws sunucu (örn. http://localhost:3001)" style="width:100%;margin-top:4px;font-size:12px">
         <button id="menuServerSave" class="alt" style="margin-top:6px;width:100%">Sunucuyu kaydet</button>
       </div>
     </div>
@@ -523,16 +523,6 @@ body.ph-lobby #uiTopBtns{display:none}
 
 <div id="fatal"></div>
 <script type="module">
-// Prefer production relay when no custom server is saved (override via menu or localStorage).
-try {
-  const _su = localStorage.getItem("antics_mp_server");
-  if (!_su || /localhost|127\.0\.0\.1/i.test(_su)) {
-    localStorage.setItem("antics_mp_server", "https://antics-royale.onrender.com");
-  }
-} catch (_) {}
-if (typeof window !== "undefined" && !window.ANTICS_MP_SERVER) {
-  window.ANTICS_MP_SERVER = "https://antics-royale.onrender.com";
-}
 
 /* Canvas roundRect polyfill (Safari < 15 / older browsers) */
 (function(){
@@ -992,7 +982,7 @@ function et() {
     };
     try {
       let inp = e("menuServerUrl");
-      if (inp) inp.value = localStorage.getItem("antics_mp_server") || window.ANTICS_MP_SERVER || "https://antics-royale.onrender.com";
+      if (inp) inp.value = localStorage.getItem("antics_mp_server") || "http://localhost:3001";
     } catch (_) {}
   })();
   // mint_failed dinle
@@ -1068,7 +1058,7 @@ function et() {
         let su = localStorage.getItem("antics_mp_server");
         if (su && p.setServerUrl) p.setServerUrl(su);
         let inp = e("menuServerUrl");
-        if (inp) inp.value = (p.getServerUrl && p.getServerUrl()) || su || window.ANTICS_MP_SERVER || "https://antics-royale.onrender.com";
+        if (inp) inp.value = (p.getServerUrl && p.getServerUrl()) || su || "http://localhost:3001";
       } catch (_) {}
     }).catch(() => { T = !0; });
     e("nameBtn") && (e("nameBtn").onclick = n => {
@@ -1169,7 +1159,7 @@ function et() {
     let Ae = (n = w()) => (n.roster || []).filter(a => !(n.elim || []).includes(a) && C(a)), lt = (n, a = w()) => (a.roster || []).includes(n) && !(a.elim || []).includes(n);
     function it(n) {
       let a = w(), i = Ae(a), t = i.length, l = Math.max(0, i.indexOf(p.id)), d = n.build ? Ze(n, a) : null, r = n.spawn(l, t, d);
-      o.x = r.x, o.z = r.z, o.y = 0, o.vx = o.vy = o.vz = o.kx = o.kz = 0, o.gr = !0, o.cp = null, He(!0);
+      o.x = r.x, o.z = r.z, o.y = 0, o.vx = o.vy = o.vz = o.kx = o.kz = 0, o.gr = !0, o.cp = null, o._offT = 0, He(!0);
     }
     function dn() {
       o.x = J(-9, 9), o.z = J(-6, 4), o.y = 0, o.vx = o.vy = o.vz = o.kx = o.kz = 0, o.gr = !0, o.cp = null, He(!0);
@@ -3175,21 +3165,73 @@ function et() {
       o.kx *= g, o.kz *= g;
       let k = Math.hypot(o.kx, o.kz);
       k > 32 && (o.kx *= 32 / k, o.kz *= 32 / k), k < 0.06 && (o.kx = o.kz = 0), o.x += (o.vx + o.kx) * n, o.z += (o.vz + o.kz) * n;
-      let A = l.bounds(i, r);
-      o.x = K(o.x, A.x0, A.x1), o.z = K(o.z, A.z0, A.z1);
+      // Support önce gerçek (clamp edilmemiş) konumla hesaplanır — arena/platform sınırını doğru yakalar
       let R = l.void && i !== "lobby" && typeof l.support == "function" ? l.support(o.x, o.z, c, a, r) : je, B = !1;
+      let A = l.bounds(i, r);
+      // Fall-out haritalarında platform dışındayken X/Z clamp etme: boşluğa düşebilsin
+      if (!(l.void && l.fall === "out" && !R && o.st === "run")) {
+        o.x = K(o.x, A.x0, A.x1), o.z = K(o.z, A.z0, A.z1);
+        // Clamp sonrası support yeniden (sınırda kayma için)
+        if (l.void && i !== "lobby" && typeof l.support == "function")
+          R = l.support(o.x, o.z, c, a, r);
+      }
+      // Arena (dairesel) dışı: dışarı savur + düşüşü hızlandır
       if (!R && l.cfg && l.cfg.radius && o.st === "run") {
         let _rr = l.cfg.radius(c), _hd = Math.hypot(o.x, o.z);
         if (_hd > _rr) {
           let _nx = o.x / (_hd || 1), _nz = o.z / (_hd || 1), _out = _hd - _rr;
           o.kx += _nx * (8 + _out * 3) * n * 60, o.kz += _nz * (8 + _out * 3) * n * 60;
           if (o.y > -0.05)
-            o.vy = Math.min(o.vy, -4);
-          if (_out > 1.5 && o.y < 0.2)
-            o.vy = Math.min(o.vy, -8);
+            o.vy = Math.min(o.vy, -6);
+          if (_out > 0.6 && o.y < 0.35)
+            o.vy = Math.min(o.vy, -10);
         }
       }
-      f && o.gr && performance.now() - he < 120 && (o.vy = Zn, B = !0, he = -1000000000, o.gr = !1, O("jump")), o.vy -= Yn * n, o.y += o.vy * n, o.gr = !1, R && o.vy <= 0 && o.y <= 0.02 && o.y > -0.7 && (o.y = 0, o.vy = 0, o.gr = !0, u && (R.vx || R.vz) && (o.x += R.vx * n, o.z += R.vz * n), R.plat && R.plat.cp && !R.plat.amp && o.st === "run" && (o.cp = R.plat)), o.y < -40 && (o.y = -40, o.vy = 0), u && (o.y < (l.id === "final" || l.id === "brawl" ? -1.2 : l.fall === "respawn" ? -8 : -3.5) && (o.st === "run" || o.st === "fin" && l.fall === "respawn") && (l.fall === "respawn" ? yt() : vn("f")), o.st === "run" && l.id === "hill" && o.gr && Math.hypot(o.x, o.z) <= 3.2 && (o._hpAcc = (o._hpAcc || 0) + n, o._hpAcc >= 0.2 && (o.hp = (o.hp || 0) + Math.floor(o._hpAcc / 0.2), o._hpAcc %= 0.2, (o._hpSync = o._hpSync || 0), performance.now() - o._hpSync > 300 && (o._hpSync = performance.now(), ee({ hp: o.hp })))), o.st === "run" && (l.localRule && l.localRule(a, t, B), o.st === "run" && l.hazards && l.hazards(n, c, a, r), o.st === "run" && l.kind === "race" && o.z >= l.finishZ(r) && ct())), He();
+      // Platform/ada dışı (support yok): düşüş zorla
+      if (!R && l.void && l.fall === "out" && o.st === "run" && !(l.cfg && l.cfg.radius)) {
+        if (o.y > -0.05) o.vy = Math.min(o.vy, -6);
+      }
+      f && o.gr && performance.now() - he < 120 && (o.vy = Zn, B = !0, he = -1000000000, o.gr = !1, O("jump")), o.vy -= Yn * n, o.y += o.vy * n, o.gr = !1, R && o.vy <= 0 && o.y <= 0.02 && o.y > -0.7 && (o.y = 0, o.vy = 0, o.gr = !0, u && (R.vx || R.vz) && (o.x += R.vx * n, o.z += R.vz * n), R.plat && R.plat.cp && !R.plat.amp && o.st === "run" && (o.cp = R.plat)), o.y < -40 && (o.y = -40, o.vy = 0);
+      // Elenme: Y eşiği VEYA gerçek platform dışına (X/Z) çıkıp boşluğa düşme
+      if (u && o.st === "run" && l.fall === "out" && l.void) {
+        let deathY = (l.id === "final" || l.id === "brawl") ? -0.85 : -3.5;
+        let offPlat = !R;
+        if (offPlat) {
+          o._offT = (o._offT || 0) + n;
+          let clearlyOut = true;
+          if (l.cfg && typeof l.cfg.radius === "function") {
+            clearlyOut = Math.hypot(o.x, o.z) > l.cfg.radius(c) + 0.25;
+          }
+          // Y altına indiyse veya platformdan net çıktıktan kısa süre sonra elen
+          if (o.y < deathY || (clearlyOut && o._offT > 0.18 && o.y < 0.45)) {
+            vn("f");
+          }
+        } else {
+          o._offT = 0;
+        }
+      } else if (u && (o.st === "run" || o.st === "fin" && l.fall === "respawn") && o.y < (l.fall === "respawn" ? -8 : -3.5)) {
+        // Mevcut respawn / diğer fall-out haritaları (void olmayanlar dahil)
+        if (l.fall === "respawn") yt();
+        else if (l.fall === "out" && o.st === "run") vn("f");
+      }
+      if (o.st === "run" && l.id === "hill" && o.gr && Math.hypot(o.x, o.z) <= 3.2) {
+        o._hpAcc = (o._hpAcc || 0) + n;
+        if (o._hpAcc >= 0.2) {
+          o.hp = (o.hp || 0) + Math.floor(o._hpAcc / 0.2);
+          o._hpAcc %= 0.2;
+          o._hpSync = o._hpSync || 0;
+          if (performance.now() - o._hpSync > 300) {
+            o._hpSync = performance.now();
+            ee({ hp: o.hp });
+          }
+        }
+      }
+      if (o.st === "run") {
+        l.localRule && l.localRule(a, t, B);
+        o.st === "run" && l.hazards && l.hazards(n, c, a, r);
+        o.st === "run" && l.kind === "race" && o.z >= l.finishZ(r) && ct();
+      }
+      He();
       let le = u && l.id === "redlight" ? a.rid + ":" + a.light + ":" + a.lightAt : (u && l.id === "colors" ? a.rid + ":col:" + (a.colMode || "all") + ":" + a.safeCol + ":" + a.lightAt : "");
       le !== Bn && (Bn = le, le && a.playAt && t - (a.lightAt || 0) < 1500 && (a.lightAt || 0) > a.playAt + 50 && O(l.id === "colors" ? ((a.colMode === "pick") ? "go" : "tick") : (a.light === "red" ? "red" : "green"))), zt(n), applyHitImpulses(n), St();
       for (let Z = Te.length - 1; Z >= 0; Z--) {
