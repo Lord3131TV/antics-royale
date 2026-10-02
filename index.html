@@ -376,7 +376,7 @@ body.ph-lobby #uiTopBtns{display:none}
         <div class="settings-row" style="margin-top:12px;text-align:left">
           <span style="font-size:12px;opacity:.85">Sunucu</span>
         </div>
-        <input id="menuServerUrl" placeholder="ws sunucu (örn. http://localhost:3001)" style="width:100%;margin-top:4px;font-size:12px">
+        <input id="menuServerUrl" placeholder="ws sunucu (örn. https://antics-royale.onrender.com)" style="width:100%;margin-top:4px;font-size:12px">
         <button id="menuServerSave" class="alt" style="margin-top:6px;width:100%">Sunucuyu kaydet</button>
       </div>
     </div>
@@ -905,7 +905,7 @@ function et() {
     // Standalone: sunucuda oda oluştur, kod ile yönlendir
     import("./mp-client.js").then(async mod => {
       try {
-        let su = localStorage.getItem("antics_mp_server");
+        let su = localStorage.getItem("antics_mp_server") || "https://antics-royale.onrender.com";
         if (su && mod.setServerUrl) mod.setServerUrl(su);
       } catch (_) {}
       let nm = "";
@@ -982,7 +982,7 @@ function et() {
     };
     try {
       let inp = e("menuServerUrl");
-      if (inp) inp.value = localStorage.getItem("antics_mp_server") || "http://localhost:3001";
+      if (inp) inp.value = localStorage.getItem("antics_mp_server") || "https://antics-royale.onrender.com";
     } catch (_) {}
   })();
   // mint_failed dinle
@@ -1005,7 +1005,7 @@ function et() {
     import("./mp-client.js").then(p => {
       M = p;
       try {
-        let su = localStorage.getItem("antics_mp_server");
+        let su = localStorage.getItem("antics_mp_server") || "https://antics-royale.onrender.com";
         if (su && p.setServerUrl) p.setServerUrl(su);
       } catch (_) {}
       let nm = "";
@@ -1055,10 +1055,10 @@ function et() {
     import("./mp-client.js").then(p => {
       M = p;
       try {
-        let su = localStorage.getItem("antics_mp_server");
+        let su = localStorage.getItem("antics_mp_server") || "https://antics-royale.onrender.com";
         if (su && p.setServerUrl) p.setServerUrl(su);
         let inp = e("menuServerUrl");
-        if (inp) inp.value = (p.getServerUrl && p.getServerUrl()) || su || "http://localhost:3001";
+        if (inp) inp.value = (p.getServerUrl && p.getServerUrl()) || su || "https://antics-royale.onrender.com";
       } catch (_) {}
     }).catch(() => { T = !0; });
     e("nameBtn") && (e("nameBtn").onclick = n => {
@@ -2378,7 +2378,8 @@ function et() {
       return Math.max(0, (i - n.playAt) / 1000);
     }
     function vn(n) {
-      o.st === "run" && (n = n || "z", o.vx = o.vz = 0, ee({
+      // Arena/fall-off: st=out → spectator; aynı turda respawn yok. Yeni tur intro'da spawn.
+      o.st === "run" && (n = n || "z", o.vx = o.vz = 0, o.cp = null, ee({
         st: "out",
         oc: n,
         ot: Math.round(y.now()),
@@ -3179,7 +3180,7 @@ function et() {
             o.vy = Math.min(o.vy, -8);
         }
       }
-      f && o.gr && performance.now() - he < 120 && (o.vy = Zn, B = !0, he = -1000000000, o.gr = !1, O("jump")), o.vy -= Yn * n, o.y += o.vy * n, o.gr = !1, R && o.vy <= 0 && o.y <= 0.02 && o.y > -0.7 && (o.y = 0, o.vy = 0, o.gr = !0, u && (R.vx || R.vz) && (o.x += R.vx * n, o.z += R.vz * n), R.plat && R.plat.cp && !R.plat.amp && o.st === "run" && (o.cp = R.plat)), o.y < -40 && (o.y = -40, o.vy = 0), u && (o.y < (l.id === "final" || l.id === "brawl" ? -1.2 : l.fall === "respawn" ? -8 : -3.5) && (o.st === "run" || o.st === "fin" && l.fall === "respawn") && (l.fall === "respawn" ? yt() : vn("f")), o.st === "run" && l.id === "hill" && o.gr && Math.hypot(o.x, o.z) <= 3.2 && (o._hpAcc = (o._hpAcc || 0) + n, o._hpAcc >= 0.2 && (o.hp = (o.hp || 0) + Math.floor(o._hpAcc / 0.2), o._hpAcc %= 0.2, (o._hpSync = o._hpSync || 0), performance.now() - o._hpSync > 300 && (o._hpSync = performance.now(), ee({ hp: o.hp })))), o.st === "run" && (l.localRule && l.localRule(a, t, B), o.st === "run" && l.hazards && l.hazards(n, c, a, r), o.st === "run" && l.kind === "race" && o.z >= l.finishZ(r) && ct())), He();
+      f && o.gr && performance.now() - he < 120 && (o.vy = Zn, B = !0, he = -1000000000, o.gr = !1, O("jump")), o.vy -= Yn * n, o.y += o.vy * n, o.gr = !1, R && o.vy <= 0 && o.y <= 0.02 && o.y > -0.7 && (o.y = 0, o.vy = 0, o.gr = !0, u && (R.vx || R.vz) && (o.x += R.vx * n, o.z += R.vz * n), R.plat && R.plat.cp && !R.plat.amp && o.st === "run" && (o.cp = R.plat)), o.y < -40 && (o.y = -40, o.vy = 0), u && (o.y < (l.id === "final" || l.id === "brawl" ? -1.2 : l.fall === "respawn" ? -8 : -3.5) && (l.fall === "respawn" ? (o.st === "run" || o.st === "fin") && yt() : o.st === "run" && vn("f")), o.st === "run" && l.id === "hill" && o.gr && Math.hypot(o.x, o.z) <= 3.2 && (o._hpAcc = (o._hpAcc || 0) + n, o._hpAcc >= 0.2 && (o.hp = (o.hp || 0) + Math.floor(o._hpAcc / 0.2), o._hpAcc %= 0.2, (o._hpSync = o._hpSync || 0), performance.now() - o._hpSync > 300 && (o._hpSync = performance.now(), ee({ hp: o.hp })))), o.st === "run" && (l.localRule && l.localRule(a, t, B), o.st === "run" && l.hazards && l.hazards(n, c, a, r), o.st === "run" && l.kind === "race" && o.z >= l.finishZ(r) && ct())), He();
       let le = u && l.id === "redlight" ? a.rid + ":" + a.light + ":" + a.lightAt : (u && l.id === "colors" ? a.rid + ":col:" + (a.colMode || "all") + ":" + a.safeCol + ":" + a.lightAt : "");
       le !== Bn && (Bn = le, le && a.playAt && t - (a.lightAt || 0) < 1500 && (a.lightAt || 0) > a.playAt + 50 && O(l.id === "colors" ? ((a.colMode === "pick") ? "go" : "tick") : (a.light === "red" ? "red" : "green"))), zt(n), applyHitImpulses(n), St();
       for (let Z = Te.length - 1; Z >= 0; Z--) {
