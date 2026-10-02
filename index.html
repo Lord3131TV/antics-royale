@@ -3041,15 +3041,8 @@ function et() {
       let a = performance.now();
       let mapId = (Ye(n, n.phase || "play") || {}).id || "";
       let isArena = mapId === "final" || mapId === "brawl";
-      let hitRad = isArena ? 1.85 : 1.45;
-      let cd = isArena ? 55 : 90;
-      let playT = Ve(n, y.now());
-      let arenaR = null;
-      if (isArena) {
-        let mg = Ye(n, n.phase || "play");
-        if (mg && mg.cfg && typeof mg.cfg.radius === "function")
-          arenaR = mg.cfg.radius(playT);
-      }
+      let hitRad = isArena ? 1.65 : 1.45;
+      let cd = isArena ? 70 : 90;
       for (let i of y.players) {
         if (i.id === p.id)
           continue;
@@ -3059,32 +3052,18 @@ function et() {
         let l = me.get(i.id);
         if (!l || l.y < -0.6 || o.y < -0.6)
           continue;
-        // Ağ gecikmesi: rakibin konumunu vx ile tahmin et (görsel lerp'ten daha güncel)
-        let lag = K((y.now() - (t.at || y.now())) / 1000, 0, 0.4);
-        let predX = (t.x || 0) + (t.vx || 0) * (lag + 0.04);
-        let predZ = (t.z || 0) + (t.vz || 0) * (lag + 0.04);
-        // Görsel ile karıştır (hitImp offset'li me konumu)
-        let tx = predX * 0.65 + l.x * 0.35;
-        let tz = predZ * 0.65 + l.z * 0.35;
-        let rx = tx - o.x, rz = tz - o.z, u = Math.hypot(rx, rz);
+        // d,h = benden rakibe doğru birim vektör
+        let rx = l.x - o.x, rz = l.z - o.z, u = Math.hypot(rx, rz);
         if (u >= hitRad)
           continue;
         let d = u > 0.0001 ? rx / u : 1, h = u > 0.0001 ? rz / u : 0;
-        // Çakışmayı ayır — her kare (cooldown yok)
-        let overlap = (hitRad - u) * (isArena ? 1.5 : 1.15);
-        o.x -= d * overlap * 0.6;
-        o.z -= h * overlap * 0.6;
-        l.x += d * overlap * 0.4;
-        l.z += h * overlap * 0.4;
-        // Arena kenarındaysam ve ayrılma dışarı itiyorsa ekstra it
-        if (isArena && arenaR != null) {
-          let myDist = Math.hypot(o.x, o.z) || 0.01;
-          let outDot = (-d) * (o.x / myDist) + (-h) * (o.z / myDist);
-          if (outDot > 0.15 && myDist > arenaR * 0.55) {
-            o.x -= d * overlap * 0.45;
-            o.z -= h * overlap * 0.45;
-          }
-        }
+        // Çakışmayı ayır
+        let overlap = (hitRad - u) * (isArena ? 1.35 : 1.15);
+        o.x -= d * overlap * 0.55;
+        o.z -= h * overlap * 0.55;
+        l.x += d * overlap * 0.45;
+        l.z += h * overlap * 0.45;
+        // Ağ state vx zaten kx dahil (He: vx = o.vx + o.kx)
         let myVx = o.vx + o.kx, myVz = o.vz + o.kz;
         let theirVx = (t.vx || 0), theirVz = (t.vz || 0);
         let myInto = myVx * d + myVz * h;
@@ -3092,70 +3071,69 @@ function et() {
         let mySpd = Math.hypot(myVx, myVz);
         let theirSpd = Math.hypot(theirVx, theirVz);
         let isDash = Math.hypot(o.kx, o.kz) > 5;
-        let theirDash = theirSpd > 8.5;
+        let theirDash = theirSpd > 9;
         let canHit = a - (Ln.get(i.id) || 0) > cd;
-        // 1) Ben itiyorum
-        let pushing = myInto > 0.08 || mySpd > 2.0;
+        // 1) Ben rakibi itiyorum → görsel hitImp + hafif geri tepme
+        let pushing = myInto > 0.15 || mySpd > 2.5;
         if (pushing && canHit) {
           Ln.set(i.id, a);
-          let base = isArena ? 6.2 : 3.2;
-          let fromSpeed = Math.max(0, myInto) * (isArena ? 2.1 : 1.4) + (mySpd > 3 ? (mySpd - 3) * (isArena ? 0.55 : 0.3) : 0);
-          let dashBonus = isDash ? (isArena ? 6.5 : 4) : 0;
-          let knockThem = Math.min(isArena ? 14 : 9, base + fromSpeed + dashBonus);
-          let knockMe = Math.min(isArena ? 3.5 : 4, knockThem * 0.25 + Math.max(0, theirInto) * 1.1);
+          canHit = false;
+          let base = isArena ? 5.2 : 3.2;
+          let fromSpeed = Math.max(0, myInto) * (isArena ? 1.8 : 1.4) + (mySpd > 3 ? (mySpd - 3) * (isArena ? 0.45 : 0.3) : 0);
+          let dashBonus = isDash ? (isArena ? 5.5 : 4) : 0;
+          let knockThem = Math.min(isArena ? 12 : 9, base + fromSpeed + dashBonus);
+          let knockMe = Math.min(isArena ? 3.2 : 4, knockThem * 0.28 + Math.max(0, theirInto) * 1.2);
           o.kx -= d * knockMe;
           o.kz -= h * knockMe;
           let imp = hitImp.get(i.id) || { kx: 0, kz: 0, vy: 0, ox: 0, oz: 0, oy: 0 };
           imp.kx += d * knockThem;
           imp.kz += h * knockThem;
-          imp.ox = (imp.ox || 0) + d * Math.min(1.6, knockThem * 0.09);
-          imp.oz = (imp.oz || 0) + h * Math.min(1.6, knockThem * 0.09);
-          if (knockThem > 5.5) {
-            imp.vy = Math.max(imp.vy || 0, isDash ? 4.8 : 2.5);
-            imp.oy = Math.max(imp.oy || 0, isDash ? 0.4 : 0.16);
+          imp.ox = (imp.ox || 0) + d * Math.min(1.4, knockThem * 0.08);
+          imp.oz = (imp.oz || 0) + h * Math.min(1.4, knockThem * 0.08);
+          if (knockThem > 6) {
+            imp.vy = Math.max(imp.vy || 0, isDash ? 4.5 : 2.8);
+            imp.oy = Math.max(imp.oy || 0, isDash ? 0.35 : 0.18);
             l.y = Math.max(l.y, 0.08);
           }
           let ik = Math.hypot(imp.kx, imp.kz);
-          if (ik > 24) { imp.kx *= 24 / ik; imp.kz *= 24 / ik; }
+          if (ik > 22) { imp.kx *= 22 / ik; imp.kz *= 22 / ik; }
           hitImp.set(i.id, imp);
-          l.x += d * Math.min(0.9, knockThem * 0.04);
-          l.z += h * Math.min(0.9, knockThem * 0.04);
+          l.x += d * Math.min(0.7, knockThem * 0.03);
+          l.z += h * Math.min(0.7, knockThem * 0.03);
+          l.vx = (l.vx || 0) + d * knockThem * 0.25;
+          l.vz = (l.vz || 0) + h * knockThem * 0.25;
           O("hit");
           re = Math.max(re, Math.min(0.55, knockThem / 16));
           fe(l.x, 1.1, l.z, isDash ? "#ffd23f" : "#ff6bd6", isDash ? 16 : 12, isDash ? 5 : 4);
           fe(o.x, 0.9, o.z, "#ffffff", 6, 3);
         } else if (myInto > 0) {
-          o.kx -= d * myInto * 0.4;
-          o.kz -= h * myInto * 0.4;
+          o.kx -= d * myInto * 0.35;
+          o.kz -= h * myInto * 0.35;
         }
-        // 2) Rakip beni itiyor → YEREL fizik (kurban tarafı — elenme için şart)
-        //    Temas + rakip yaklaşıyorsa veya ben kenardaysam savrul
-        let nearEdge = isArena && arenaR != null && Math.hypot(o.x, o.z) > arenaR * 0.65;
-        let beingPushed = theirInto > 0.06 || (theirSpd > 1.8 && theirInto > 0) || (nearEdge && u < hitRad * 0.95 && theirSpd > 1.2);
+        // 2) KRİTİK: Rakip beni itiyor → yerel fizik (o.kx/o.kz) uygulanır
+        //    Önceden sadece saldıran tarafta görsel hitImp vardı; kurban kendi istemcisinde
+        //    savrulmuyordu, bu yüzden arena dışına çıkınca elenmiyordu.
+        let beingPushed = theirInto > 0.12 || (theirSpd > 2.2 && theirInto > 0.02);
         if (beingPushed && a - (Ln.get("in:" + i.id) || 0) > cd) {
           Ln.set("in:" + i.id, a);
-          let baseIn = isArena ? 6.5 : 3.4;
-          let fromTheir = Math.max(0, theirInto) * (isArena ? 2.2 : 1.45) + (theirSpd > 3 ? (theirSpd - 3) * (isArena ? 0.6 : 0.32) : 0);
-          let theirDashBonus = theirDash ? (isArena ? 6.5 : 4) : 0;
-          let edgeBonus = nearEdge ? 2.5 : 0;
-          let knockIn = Math.min(isArena ? 15 : 9, baseIn + fromTheir + theirDashBonus + edgeBonus);
+          let baseIn = isArena ? 5.5 : 3.4;
+          let fromTheir = Math.max(0, theirInto) * (isArena ? 1.9 : 1.45) + (theirSpd > 3 ? (theirSpd - 3) * (isArena ? 0.5 : 0.32) : 0);
+          let theirDashBonus = theirDash ? (isArena ? 5.5 : 4) : 0;
+          let knockIn = Math.min(isArena ? 13 : 9, baseIn + fromTheir + theirDashBonus);
+          // Benden rakibe d; itilince ters yöne savrul (-d)
           o.kx -= d * knockIn;
           o.kz -= h * knockIn;
-          if (knockIn > 5) {
-            o.vy = Math.max(o.vy, theirDash ? 3.5 : 1.4);
+          if (knockIn > 6) {
+            o.vy = Math.max(o.vy, theirDash ? 3.2 : 1.6);
             o.gr = !1;
           }
-          o.x -= d * Math.min(1.1, knockIn * 0.055);
-          o.z -= h * Math.min(1.1, knockIn * 0.055);
-          // Kenardaysam merkezden dışarı da it
-          if (nearEdge && arenaR != null) {
-            let md = Math.hypot(o.x, o.z) || 1;
-            o.kx += (o.x / md) * 3.5;
-            o.kz += (o.z / md) * 3.5;
-          }
+          // Anlık pozisyon ayrımı — platform kenarındayken dışarı taşır
+          o.x -= d * Math.min(0.85, knockIn * 0.04);
+          o.z -= h * Math.min(0.85, knockIn * 0.04);
+          // Pozisyonu hemen yayınla ki diğer istemciler savrulmayı görsün
           He(!0);
           O("hit");
-          re = Math.max(re, Math.min(0.55, knockIn / 16));
+          re = Math.max(re, Math.min(0.5, knockIn / 16));
           fe(o.x, 1.0, o.z, theirDash ? "#ffd23f" : "#ff6bd6", 10, 4);
         }
       }
@@ -3236,34 +3214,25 @@ function et() {
         if (o.y > -0.05) o.vy = Math.min(o.vy, -6);
       }
       f && o.gr && performance.now() - he < 120 && (o.vy = Zn, B = !0, he = -1000000000, o.gr = !1, O("jump")), o.vy -= Yn * n, o.y += o.vy * n, o.gr = !1, R && o.vy <= 0 && o.y <= 0.02 && o.y > -0.7 && (o.y = 0, o.vy = 0, o.gr = !0, u && (R.vx || R.vz) && (o.x += R.vx * n, o.z += R.vz * n), R.plat && R.plat.cp && !R.plat.amp && o.st === "run" && (o.cp = R.plat)), o.y < -40 && (o.y = -40, o.vy = 0);
-      // Elenme: arena diski (cfg.radius/support) veya diğer void platform dışı
+      // Elenme: gerçek platform support dışına (X/Z) çıkma + Y düşüş
+      // Arena diski = cfg.radius (support); tile/ada = support null
       if (u && o.st === "run" && l.fall === "out" && l.void) {
         let isArenaMap = l.id === "final" || l.id === "brawl";
-        let deathY = isArenaMap ? -0.5 : -3.5;
-        // Arena: doğrudan yarıçap kontrolü (support ile aynı kaynak)
-        if (isArenaMap && l.cfg && typeof l.cfg.radius === "function") {
-          let rr = l.cfg.radius(c);
-          let dist = Math.hypot(o.x, o.z);
-          let outDist = dist - rr;
-          if (outDist > 0.12) {
-            o._offT = (o._offT || 0) + n;
-            // Düşüşü zorla
-            if (o.y > -0.05) o.vy = Math.min(o.vy, -8);
-            if (outDist > 0.4) o.vy = Math.min(o.vy, -12);
-            let knockSpd = Math.hypot(o.kx || 0, o.kz || 0);
-            // Disk dışına çıktıysa: itilmişse hemen, değilse kısa süre sonra elen
-            // Y eşiği de her zaman geçerli
-            if (o.y < deathY || outDist > 0.55 || (o._offT > 0.06 && knockSpd > 2) || o._offT > 0.12) {
-              vn("f");
-            }
-          } else {
-            o._offT = 0;
-          }
-        } else if (!R) {
-          // Tile / ada vb.
+        let deathY = isArenaMap ? -0.7 : -3.5;
+        let offPlat = !R;
+        if (offPlat) {
           o._offT = (o._offT || 0) + n;
-          if (o.y > -0.05) o.vy = Math.min(o.vy, -6);
-          if (o.y < deathY || (o._offT > 0.15 && o.y < 0.4)) {
+          let clearlyOut = true;
+          let outDist = 0;
+          if (l.cfg && typeof l.cfg.radius === "function") {
+            outDist = Math.hypot(o.x, o.z) - l.cfg.radius(c);
+            clearlyOut = outDist > 0.15;
+          }
+          // İtilerek veya yürüyerek dışarı: kısa süre sonra / Y altına inince elen
+          // Knockback hızı varken daha hızlı elen (itme senaryosu)
+          let knockSpd = Math.hypot(o.kx || 0, o.kz || 0);
+          let killDelay = knockSpd > 4 ? 0.08 : 0.16;
+          if (o.y < deathY || (clearlyOut && o._offT > killDelay && o.y < 0.55) || (clearlyOut && outDist > 0.8 && o.y < 0.35)) {
             vn("f");
           }
         } else {
