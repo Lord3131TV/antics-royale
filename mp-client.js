@@ -9,10 +9,11 @@
  */
 import { io } from "https://cdn.socket.io/4.8.1/socket.io.esm.min.js";
 
+const DEFAULT_SERVER = "https://antics-royale.onrender.com";
 let SERVER_URL =
   (typeof window !== "undefined" && window.ANTICS_MP_SERVER) ||
   (typeof localStorage !== "undefined" && localStorage.getItem("antics_mp_server")) ||
-  "https://antics-royale.onrender.com";
+  DEFAULT_SERVER;
 
 export function setServerUrl(url) {
   SERVER_URL = String(url || "").replace(/\/$/, "");
