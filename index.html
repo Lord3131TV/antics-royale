@@ -2605,22 +2605,38 @@ function et() {
         });
       }
       if (n.kind === "race") {
+        // KESİN: Konum/Z ile kazanan YOK. Önde olmak kazanma değildir.
         let runners = t.filter(R => (l(R) || {}).st === "run");
         let finishers = t.filter(R => (l(R) || {}).st === "fin").sort((R, B) => (l(R).fa || 0) - (l(B).fa || 0));
-        // Hâlâ koşan varken ve süre dolmamışken bitirme
-        // NOT: runners===0 başlangıç desync'inde de olabilir → süre dolmadan bitirme
-        if (runners.length > 0 && !u)
-          return null;
-        if (runners.length === 0 && finishers.length === 0 && !u)
-          return null;
-        // Süre doldu veya herkes bitirdi/elendi
+        let outs = t.filter(R => {
+          let s = l(R) || {};
+          return s.st === "out" || s.st === "spec";
+        });
+        if (!u) {
+          // Süre dolmadan: sadece HERKES fin veya out ise bit (kimse hâlâ run değil)
+          // Tek kişi bitiş çizgisine vardı diye tur bitmez
+          if (runners.length > 0)
+            return null;
+          if (finishers.length + outs.length < t.length)
+            return null; // state henüz gelmemiş oyuncular var
+          if (finishers.length === 0 && outs.length === 0)
+            return null;
+        }
+        // Süre doldu VEYA herkes çözüldü
+        // Kazananlar = bitişe varanlar; süre dolduysa hâlâ koşanlar da hayatta
+        // ASLA z/x konumuna göre sıralama veya seçim yok
         let k = finishers.slice();
         let A = "";
-        if (!k.length && u) {
-          // Süre doldu, kimse fin değil → hâlâ koşanlar hayatta (Z ile seçim YOK)
-          k = runners.slice();
-          A = k.length ? "Süre doldu" : "Kimse bitiremedi";
+        if (u) {
+          // Süre doldu: fin + hâlâ run olanlar hayatta; out olanlar elendi
+          for (let id of runners) {
+            if (!k.includes(id)) k.push(id);
+          }
+          A = k.length ? "Süre doldu" : "Kimse hayatta kalmadı";
+        } else {
+          A = finishers.length ? "Bitiş çizgisine ulaşıldı" : "";
         }
+        // Ölü / out asla kazanan listesinde olmasın
         k = onlyAlive(k);
         return { q: k, note: A };
       }
@@ -2687,14 +2703,15 @@ function et() {
         h = [];
         b = "Kimse ayakta kalmadı";
       }
-      // Final arena: süre doldu, birden fazla ayakta → merkeze en yakın (sadece run)
+      // Final: SADECE süre dolduysa ve birden fazla AYAKTA (run) varsa — önde olmak değil, merkeze yakınlık (final kuralı)
       if (n.final && h.length > 1 && u) {
         let m = g => {
           let k = l(g) || {};
+          if (k.st && k.st !== "run") return 1e9;
           return Math.hypot(k.x || 0, k.z || 0);
         };
-        h = [h.slice().sort((g, k) => m(g) - m(k))[0]];
-        b = "Süre doldu! Merkeze en yakın oyuncu şampiyon.";
+        h = [h.filter(id => (l(id) || {}).st === "run").slice().sort((g, k) => m(g) - m(k))[0]].filter(Boolean);
+        b = "Süre doldu! Merkeze en yakın ayakta kalan şampiyon.";
       }
       h = onlyAlive(h);
       return { q: h, note: b };
@@ -3450,7 +3467,11 @@ function pt(n, a) {
         if (o.st === "run") {
           if (l.localRule) l.localRule(a, t, B);
           if (o.st === "run" && l.hazards) l.hazards(n, c, a, r);
-          if (o.st === "run" && l.kind === "race" && o.z >= l.finishZ(r)) ct();
+          // Bitiş çizgisi: sadece kendini fin yapar; turu/tek başına kazanan ilan etmez
+          if (o.st === "run" && l.kind === "race" && typeof l.finishZ === "function") {
+            let _fz = l.finishZ(r);
+            if (typeof _fz === "number" && _fz > 5 && o.z >= _fz) ct();
+          }
         }
       }
       He();
