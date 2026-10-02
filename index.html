@@ -1600,7 +1600,8 @@ function et() {
       };
     }
     var stonesBuild = function (n) {
-      let a = sn(n), i = (u, f) => u + a() * (f - u), t = [], r = 0, safe = [];
+      let a = sn(n), t = [], r = 0, safe = [];
+      // Başlangıç platformu
       t.push({
         x: 0,
         w: 12,
@@ -1610,34 +1611,40 @@ function et() {
         safe: !0
       });
       r = 2;
+      // Cam çiftleri: Z ekseninde hafif örtüşme (gap yok) — aynı şeritte ileri
+      // atlayışlarda support asla null olmasın. Görsel = fizik (aynı x/w/z0/z1).
+      const platLen = 3.6;
+      const stepZ = 3.45; // 0.15 örtüşme → sürekli collision yüzeyi
+      const platW = 3.2;
+      const laneX = 2.4;
       for (let c = 0; c < 9; c++) {
         let leftSafe = a() < 0.5;
         safe.push(leftSafe);
-        // Daha yakın bloklar: yan boşluk ve ileri boşluk azaltıldı
         t.push({
-          x: -2.35,
-          w: 3.0,
+          x: -laneX,
+          w: platW,
           z0: r,
-          z1: r + 3.4,
+          z1: r + platLen,
           cp: c === 0,
           safe: leftSafe,
           pair: c
         });
         t.push({
-          x: 2.35,
-          w: 3.0,
+          x: laneX,
+          w: platW,
           z0: r,
-          z1: r + 3.4,
+          z1: r + platLen,
           cp: !1,
           safe: !leftSafe,
           pair: c
         });
-        r += 3.55;
+        r += stepZ;
       }
+      // Bitiş platformu — son cam çiftiyle örtüşsün
       t.push({
         x: 0,
         w: 14,
-        z0: r,
+        z0: r - 0.15,
         z1: r + 12,
         cp: !0,
         safe: !0,
@@ -1682,19 +1689,27 @@ function et() {
       },
       finishZ: n => n.finishZ,
       support(n, a, i, t, l) {
+        // Görsel mesh ile aynı kutu (x±w/2, z0..z1); kenarda küçük tolerans
+        // Güvenli platform öncelikli: örtüşen Z diliminde yanlış cam null dönmesin
+        let hitUnsafe = false;
         for (let r of l.plats) {
-          if (a < r.z0 - 0.2 || a > r.z1 + 0.2)
+          if (a < r.z0 - 0.15 || a > r.z1 + 0.15)
             continue;
-          if (Math.abs(n - r.x) <= r.w / 2 + 0.2) {
-            if (r.safe === !1)
-              return null;
-            return {
-              vx: 0,
-              vz: 0,
-              plat: r
-            };
+          if (Math.abs(n - r.x) > r.w / 2 + 0.25)
+            continue;
+          if (r.safe === !1) {
+            hitUnsafe = true;
+            continue;
           }
+          return {
+            vx: 0,
+            vz: 0,
+            plat: r
+          };
         }
+        // Sadece güvensiz cama basıldıysa düş
+        if (hitUnsafe)
+          return null;
         return null;
       },
       world(n, a, i, t, l) {
@@ -1704,6 +1719,7 @@ function et() {
         for (let u of plats) {
           if (u.z1 < P.z - 12 || u.z0 > P.z + 140)
             continue;
+          // Görsel boyut = fizik boyutu (aynı x, w, z0, z1)
           let d = u.x - u.w / 2, h = u.x + u.w / 2, b = u.fin ? "#ffffff" : "rgba(180,220,255,0.55)";
           Ee([
             [
