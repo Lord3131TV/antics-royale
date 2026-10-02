@@ -1,453 +1,4227 @@
-/**
- * Antics Royale 3D — Realtime Multiplayer Server
- * Socket.IO room/state relay matching the game's SDK-like API.
- */
-const express = require("express");
-const http = require("http");
-const { Server } = require("socket.io");
-const cors = require("cors");
-const crypto = require("crypto");
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#24123f">
+<title>Antics Royale 3D — Online Multiplayer</title>
+<meta name="description" content="Özel referans karakterler, lobi karakter seçimi ve 8 heyecanlı 3D mini oyun içeren çok oyunculu parti oyunu." />
+<meta property="og:title" content="Antics Royale 3D - Karakter Seçimli" />
+<meta property="og:description" content="Özel referans karakterler, lobi karakter seçimi ve 8 heyecanlı 3D mini oyun içeren çok oyunculu parti oyunu." />
+<meta property="og:type" content="website" />
+<meta name="twitter:card" content="summary_large_image" />
+<style>
+:root{
+  --plum:#24123f; --panel:rgba(36,18,63,.82); --pink:#ff3d6e; --mint:#2ee59d; --sun:#ffd23f; --paper:#fff8ee;
+  --font:"Avenir Next Rounded","Nunito","Trebuchet MS","Segoe UI",system-ui,-apple-system,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden;background:var(--plum);font-family:var(--font);color:#fff;
+  user-select:none;-webkit-user-select:none;touch-action:none}
+canvas#cv{position:fixed;inset:0;display:block;z-index:1}
+#hud{position:fixed;inset:0;pointer-events:none;z-index:2;
+  padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px)}
+.panel{background:var(--panel);border:2px solid rgba(255,255,255,.16);border-radius:16px;padding:12px 14px;backdrop-filter:blur(6px);box-shadow:0 8px 24px rgba(0,0,0,.35)}
+#tl{position:absolute;left:14px;top:14px;min-width:190px;font-size:14px;line-height:1.45}
+#tl .h{font-size:22px;font-weight:900;letter-spacing:.2px}
+#tl .m{opacity:.8;margin-bottom:4px}
+#tl .big b{font-size:26px;color:var(--sun)}
+#tl .sub{opacity:.85}
+#tr{position:absolute;right:14px;top:14px;min-width:210px;max-width:260px;font-size:14px}
+#tr .row,#endRows .row{display:flex;align-items:center;gap:8px;padding:3px 0}
+#tr .row i,#endRows .row i,.pl i{width:12px;height:12px;border-radius:50%;flex:none;border:2px solid rgba(255,255,255,.75)}
+#tr .row .n,#endRows .row .n{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:700}
+#tr .row .sc,#endRows .row .sc{font-weight:900;color:var(--sun);min-width:34px;text-align:right}
+#tr .row.me .n,#endRows .row.me .n{color:var(--mint)}
+#tr .row.out,#endRows .row.out{opacity:.45}
+#tr .ttl{font-weight:900;margin-bottom:4px}
+#tc{position:absolute;left:50%;top:14px;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:8px}
+.lb{padding:10px 26px;border-radius:999px;font-weight:900;font-size:clamp(16px,2.6vw,28px);border:3px solid #fff;box-shadow:0 6px 0 rgba(0,0,0,.25);white-space:nowrap}
+.lb.green{background:#19b866}
+.lb.red{background:#e5173f;animation:pulse .45s infinite alternate}
+.lb.wait{background:#6a4fb3}
+.lb.warn{background:#e8590c;animation:pulse .6s infinite alternate}
+@keyframes pulse{from{transform:scale(1)}to{transform:scale(1.07)}}
+.tm{font-weight:900;font-size:20px;background:var(--panel);border-radius:999px;padding:4px 16px}
+.tm.low{color:var(--pink)}
+#msg{position:absolute;left:50%;top:36%;transform:translate(-50%,-50%);text-align:center;width:min(720px,92vw);text-shadow:0 4px 0 rgba(0,0,0,.35)}
+#msg .k{font-size:clamp(18px,2.4vw,26px);font-weight:800;color:var(--sun)}
+#msg .t{font-size:clamp(30px,6vw,64px);font-weight:900;line-height:1.05;margin:4px 0 10px}
+#msg .d{font-size:clamp(14px,1.8vw,19px);line-height:1.5;font-weight:700}
+#msg .cnt{font-size:clamp(80px,18vw,190px);font-weight:900;line-height:1;color:var(--sun);animation:pop .5s ease-out}
+#msg .go{font-size:clamp(50px,11vw,120px);font-weight:900;color:var(--mint)}
+#msg .bad{font-size:clamp(44px,9vw,96px);font-weight:900;color:var(--pink)}
+#msg .good{font-size:clamp(38px,8vw,84px);font-weight:900;color:var(--mint)}
+#msg .small{font-size:clamp(14px,1.8vw,19px);font-weight:700;margin-top:8px}
+#msg .list{margin-top:10px;background:var(--panel);border-radius:14px;padding:10px 16px;font-size:16px;line-height:1.6;font-weight:700;text-shadow:none}
+@keyframes pop{from{transform:scale(1.6);opacity:.2}to{transform:scale(1);opacity:1}}
+#feed{position:absolute;left:14px;bottom:44px;display:flex;flex-direction:column;gap:6px;max-width:min(360px,80vw)}
+#feed div{background:var(--panel);border-left:5px solid #fff;border-radius:10px;padding:6px 12px;font-size:14px;font-weight:700}
+#feed .bad{border-color:var(--pink)} #feed .good{border-color:var(--mint)}
+#hint{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);font-size:13px;font-weight:700;opacity:.9;
+  background:var(--panel);padding:5px 14px;border-radius:999px;white-space:nowrap}
+#ping{position:absolute;right:14px;bottom:12px;font-size:12px;font-weight:700;opacity:.75;background:var(--panel);padding:4px 10px;border-radius:999px}
+#vig{position:fixed;inset:0;pointer-events:none;transition:box-shadow .15s;z-index:1}
+body.red #vig{box-shadow:inset 0 0 150px 36px rgba(255,20,70,.6)}
 
-const PORT = process.env.PORT || 3001;
-const MAX_PLAYERS = 8;
-const CODE_LEN = 5;
-const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no I/O/0/1
-const IDLE_ROOM_MS = 45 * 60 * 1000;
-/** Empty rooms kept this long so create→leave→redirect→join (and friends joining the code) still works */
-const EMPTY_ROOM_MS = 3 * 60 * 1000;
-const HOST_TICK_MS = 33;
+/* Lobi Arayüzü */
+#lobby{position:absolute;left:14px;top:14px;width:min(420px,94vw);pointer-events:auto;display:none;max-height:calc(100% - 28px);overflow:auto;touch-action:pan-y;-webkit-overflow-scrolling:touch}
+#lobby h1{margin:0;font-size:32px;line-height:1.1;font-weight:900;color:var(--sun);text-shadow:0 3px 0 rgba(0,0,0,.35)}
+#lobby .lead{margin:6px 0 10px;font-size:13px;line-height:1.45;opacity:.92}
 
-const path = require("path");
-const app = express();
-app.use(cors({ origin: true }));
-app.use(express.json());
+/* Karakter Seçici Kartları */
+.char-selector{margin:10px 0 14px;background:rgba(0,0,0,.22);border-radius:14px;padding:10px;border:1px solid rgba(255,255,255,.1)}
+.char-title{font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.8px;color:var(--sun);margin-bottom:8px;display:flex;align-items:center;justify-content:space-between}
+.char-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.char-card{background:rgba(255,255,255,.07);border:2px solid rgba(255,255,255,.15);border-radius:12px;padding:8px;cursor:pointer;text-align:left;transition:all .18s ease;display:flex;flex-direction:column;gap:4px}
+.char-card:hover{background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.4);transform:translateY(-2px)}
+.char-card.selected{border-color:var(--mint);background:rgba(46,229,157,.18);box-shadow:0 0 14px rgba(46,229,157,.35)}
+.char-card .card-head{display:flex;align-items:center;gap:6px}
+.char-card .avatar-icon{font-size:22px;line-height:1}
+.char-card .name{font-weight:900;font-size:13px;line-height:1.2;color:#fff}
+.char-card .subtext{font-size:11px;opacity:.85;line-height:1.3}
+.char-card .badge{align-self:flex-start;font-size:10px;font-weight:900;border-radius:6px;padding:1px 6px;margin-top:2px}
+.char-card.selected .badge{background:var(--mint);color:var(--plum)}
+.char-card:not(.selected) .badge{background:rgba(255,255,255,.2);color:#fff}
 
-// Optional: serve frontend from ../public when SERVE_STATIC=1 (local all-in-one)
-if (process.env.SERVE_STATIC === "1") {
-  const pub = path.join(__dirname, "..", "public");
-  app.use(express.static(pub));
-  console.log("Serving static from", pub);
+.pl{display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:10px;background:rgba(255,255,255,.07);margin-bottom:5px;font-weight:700;font-size:14px}
+.pl.me{background:rgba(46,229,157,.18)}
+.pl .n{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pl .cbadge{font-size:11px;opacity:.9;background:rgba(255,255,255,.14);border-radius:6px;padding:2px 6px}
+.pl em{font-style:normal;font-size:11px;background:var(--sun);color:var(--plum);border-radius:6px;padding:1px 6px;font-weight:900}
+.pl .rd{font-size:12px;opacity:.9}
+.row2{display:flex;gap:8px;margin-top:8px}
+button,input{font-family:var(--font);touch-action:manipulation}
+button{flex:1;border:0;border-radius:12px;padding:10px 12px;font-weight:900;font-size:14px;cursor:pointer;color:var(--plum);background:var(--sun);box-shadow:0 4px 0 rgba(0,0,0,.3);transition:transform .1s,box-shadow .1s}
+button:active{transform:translateY(3px);box-shadow:0 1px 0 rgba(0,0,0,.3)}
+button:focus-visible,input:focus-visible{outline:3px solid #fff;outline-offset:2px}
+button.go{background:var(--mint)} button.alt{background:#fff}
+input{flex:1;min-width:0;border-radius:12px;border:2px solid rgba(255,255,255,.3);background:rgba(255,255,255,.1);color:#fff;padding:8px 12px;font-size:14px;font-weight:700}
+#lobbyNote{margin-top:8px;font-size:12px;line-height:1.45;opacity:.92;min-height:18px}
+
+/* Oda paneli */
+.room-box{margin:10px 0 12px;background:rgba(0,0,0,.28);border-radius:14px;padding:10px 12px;border:1px solid rgba(255,255,255,.12)}
+.room-box .rt{font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.7px;color:var(--sun);margin-bottom:6px}
+.room-code-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.room-code{font-size:clamp(22px,5vw,28px);font-weight:900;letter-spacing:3px;color:#fff;background:rgba(255,255,255,.1);border-radius:10px;padding:8px 14px;font-variant-numeric:tabular-nums}
+.room-code.empty{font-size:14px;letter-spacing:.3px;opacity:.7}
+.room-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.room-actions button{flex:1;min-width:100px;padding:9px 10px;font-size:13px}
+.room-join{display:flex;gap:6px;margin-top:8px}
+.room-join input{flex:1;min-width:0;text-transform:uppercase;letter-spacing:1px}
+.room-hint{font-size:11px;opacity:.85;margin-top:6px;line-height:1.4}
+#menuDoor{display:none;margin:10px 0 12px}
+#menuDoor .door-title{font-size:13px;font-weight:900;margin-bottom:8px;color:var(--sun)}
+#menuDoor .door-btns{display:flex;flex-direction:column;gap:8px}
+#menuDoor button{width:100%;padding:14px 12px;font-size:15px}
+#menuDoor .door-sub{font-size:11px;opacity:.8;font-weight:700;margin-top:2px}
+body.menu-mode #lobby .char-selector,
+body.menu-mode #plist,
+body.menu-mode #startBtn,
+body.menu-mode .room-box,
+body.menu-mode #guestWait{display:none!important}
+body.menu-mode #menuDoor{display:block}
+/* lobbyNote stays visible in menu-mode so join errors (Room not found) can show */
+
+/* Misafir: sadece kurucu paneli (kod) gizli */
+body.guest-lobby #roomHostOnly{display:none!important}
+body.guest-lobby #guestWait{display:block}
+#guestWait{display:none;margin:10px 0 12px;background:rgba(0,0,0,.28);border-radius:14px;padding:14px 12px;border:1px solid rgba(255,255,255,.12);text-align:center}
+#guestWait .gw-title{font-size:16px;font-weight:900;color:var(--sun);margin-bottom:6px}
+#guestWait .gw-sub{font-size:13px;opacity:.9;line-height:1.45;font-weight:700}
+#guestWait .gw-dots{margin-top:10px;font-size:22px;letter-spacing:4px;opacity:.7;animation:pulse .8s infinite alternate}
+#roomHostOnly{margin:10px 0 0}
+
+#end{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(20,8,40,.65);pointer-events:auto;z-index:5}
+#end .card{width:min(540px,92vw);text-align:center}
+#end .crown{font-size:clamp(70px,14vw,120px);line-height:1;animation:pop .7s ease-out}
+#end h2{margin:4px 0 2px;font-size:clamp(30px,6vw,54px);font-weight:900;color:var(--sun)}
+#end .who{font-size:clamp(34px,7.5vw,70px);font-weight:900;line-height:1.05;margin-bottom:12px;overflow-wrap:anywhere;text-shadow:0 4px 0 rgba(0,0,0,.35)}
+#endRows{text-align:left;margin:8px 0}
+#end .back{opacity:.9;font-size:14px;font-weight:700;margin-bottom:8px}
+#end button{flex:none;width:100%}
+#fatal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:var(--plum);z-index:10;padding:24px;text-align:center;font-size:18px;font-weight:700}
+body.ph-lobby #lobby{display:block}
+body.ph-lobby #tl,body.ph-lobby #tr,body.ph-lobby #tc{display:none}
+body.ph-gameEnd #end{display:flex}
+@media (prefers-reduced-motion:reduce){.lb.red,.lb.warn,#msg .cnt,#end .crown{animation:none}}
+
+/* Mobil dokunmatik kontroller */
+#mobileCtrls{position:fixed;inset:0;pointer-events:none;z-index:4;display:none}
+body.show-mobile #mobileCtrls{display:block}
+#stickZone{position:absolute;left:max(10px,env(safe-area-inset-left));bottom:max(14px,env(safe-area-inset-bottom));width:132px;height:132px;pointer-events:auto;touch-action:none}
+#stickBase{position:absolute;inset:0;border-radius:50%;background:rgba(36,18,63,.55);border:3px solid rgba(255,255,255,.28);box-shadow:0 6px 20px rgba(0,0,0,.35)}
+#stickKnob{position:absolute;left:50%;top:50%;width:54px;height:54px;margin:-27px 0 0 -27px;border-radius:50%;background:rgba(255,255,255,.88);border:3px solid var(--mint);box-shadow:0 4px 12px rgba(0,0,0,.4);transition:none}
+#btnJump,#btnDash{position:absolute;right:max(12px,env(safe-area-inset-right));width:68px;height:68px;border-radius:50%;pointer-events:auto;touch-action:none;border:3px solid rgba(255,255,255,.35);font-weight:900;font-size:12px;color:#fff;display:flex;align-items:center;justify-content:center;text-align:center;line-height:1.15;box-shadow:0 6px 16px rgba(0,0,0,.4);user-select:none;-webkit-user-select:none}
+#btnJump{bottom:max(20px,env(safe-area-inset-bottom));background:rgba(46,229,157,.85);border-color:rgba(255,255,255,.5)}
+#btnDash{bottom:max(100px,calc(env(safe-area-inset-bottom) + 80px));background:rgba(255,210,63,.85);color:var(--plum);border-color:rgba(255,255,255,.45)}
+#btnJump:active,#btnDash:active,#btnJump.active,#btnDash.active{transform:scale(.92);filter:brightness(1.1)}
+@media (min-width:900px) and (hover:hover){body.show-mobile #mobileCtrls{display:none}}
+
+/* —— Telefon / dar ekran (portrait & genel mobil) —— */
+@media (max-width:720px){
+  #hud{padding:max(6px,env(safe-area-inset-top)) max(6px,env(safe-area-inset-right)) max(6px,env(safe-area-inset-bottom)) max(6px,env(safe-area-inset-left))}
+  .panel{padding:8px 10px;border-radius:12px}
+  #tl{left:8px;top:8px;min-width:0;max-width:46vw;font-size:11px;line-height:1.35;padding:7px 9px}
+  #tl .h{font-size:15px}
+  #tl .m{font-size:11px;margin-bottom:2px}
+  #tl .big{font-size:12px}
+  #tl .big b{font-size:16px}
+  #tl .sub{font-size:10px}
+  #tr{top:auto;bottom:max(40px,env(safe-area-inset-bottom));right:8px;min-width:0;max-width:42vw;font-size:11px;padding:6px 8px}
+  #tr .ttl{font-size:11px;margin-bottom:2px}
+  #tr .row{gap:5px;padding:2px 0}
+  #tr .row .sc{min-width:26px}
+  #tr .row i{width:9px;height:9px}
+  #tc{top:max(6px,env(safe-area-inset-top));gap:5px;width:min(92vw,360px);align-items:center}
+  .lb{padding:7px 14px;font-size:clamp(12px,3.4vw,16px);border-width:2px;box-shadow:0 3px 0 rgba(0,0,0,.25);max-width:92vw;white-space:normal;text-align:center;line-height:1.2}
+  .tm{font-size:15px;padding:3px 12px}
+  #msg{top:32%;width:min(94vw,420px)}
+  #msg .k{font-size:clamp(13px,3.2vw,18px)}
+  #msg .t{font-size:clamp(22px,6.5vw,40px);margin:2px 0 6px}
+  #msg .d{font-size:clamp(12px,3vw,15px);line-height:1.4}
+  #msg .cnt{font-size:clamp(64px,20vw,120px)}
+  #msg .go{font-size:clamp(36px,12vw,72px)}
+  #msg .bad,#msg .good{font-size:clamp(28px,9vw,56px)}
+  #msg .small{font-size:clamp(12px,3vw,15px)}
+  #msg .list{font-size:13px;padding:8px 12px;line-height:1.45}
+  #feed{left:8px;bottom:auto;top:max(88px,calc(env(safe-area-inset-top) + 72px));max-width:min(220px,55vw);gap:4px}
+  #feed div{padding:4px 8px;font-size:11px;border-radius:8px;border-left-width:4px}
+  #hint{bottom:max(6px,env(safe-area-inset-bottom));font-size:10px;max-width:72vw;white-space:normal;text-align:center;padding:4px 10px;line-height:1.3}
+  #ping{right:8px;bottom:max(6px,env(safe-area-inset-bottom));font-size:10px;padding:3px 8px}
+  body.show-mobile #hint{bottom:max(152px,calc(env(safe-area-inset-bottom) + 138px));max-width:56vw}
+  body.show-mobile #ping{bottom:max(152px,calc(env(safe-area-inset-bottom) + 138px))}
+  body.show-mobile #tr{bottom:max(152px,calc(env(safe-area-inset-bottom) + 138px));max-width:38vw}
+  body.show-mobile #feed{top:max(88px,calc(env(safe-area-inset-top) + 72px))}
+  /* Lobi — tam genişlik, kaydırılabilir */
+  #lobby{left:max(8px,env(safe-area-inset-left));right:max(8px,env(safe-area-inset-right));top:max(8px,env(safe-area-inset-top));width:auto;max-width:none;max-height:calc(100% - 16px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));padding:12px 12px 14px;border-radius:14px}
+  #lobby h1{font-size:clamp(24px,7vw,30px)}
+  #lobby .lead{font-size:12px;margin:4px 0 8px}
+  .char-selector{padding:8px;margin:8px 0 10px}
+  .char-title{font-size:11px;margin-bottom:6px}
+  .char-grid{gap:6px}
+  .char-card{padding:7px;border-radius:10px}
+  .char-card .avatar-icon{font-size:20px}
+  .char-card .name{font-size:12px}
+  .char-card .subtext{font-size:10px}
+  .pl{font-size:12px;padding:5px 7px;gap:6px;margin-bottom:4px}
+  .pl .cbadge{font-size:10px;padding:1px 5px}
+  .pl em{font-size:10px}
+  .row2{gap:6px;margin-top:6px}
+  button,input{font-size:13px;padding:11px 12px;border-radius:11px;min-height:44px}
+  #lobbyNote{font-size:11px;margin-top:6px}
+  .room-box{padding:8px 10px;margin:8px 0 10px}
+  .room-code{font-size:20px;letter-spacing:2px;padding:6px 10px}
+  .room-actions button,.room-join button{min-height:44px;font-size:12px}
+  #menuDoor button{min-height:48px;font-size:14px}
+  #end .card{width:min(94vw,480px);padding:14px 12px;max-height:calc(100vh - 24px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));overflow:auto}
+  #end .crown{font-size:clamp(52px,14vw,90px)}
+  #end h2{font-size:clamp(22px,6vw,36px)}
+  #end .who{font-size:clamp(24px,7vw,48px);margin-bottom:8px}
+  #end .back{font-size:12px}
+  #end button{min-height:48px;font-size:15px}
 }
 
-app.get("/api", (_req, res) => {
-  res.json({
-    ok: true,
-    service: "antics-royale-mp",
-    version: "1.0.0",
-    rooms: rooms.size,
-  });
-});
-
-app.get("/health", (_req, res) => res.json({ ok: true }));
-
-const server = http.createServer(app);
-const io = new Server(server, {
-  cors: { origin: true, methods: ["GET", "POST"] },
-  transports: ["websocket", "polling"],
-  pingInterval: 10000,
-  pingTimeout: 20000,
-});
-
-/** @type {Map<string, Room>} */
-const rooms = new Map();
-/** socketId -> { roomCode, playerId } */
-const socketIndex = new Map();
-
-function genCode() {
-  let code;
-  do {
-    let s = "";
-    const bytes = crypto.randomBytes(CODE_LEN);
-    for (let i = 0; i < CODE_LEN; i++) s += CODE_ALPHABET[bytes[i] % CODE_ALPHABET.length];
-    code = s;
-  } while (rooms.has(code));
-  return code;
+/* Çok dar telefonlar (≤400px) */
+@media (max-width:400px){
+  #tl{max-width:48vw;font-size:10px;padding:6px 7px}
+  #tl .h{font-size:13px}
+  #tl .big b{font-size:14px}
+  #tr{max-width:40vw;font-size:10px}
+  .lb{padding:6px 10px;font-size:11px}
+  .tm{font-size:13px;padding:2px 10px}
+  #stickZone{width:118px;height:118px;left:max(8px,env(safe-area-inset-left));bottom:max(10px,env(safe-area-inset-bottom))}
+  #stickKnob{width:48px;height:48px;margin:-24px 0 0 -24px}
+  #btnJump,#btnDash{width:60px;height:60px;font-size:11px;right:max(8px,env(safe-area-inset-right))}
+  #btnJump{bottom:max(14px,env(safe-area-inset-bottom))}
+  #btnDash{bottom:max(86px,calc(env(safe-area-inset-bottom) + 70px))}
+  body.show-mobile #hint,body.show-mobile #ping,body.show-mobile #tr{bottom:max(130px,calc(env(safe-area-inset-bottom) + 118px))}
+  .char-grid{grid-template-columns:1fr}
+  #lobby h1{font-size:22px}
 }
 
-function genId() {
-  return crypto.randomBytes(8).toString("hex");
+/* Yatay telefon (landscape) */
+@media (max-height:480px) and (orientation:landscape){
+  #tl{left:6px;top:6px;max-width:28vw;font-size:10px;padding:5px 7px}
+  #tl .h{font-size:13px}
+  #tl .big b{font-size:14px}
+  #tr{top:6px;bottom:auto;right:6px;max-width:26vw;font-size:10px;padding:5px 7px}
+  #tc{top:4px;gap:3px}
+  .lb{padding:4px 12px;font-size:12px}
+  .tm{font-size:12px;padding:2px 8px}
+  #feed{top:auto;bottom:max(8px,env(safe-area-inset-bottom));left:6px;max-width:30vw}
+  #hint{bottom:max(4px,env(safe-area-inset-bottom));font-size:10px;max-width:40vw}
+  #ping{bottom:max(4px,env(safe-area-inset-bottom))}
+  #stickZone{width:100px;height:100px;left:max(8px,env(safe-area-inset-left));bottom:max(8px,env(safe-area-inset-bottom))}
+  #stickKnob{width:42px;height:42px;margin:-21px 0 0 -21px}
+  #btnJump,#btnDash{width:54px;height:54px;font-size:10px;right:max(8px,env(safe-area-inset-right))}
+  #btnJump{bottom:max(10px,env(safe-area-inset-bottom))}
+  #btnDash{bottom:max(72px,calc(env(safe-area-inset-bottom) + 58px))}
+  body.show-mobile #hint{bottom:max(8px,env(safe-area-inset-bottom));left:auto;right:max(70px,calc(env(safe-area-inset-right) + 62px));transform:none;max-width:28vw}
+  body.show-mobile #ping{bottom:max(8px,env(safe-area-inset-bottom))}
+  body.show-mobile #tr{top:6px;bottom:auto}
+  #lobby{max-height:calc(100% - 12px);padding:8px 10px}
+  #lobby h1{font-size:20px}
+  #lobby .lead{font-size:11px;margin:2px 0 6px}
+  .char-selector{margin:4px 0 6px;padding:6px}
+  .char-grid{grid-template-columns:1fr 1fr}
+  .row2{margin-top:4px}
+  button,input{min-height:40px;padding:8px 10px;font-size:12px}
+  #msg{top:40%}
+  #msg .t{font-size:clamp(18px,5vh,32px)}
+  #msg .cnt{font-size:clamp(48px,14vh,90px)}
+  #end .card{max-height:calc(100vh - 12px);padding:10px}
+  #end .crown{font-size:clamp(36px,10vh,64px)}
+  #end h2{font-size:clamp(18px,5vh,28px)}
+  #end .who{font-size:clamp(20px,6vh,36px)}
 }
 
-function now() {
-  return Date.now();
+/* Kısa dikey ekranlar (notch + küçük yükseklik) */
+@media (max-height:700px) and (orientation:portrait) and (max-width:720px){
+  #lobby{padding:10px}
+  #lobby h1{font-size:22px}
+  #lobby .lead{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .char-card .subtext{display:none}
+  .char-selector{margin:6px 0 8px}
 }
 
-class Player {
-  constructor(id, name, socketId) {
-    this.id = id;
-    this.name = name || "Oyuncu";
-    this.socketId = socketId;
-    this.state = {};
-    this.joinedAt = now();
-  }
-  public() {
-    return {
-      id: this.id,
-      name: this.name,
-      state: this.state,
+
+/* ===== Admin sistemi ===== */
+.adm-box{margin:10px 0 0;background:rgba(0,0,0,.28);border:1px solid rgba(255,210,63,.4);border-radius:14px;padding:10px 12px}
+.adm-h{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.7px;color:var(--sun);margin-bottom:8px}
+.adm-h em{font-style:normal;font-size:10px;background:var(--sun);color:var(--plum);border-radius:6px;padding:1px 6px}
+.adm-sub{font-size:11px;font-weight:900;opacity:.8;margin:8px 0 5px;text-transform:uppercase;letter-spacing:.5px}
+.adm-row{display:flex;align-items:center;gap:6px;padding:5px 8px;border-radius:10px;background:rgba(255,255,255,.07);margin-bottom:5px;font-weight:700;font-size:14px}
+.adm-row.me{background:rgba(46,229,157,.18)}
+.adm-row i{width:12px;height:12px;border-radius:50%;flex:none;border:2px solid rgba(255,255,255,.75)}
+.adm-row .n{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.adm-row .tag{font-size:11px;opacity:.85}
+.adm-row button{flex:none;padding:5px 10px;font-size:12px;border-radius:9px;box-shadow:0 3px 0 rgba(0,0,0,.3)}
+.adm-row button.kk{background:var(--sun)}
+.adm-row button.bb{background:var(--pink);color:#fff}
+.adm-row button.uu{background:#fff}
+.adm-empty{font-size:12px;opacity:.8;padding:2px 2px 4px}
+#admBtn{position:fixed;left:14px;top:calc(50% - 20px);z-index:4;flex:none;width:auto;padding:9px 14px;font-size:13px;display:none;pointer-events:auto}
+#admFloat{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(20,8,40,.55);z-index:6;pointer-events:auto;touch-action:pan-y}
+#admFloat .admcard{width:min(420px,92vw);max-height:80%;overflow:auto;-webkit-overflow-scrolling:touch}
+#admFloat .admcard>button{width:100%;margin-top:6px}
+#admGone{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(20,8,40,.94);z-index:30;padding:16px;text-align:center}
+#admGone .card{width:min(440px,92vw)}
+#admGone .ic{font-size:72px;line-height:1}
+#admGone h2{margin:6px 0;font-size:clamp(26px,6vw,40px);font-weight:900;color:var(--sun)}
+#admGone p{margin:0 0 12px;font-size:15px;line-height:1.5;font-weight:700;opacity:.95}
+
+/* ===== Pause / Ayarlar / Yardım ===== */
+#pauseOv,#settingsOv,#helpOv{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(20,8,40,.72);z-index:8;pointer-events:auto;padding:16px}
+#pauseOv.show,#settingsOv.show,#helpOv.show{display:flex}
+.pause-card,.settings-card,.help-card{width:min(420px,92vw);text-align:center;max-height:90vh;overflow:auto}
+.pause-card h2,.settings-card h2,.help-card h2{margin:0 0 12px;font-size:clamp(24px,5vw,36px);font-weight:900;color:var(--sun)}
+.pause-card .btn-col,.settings-card .btn-col{display:flex;flex-direction:column;gap:10px;margin-top:8px}
+.pause-card button,.settings-card button,.help-card button{width:100%;padding:12px;font-size:15px;min-height:48px}
+.settings-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 12px;background:rgba(255,255,255,.08);border-radius:12px;margin-bottom:8px;font-weight:800;font-size:14px}
+.settings-row .tog{flex:none;min-width:72px;padding:8px 12px;font-size:13px}
+.help-card ul{text-align:left;margin:8px 0 14px;padding-left:18px;font-size:14px;line-height:1.55;font-weight:700}
+.help-card li{margin-bottom:6px}
+#uiTopBtns{position:absolute;right:14px;bottom:44px;display:flex;flex-direction:column;gap:8px;pointer-events:auto;z-index:3}
+#uiTopBtns button{flex:none;width:auto;padding:8px 14px;font-size:13px;box-shadow:0 3px 0 rgba(0,0,0,.3)}
+body.ph-lobby #uiTopBtns{display:none}
+@media (max-width:720px){
+  #uiTopBtns{right:8px;bottom:max(160px,calc(env(safe-area-inset-bottom) + 148px))}
+  #uiTopBtns button{padding:7px 11px;font-size:12px;min-height:40px}
+  body.show-mobile #uiTopBtns{bottom:max(160px,calc(env(safe-area-inset-bottom) + 148px))}
+}
+</style>
+</head>
+<body class="ph-lobby">
+<canvas id="cv"></canvas>
+<div id="vig"></div>
+<div id="hud">
+  <div id="tl" class="panel"></div>
+  <div id="tc"></div>
+  <div id="tr" class="panel"></div>
+  <div id="msg"></div>
+  <div id="feed"></div>
+  <div id="hint"></div>
+  <div id="ping"></div>
+
+  <div id="mobileCtrls">
+    <div id="stickZone">
+      <div id="stickBase"></div>
+      <div id="stickKnob"></div>
+    </div>
+    <div id="btnJump">ZİPLA</div>
+    <div id="btnDash">ATIL</div>
+  </div>
+
+  <div id="lobby" class="panel">
+    <h1>Antics Royale</h1>
+    <p class="lead">8 kısa mini oyun: elenenler seyirci olur, son arenanın kazananı şampiyon!</p>
+
+    <!-- Ön menü: oda seçimi (menu=1) -->
+    <div id="menuDoor">
+      <div class="door-title">Oda</div>
+      <div class="door-btns">
+        <button id="doorPrivate" class="go">
+          Oda kur
+          <div class="door-sub">Yeni oda aç · kodu arkadaşlarına ver</div>
+        </button>
+        <div class="room-join" style="margin-top:10px">
+          <input id="menuJoinCode" maxlength="8" placeholder="ODA KODU" autocomplete="off" style="text-transform:uppercase;letter-spacing:1px">
+          <button id="doorJoin" class="alt">Katıl</button>
+        </div>
+        <div class="room-hint" style="margin-top:8px">4–6 haneli oda kodunu girerek arkadaşının odasına katıl.</div>
+        <div class="settings-row" style="margin-top:12px;text-align:left">
+          <span style="font-size:12px;opacity:.85">Sunucu</span>
+        </div>
+        <input id="menuServerUrl" placeholder="ws sunucu (örn. http://localhost:3001)" style="width:100%;margin-top:4px;font-size:12px">
+        <button id="menuServerSave" class="alt" style="margin-top:6px;width:100%">Sunucuyu kaydet</button>
+      </div>
+    </div>
+
+    <!-- Kurucu: oda kodu (misafir görmez) -->
+    <div class="room-box" id="roomBox">
+      <div id="roomHostOnly">
+        <div class="rt">Senin oda kodun</div>
+        <div class="room-code-row">
+          <div class="room-code empty" id="roomCodeEl">bağlanıyor…</div>
+        </div>
+        <div class="room-actions">
+          <button id="copyCodeBtn" class="alt">Kodu kopyala</button>
+          <button id="createRoomBtn" class="go">Yeni oda kur</button>
+        </div>
+        <div class="room-hint" id="roomHint">Bu kodu arkadaşlarına ver. Onlar aynı odaya link veya davet ile girer.</div>
+      </div>
+    </div>
+
+    <!-- Misafir bekleme paneli -->
+    <div id="guestWait">
+      <div class="gw-title">Odaya girdin</div>
+      <div class="gw-sub">Kurucu «Oyunu başlat»a basana kadar bekle.<br>Oyun kendiliğinden başlamaz.</div>
+      <div class="gw-dots">···</div>
+    </div>
+
+    <!-- Karakter Seçimi -->
+    <div class="char-selector">
+      <div class="char-title">
+        <span>Karakterini Seç (Skin)</span>
+        <span style="font-size:11px;opacity:.7">Oyun boyu kalır</span>
+      </div>
+      <div class="char-grid">
+        <div id="charBtn1" class="char-card selected">
+          <div class="card-head">
+            <span class="avatar-icon">🧔</span>
+            <div>
+              <div class="name">Karakter 1</div>
+              <div style="font-size:11px;opacity:.8">Savaşçı / Boss</div>
+            </div>
+          </div>
+          <div class="subtext">Kel, gür sakallı, piercingli, siyah WILD tişört</div>
+          <div class="badge">Seçildi ✓</div>
+        </div>
+
+        <div id="charBtn2" class="char-card">
+          <div class="card-head">
+            <span class="avatar-icon">🎩</span>
+            <div>
+              <div class="name">Karakter 2</div>
+              <div style="font-size:11px;opacity:.8">Beyefendi</div>
+            </div>
+          </div>
+          <div class="subtext">Gri fötr şapka, bıyık, siyah ceket & gri gömlek</div>
+          <div class="badge">Seç</div>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- Oyuncu Listesi -->
+    <div id="plist"></div>
+
+    <div class="row2">
+      <input id="nameIn" maxlength="16" placeholder="İsmin" autocomplete="off">
+      <button id="nameBtn" class="alt" style="flex:0 0 auto">İsmi kaydet</button>
+    </div>
+    <div class="row2">
+      <button id="startBtn" class="go" style="display:none">Oyunu başlat</button>
+    </div>
+    <div class="row2">
+      <button id="lobbyHelpBtn" class="alt" type="button">❓ Nasıl oynanır</button>
+      <button id="lobbySettingsBtn" class="alt" type="button">⚙ Ayarlar</button>
+    </div>
+    <div id="lobbyNote"></div>
+  </div>
+
+  <div id="end">
+    <div class="card panel">
+      <div class="crown" id="endIcon">🏆</div>
+      <h2 id="endTitle">Şampiyon</h2>
+      <div class="who" id="endWho"></div>
+      <div id="endRows"></div>
+      <div class="back" id="endBack"></div>
+      <button id="lobbyBtn" class="go">Lobiye dön</button>
+    </div>
+  </div>
+
+  <!-- Oyun içi hızlı butonlar -->
+  <div id="uiTopBtns">
+    <button id="btnPause" class="alt" type="button">⏸ Duraklat</button>
+    <button id="btnHelpInGame" class="alt" type="button">❓ Yardım</button>
+  </div>
+</div>
+
+<!-- Pause menüsü -->
+<div id="pauseOv">
+  <div class="pause-card panel">
+    <h2>Duraklatıldı</h2>
+    <div class="btn-col">
+      <button id="pauseResume" class="go" type="button">Devam et</button>
+      <button id="pauseSettings" class="alt" type="button">Ayarlar</button>
+      <button id="pauseHelp" class="alt" type="button">Nasıl oynanır</button>
+      <button id="pauseLobby" class="alt" type="button">Lobiye dön</button>
+    </div>
+  </div>
+</div>
+
+<!-- Ayarlar -->
+<div id="settingsOv">
+  <div class="settings-card panel">
+    <h2>Ayarlar</h2>
+    <div class="settings-row">
+      <span>Ses efektleri</span>
+      <button id="togMute" class="tog go" type="button">Açık</button>
+    </div>
+    <div class="settings-row">
+      <span>Tam ekran</span>
+      <button id="togFs" class="tog alt" type="button">Aç</button>
+    </div>
+    <div class="btn-col" style="margin-top:12px">
+      <button id="settingsClose" class="go" type="button">Kapat</button>
+    </div>
+  </div>
+</div>
+
+<!-- Nasıl oynanır -->
+<div id="helpOv">
+  <div class="help-card panel">
+    <h2>Nasıl oynanır?</h2>
+    <ul>
+      <li><b>WASD / Ok tuşları</b> — hareket</li>
+      <li><b>SPACE</b> — zıpla</li>
+      <li><b>SHIFT veya E</b> — atıl (dash) — bazı oyunlarda</li>
+      <li><b>M</b> — sesi aç/kapa</li>
+      <li><b>ESC</b> — duraklat / menü</li>
+      <li>Mobilde sol joystick + sağdaki Zıpla / Atıl butonları</li>
+      <li>8 mini oyun: elenenler seyirci olur, son arenanın kazananı şampiyon</li>
+      <li>Lobide karakterini seç, ismini yaz, kurucu «Oyunu başlat»a basar</li>
+    </ul>
+    <button id="helpClose" class="go" type="button">Anladım</button>
+  </div>
+</div>
+
+<div id="fatal"></div>
+<script type="module">
+
+/* Canvas roundRect polyfill (Safari < 15 / older browsers) */
+(function(){
+  if (typeof CanvasRenderingContext2D !== "undefined" && !CanvasRenderingContext2D.prototype.roundRect) {
+    CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, radii) {
+      let r = radii;
+      if (typeof r === "number") r = [r, r, r, r];
+      else if (!r) r = [0, 0, 0, 0];
+      else if (r.length === 1) r = [r[0], r[0], r[0], r[0]];
+      else if (r.length === 2) r = [r[0], r[1], r[0], r[1]];
+      else if (r.length === 3) r = [r[0], r[1], r[2], r[1]];
+      const [tl, tr, br, bl] = r;
+      this.moveTo(x + tl, y);
+      this.lineTo(x + w - tr, y);
+      this.quadraticCurveTo(x + w, y, x + w, y + tr);
+      this.lineTo(x + w, y + h - br);
+      this.quadraticCurveTo(x + w, y + h, x + w - br, y + h);
+      this.lineTo(x + tl, y + h);
+      this.quadraticCurveTo(x, y + h, x, y + h - bl);
+      this.lineTo(x, y + tl);
+      this.quadraticCurveTo(x, y, x + tl, y);
+      this.closePath();
+      return this;
     };
   }
+})();
+
+function an(e, S) {
+  let {
+      sx: M,
+      sy: y,
+      u: T,
+      color: N,
+      walk: H,
+      moving: I,
+      fall: p,
+      out: w,
+      fin: q,
+      alpha: _
+    } = S, L = S.charType || "char1";
+  e.save(), e.globalAlpha = _, e.translate(M, y), p > 0 && (e.rotate(p * 1.55), e.translate(0, p * 0.4 * T)), e.scale(T, T);
+  let C = I ? Math.abs(Math.sin(H * 2)) * 0.08 : 0, x = I ? Math.sin(H) : 0, Q = I ? Math.sin(H) * 0.35 : 0;
+  e.lineJoin = "round", e.lineCap = "round", L === "char1" ? Ft(e, {
+    color: N,
+    walk: H,
+    moving: I,
+    fall: p,
+    out: w,
+    fin: q,
+    bob: C,
+    sw: x,
+    armSw: Q
+  }) : Kt(e, {
+    color: N,
+    walk: H,
+    moving: I,
+    fall: p,
+    out: w,
+    fin: q,
+    bob: C,
+    sw: x,
+    armSw: Q
+  }), e.restore();
 }
-
-class Room {
-  constructor(code, creatorSocketId, creatorName) {
-    this.code = code;
-    this.createdAt = now();
-    this.lastActivity = now();
-    /** Timestamp when room became empty (null while occupied) */
-    this.emptyAt = null;
-    /** @type {Map<string, Player>} */
-    this.players = new Map();
-    this.state = {
-      phase: "lobby",
-      round: 0,
-      roster: [],
-      elim: [],
-      scores: {},
-      light: "green",
-      lightAt: now(),
-      creatorId: null,
-    };
-    this.hostId = null;
-    this._tickTimer = null;
-  }
-
-  touch() {
-    this.lastActivity = now();
-    if (this.players.size > 0) this.emptyAt = null;
-  }
-
-  addPlayer(player) {
-    this.players.set(player.id, player);
-    this.emptyAt = null;
-    if (!this.hostId || !this.players.has(this.hostId)) {
-      this.hostId = player.id;
-    }
-    // Creator may have left during create→redirect; reclaim if missing
-    if (!this.state.creatorId || !this.players.has(this.state.creatorId)) {
-      this.state.creatorId = player.id;
-    }
-    this.touch();
-    this.ensureHostTick();
-  }
-
-  removePlayer(playerId) {
-    const wasHost = this.hostId === playerId;
-    this.players.delete(playerId);
-    this.touch();
-
-    if (this.players.size === 0) {
-      this.hostId = null;
-      this.emptyAt = now();
-      this.stopHostTick();
-      return { empty: true, wasHost };
-    }
-
-    if (wasHost || !this.players.has(this.hostId)) {
-      // Promote oldest remaining player
-      let next = null;
-      for (const p of this.players.values()) {
-        if (!next || p.joinedAt < next.joinedAt) next = p;
-      }
-      this.hostId = next ? next.id : null;
-    }
-
-    // Keep creatorId stable if still present; otherwise assign to new host
-    if (this.state.creatorId && !this.players.has(this.state.creatorId)) {
-      this.state.creatorId = this.hostId;
-    }
-
-    this.ensureHostTick();
-    return { empty: false, wasHost, newHostId: this.hostId };
-  }
-
-  listPlayers() {
-    return [...this.players.values()].map((p) => p.public());
-  }
-
-  hostPlayer() {
-    return this.hostId ? this.players.get(this.hostId) || null : null;
-  }
-
-  ensureHostTick() {
-    if (this._tickTimer) return;
-    let last = performance.now();
-    this._tickTimer = setInterval(() => {
-      if (this.players.size === 0) {
-        this.stopHostTick();
-        return;
-      }
-      const t = performance.now();
-      const dt = t - last;
-      last = t;
-      const host = this.hostPlayer();
-      if (!host) return;
-      const sock = io.sockets.sockets.get(host.socketId);
-      if (sock) sock.emit("host_tick", { dt, serverNow: now() });
-    }, HOST_TICK_MS);
-  }
-
-  stopHostTick() {
-    if (this._tickTimer) {
-      clearInterval(this._tickTimer);
-      this._tickTimer = null;
-    }
-  }
-
-  snapshot(forPlayerId) {
-    const host = this.hostPlayer();
-    return {
-      code: this.code,
-      state: this.state,
-      players: this.listPlayers(),
-      hostId: this.hostId,
-      isHost: forPlayerId === this.hostId,
-      serverNow: now(),
-    };
-  }
+function Ft(e, S) {
+  let {
+      color: M,
+      out: y,
+      fin: T,
+      bob: N,
+      sw: H,
+      armSw: I,
+      fall: p
+    } = S, w = y && p > 0.4 ? "#9e9aa8" : "#f0c2a2", q = y && p > 0.4 ? "#7c7886" : "#dfa585", _ = y && p > 0.4 ? "#524e5a" : "#5c3d28", L = y && p > 0.4 ? "#686470" : "#785338", C = y && p > 0.4 ? "#333238" : "#17161b", x = y && p > 0.4 ? "#25242b" : "#141318", Q = Math.max(0, H) * 0.14, se = Math.max(0, -H) * 0.14;
+  e.fillStyle = x, e.beginPath(), e.roundRect(-0.38, -0.62 - Q, 0.28, 0.62 + Q, 0.1), e.fill(), e.beginPath(), e.roundRect(0.1, -0.62 - se, 0.28, 0.62 + se, 0.1), e.fill(), e.fillStyle = "#1c1b22", e.beginPath(), e.roundRect(-0.41, -0.16 - Q, 0.32, 0.16, 0.06), e.fill(), e.fillStyle = "#ffffff", e.fillRect(-0.41, -0.04 - Q, 0.32, 0.04), e.fillStyle = M, e.fillRect(-0.35, -0.12 - Q, 0.18, 0.03), e.fillStyle = "#1c1b22", e.beginPath(), e.roundRect(0.08, -0.16 - se, 0.32, 0.16, 0.06), e.fill(), e.fillStyle = "#ffffff", e.fillRect(0.08, -0.04 - se, 0.32, 0.04), e.fillStyle = M, e.fillRect(0.14, -0.12 - se, 0.18, 0.03), e.translate(0, -N);
+  let o = T ? -1.65 - Math.abs(Math.sin(S.walk * 0.6)) * 0.2 : -1.1 + I, he = T ? -1.65 - Math.abs(Math.sin(S.walk * 0.6 + 1)) * 0.2 : -1.1 - I, ne = T ? -0.4 : 0.15 + I * 0.3, te = T ? 0.4 : -0.15 - I * 0.3;
+  e.save(), e.translate(-0.52, o), e.rotate(ne), e.fillStyle = C, e.beginPath(), e.roundRect(-0.13, -0.16, 0.26, 0.28, 0.1), e.fill(), e.fillStyle = w, e.beginPath(), e.roundRect(-0.1, 0.12, 0.2, 0.34, 0.08), e.fill(), e.fillStyle = q, e.beginPath(), e.arc(0, 0.46, 0.09, 0, Math.PI * 2), e.fill(), e.restore(), e.save(), e.translate(0.52, he), e.rotate(te), e.fillStyle = C, e.beginPath(), e.roundRect(-0.13, -0.16, 0.26, 0.28, 0.1), e.fill(), e.fillStyle = w, e.beginPath(), e.roundRect(-0.1, 0.12, 0.2, 0.34, 0.08), e.fill(), e.fillStyle = q, e.beginPath(), e.arc(0, 0.46, 0.09, 0, Math.PI * 2), e.fill(), e.restore(), e.fillStyle = C, e.beginPath(), e.roundRect(-0.46, -1.34, 0.92, 0.8, [
+    0.24,
+    0.24,
+    0.08,
+    0.08
+  ]), e.fill(), e.fillStyle = "#26252c", e.beginPath(), e.ellipse(0, -1.32, 0.22, 0.1, 0, 0, Math.PI), e.fill(), e.fillStyle = q, e.beginPath(), e.ellipse(0, -1.34, 0.17, 0.08, 0, 0, Math.PI), e.fill(), e.fillStyle = "#ffffff", e.font = "900 0.13px sans-serif", e.textAlign = "center", e.textBaseline = "middle", e.fillText("WILD", 0, -1.06), e.strokeStyle = "rgba(255,255,255,0.06)", e.lineWidth = 0.02, e.beginPath(), e.moveTo(-0.25, -0.9), e.lineTo(0.25, -0.9), e.stroke();
+  let z = -1.68;
+  if (e.fillStyle = q, e.fillRect(-0.14, z + 0.15, 0.28, 0.22), e.fillStyle = w, e.beginPath(), e.roundRect(-0.36, z - 0.44, 0.72, 0.78, [
+      0.36,
+      0.36,
+      0.28,
+      0.28
+    ]), e.fill(), e.fillStyle = "rgba(255,255,255,0.22)", e.beginPath(), e.ellipse(-0.08, z - 0.32, 0.18, 0.09, -0.2, 0, Math.PI * 2), e.fill(), e.fillStyle = w, e.beginPath(), e.arc(-0.37, z - 0.08, 0.08, 0, Math.PI * 2), e.arc(0.37, z - 0.08, 0.08, 0, Math.PI * 2), e.fill(), e.fillStyle = q, e.beginPath(), e.arc(-0.36, z - 0.08, 0.04, 0, Math.PI * 2), e.arc(0.36, z - 0.08, 0.04, 0, Math.PI * 2), e.fill(), e.strokeStyle = "#382215", e.lineWidth = 0.045, e.beginPath(), e.moveTo(-0.24, z - 0.17), e.lineTo(-0.06, z - 0.16), e.moveTo(0.06, z - 0.16), e.lineTo(0.24, z - 0.17), e.stroke(), y && p > 0.4) {
+    e.strokeStyle = "#2d2420", e.lineWidth = 0.04;
+    for (let F of [
+        -0.15,
+        0.15
+      ])
+      e.beginPath(), e.moveTo(F - 0.06, z - 0.11), e.lineTo(F + 0.06, z + 0.01), e.moveTo(F + 0.06, z - 0.11), e.lineTo(F - 0.06, z + 0.01), e.stroke();
+  } else
+    T ? (e.strokeStyle = "#22150d", e.lineWidth = 0.04, e.beginPath(), e.arc(-0.15, z - 0.04, 0.07, Math.PI * 1.1, Math.PI * 1.9), e.stroke(), e.beginPath(), e.arc(0.15, z - 0.04, 0.07, Math.PI * 1.1, Math.PI * 1.9), e.stroke()) : (e.fillStyle = "#ffffff", e.beginPath(), e.ellipse(-0.15, z - 0.07, 0.08, 0.065, 0, 0, Math.PI * 2), e.ellipse(0.15, z - 0.07, 0.08, 0.065, 0, 0, Math.PI * 2), e.fill(), e.fillStyle = "#5a9cad", e.beginPath(), e.arc(-0.15, z - 0.07, 0.045, 0, Math.PI * 2), e.arc(0.15, z - 0.07, 0.045, 0, Math.PI * 2), e.fill(), e.fillStyle = "#1a1d20", e.beginPath(), e.arc(-0.15, z - 0.07, 0.024, 0, Math.PI * 2), e.arc(0.15, z - 0.07, 0.024, 0, Math.PI * 2), e.fill(), e.fillStyle = "#ffffff", e.beginPath(), e.arc(-0.17, z - 0.09, 0.015, 0, Math.PI * 2), e.arc(0.13, z - 0.09, 0.015, 0, Math.PI * 2), e.fill());
+  e.fillStyle = q, e.beginPath(), e.ellipse(0, z - 0.01, 0.065, 0.08, 0, 0, Math.PI * 2), e.fill(), e.strokeStyle = "#d5e0ea", e.lineWidth = 0.025, e.beginPath(), e.arc(0.07, z + 0.01, 0.03, -Math.PI * 0.4, Math.PI * 0.6), e.stroke(), e.fillStyle = _, e.beginPath(), e.moveTo(-0.35, z - 0.02), e.lineTo(-0.35, z + 0.16), e.bezierCurveTo(-0.36, z + 0.36, -0.15, z + 0.42, 0, z + 0.42), e.bezierCurveTo(0.15, z + 0.42, 0.36, z + 0.36, 0.35, z + 0.16), e.lineTo(0.35, z - 0.02), e.lineTo(0.18, z + 0.04), e.lineTo(-0.18, z + 0.04), e.closePath(), e.fill(), e.fillStyle = L, e.beginPath(), e.ellipse(0, z + 0.28, 0.18, 0.1, 0, 0, Math.PI), e.fill(), e.fillStyle = L, e.beginPath(), e.ellipse(0, z + 0.09, 0.19, 0.07, 0, 0, Math.PI), e.fill(), e.fillStyle = _, e.beginPath(), e.moveTo(-0.18, z + 0.09), e.quadraticCurveTo(0, z + 0.14, 0.18, z + 0.09), e.quadraticCurveTo(0, z + 0.05, -0.18, z + 0.09), e.fill();
 }
-
-function normalizeCode(raw) {
-  return String(raw || "")
-    .trim()
-    .toUpperCase()
-    .replace(/[^A-Z0-9]/g, "")
-    .slice(0, 8);
+function Kt(e, S) {
+  let {
+      color: M,
+      out: y,
+      fin: T,
+      bob: N,
+      sw: H,
+      armSw: I,
+      fall: p
+    } = S, w = y && p > 0.4 ? "#9e9aa8" : "#eec2a4", q = y && p > 0.4 ? "#7c7886" : "#daa484", _ = y && p > 0.4 ? "#4a4650" : "#232026", L = y && p > 0.4 ? "#2c2b33" : "#1a1920", C = y && p > 0.4 ? "#383640" : "#282630", x = y && p > 0.4 ? "#686770" : "#767e8a", Q = y && p > 0.4 ? "#25242b" : "#1e1d24", se = y && p > 0.4 ? "#666570" : "#5a626f", o = y && p > 0.4 ? "#4f4e58" : "#454c57", he = "#131317", ne = Math.max(0, H) * 0.14, te = Math.max(0, -H) * 0.14;
+  e.fillStyle = Q, e.beginPath(), e.roundRect(-0.38, -0.62 - ne, 0.28, 0.62 + ne, 0.08), e.fill(), e.beginPath(), e.roundRect(0.1, -0.62 - te, 0.28, 0.62 + te, 0.08), e.fill(), e.fillStyle = "#100f14", e.beginPath(), e.roundRect(-0.41, -0.16 - ne, 0.33, 0.16, [
+    0.08,
+    0.1,
+    0.04,
+    0.04
+  ]), e.fill(), e.fillStyle = "rgba(255,255,255,0.2)", e.fillRect(-0.35, -0.14 - ne, 0.16, 0.03), e.fillStyle = M, e.fillRect(-0.38, -0.04 - ne, 0.28, 0.03), e.fillStyle = "#100f14", e.beginPath(), e.roundRect(0.08, -0.16 - te, 0.33, 0.16, [
+    0.1,
+    0.08,
+    0.04,
+    0.04
+  ]), e.fill(), e.fillStyle = "rgba(255,255,255,0.2)", e.fillRect(0.14, -0.14 - te, 0.16, 0.03), e.fillStyle = M, e.fillRect(0.1, -0.04 - te, 0.28, 0.03), e.translate(0, -N);
+  let z = T ? -1.65 - Math.abs(Math.sin(S.walk * 0.6)) * 0.2 : -1.1 + I, F = T ? -1.65 - Math.abs(Math.sin(S.walk * 0.6 + 1)) * 0.2 : -1.1 - I, U = T ? -0.4 : 0.14 + I * 0.3, ee = T ? 0.4 : -0.14 - I * 0.3;
+  e.save(), e.translate(-0.52, z), e.rotate(U), e.fillStyle = L, e.beginPath(), e.roundRect(-0.13, -0.16, 0.26, 0.54, 0.1), e.fill(), e.fillStyle = x, e.fillRect(-0.1, 0.38, 0.2, 0.05), e.fillStyle = w, e.beginPath(), e.arc(0, 0.48, 0.085, 0, Math.PI * 2), e.fill(), e.restore(), e.save(), e.translate(0.52, F), e.rotate(ee), e.fillStyle = L, e.beginPath(), e.roundRect(-0.13, -0.16, 0.26, 0.54, 0.1), e.fill(), e.fillStyle = x, e.fillRect(-0.1, 0.38, 0.2, 0.05), e.fillStyle = w, e.beginPath(), e.arc(0, 0.48, 0.085, 0, Math.PI * 2), e.fill(), e.restore(), e.fillStyle = x, e.beginPath(), e.roundRect(-0.35, -1.34, 0.7, 0.78, 0.12), e.fill(), e.fillStyle = q, e.beginPath(), e.moveTo(-0.12, -1.34), e.lineTo(0.12, -1.34), e.lineTo(0, -1.08), e.closePath(), e.fill(), e.fillStyle = "#8a94a2", e.beginPath(), e.moveTo(-0.16, -1.34), e.lineTo(-0.06, -1.2), e.lineTo(-0.14, -1.16), e.closePath(), e.fill(), e.beginPath(), e.moveTo(0.16, -1.34), e.lineTo(0.06, -1.2), e.lineTo(0.14, -1.16), e.closePath(), e.fill(), e.fillStyle = L, e.beginPath(), e.roundRect(-0.46, -1.34, 0.36, 0.82, [
+    0.2,
+    0.05,
+    0.08,
+    0.18
+  ]), e.fill(), e.beginPath(), e.roundRect(0.1, -1.34, 0.36, 0.82, [
+    0.05,
+    0.2,
+    0.18,
+    0.08
+  ]), e.fill(), e.fillStyle = C, e.beginPath(), e.moveTo(-0.42, -1.32), e.lineTo(-0.16, -1.1), e.lineTo(-0.25, -0.92), e.lineTo(-0.44, -1.1), e.closePath(), e.fill(), e.beginPath(), e.moveTo(0.42, -1.32), e.lineTo(0.16, -1.1), e.lineTo(0.25, -0.92), e.lineTo(0.44, -1.1), e.closePath(), e.fill();
+  let v = -1.68;
+  if (e.fillStyle = q, e.fillRect(-0.13, v + 0.15, 0.26, 0.2), e.fillStyle = w, e.beginPath(), e.roundRect(-0.35, v - 0.38, 0.7, 0.72, [
+      0.28,
+      0.28,
+      0.25,
+      0.25
+    ]), e.fill(), e.fillStyle = w, e.beginPath(), e.arc(-0.36, v - 0.05, 0.075, 0, Math.PI * 2), e.arc(0.36, v - 0.05, 0.075, 0, Math.PI * 2), e.fill(), e.fillStyle = "#26222b", e.beginPath(), e.arc(-0.34, v - 0.12, 0.065, 0, Math.PI * 2), e.arc(0.34, v - 0.12, 0.065, 0, Math.PI * 2), e.fillRect(-0.36, v - 0.14, 0.08, 0.12), e.fillRect(0.28, v - 0.14, 0.08, 0.12), e.fill(), e.strokeStyle = "#26212b", e.lineWidth = 0.042, e.beginPath(), e.moveTo(-0.24, v - 0.12), e.quadraticCurveTo(-0.15, v - 0.15, -0.06, v - 0.11), e.moveTo(0.06, v - 0.11), e.quadraticCurveTo(0.15, v - 0.15, 0.24, v - 0.12), e.stroke(), y && p > 0.4) {
+    e.strokeStyle = "#2b2326", e.lineWidth = 0.04;
+    for (let ce of [
+        -0.15,
+        0.15
+      ])
+      e.beginPath(), e.moveTo(ce - 0.06, v - 0.07), e.lineTo(ce + 0.06, v + 0.05), e.moveTo(ce + 0.06, v - 0.07), e.lineTo(ce - 0.06, v + 0.05), e.stroke();
+  } else
+    T ? (e.strokeStyle = "#231c20", e.lineWidth = 0.04, e.beginPath(), e.arc(-0.15, v + 0.01, 0.07, Math.PI * 1.1, Math.PI * 1.9), e.stroke(), e.beginPath(), e.arc(0.15, v + 0.01, 0.07, Math.PI * 1.1, Math.PI * 1.9), e.stroke()) : (e.fillStyle = "#ffffff", e.beginPath(), e.ellipse(-0.15, v - 0.03, 0.08, 0.06, 0, 0, Math.PI * 2), e.ellipse(0.15, v - 0.03, 0.08, 0.06, 0, 0, Math.PI * 2), e.fill(), e.fillStyle = "#3a271c", e.beginPath(), e.arc(-0.15, v - 0.03, 0.045, 0, Math.PI * 2), e.arc(0.15, v - 0.03, 0.045, 0, Math.PI * 2), e.fill(), e.fillStyle = "#110f13", e.beginPath(), e.arc(-0.15, v - 0.03, 0.025, 0, Math.PI * 2), e.arc(0.15, v - 0.03, 0.025, 0, Math.PI * 2), e.fill(), e.fillStyle = "#ffffff", e.beginPath(), e.arc(-0.17, v - 0.05, 0.015, 0, Math.PI * 2), e.arc(0.13, v - 0.05, 0.015, 0, Math.PI * 2), e.fill());
+  e.fillStyle = q, e.beginPath(), e.ellipse(0, v + 0.04, 0.07, 0.09, 0, 0, Math.PI * 2), e.fill(), e.fillStyle = _, e.beginPath(), e.moveTo(-0.18, v + 0.16), e.quadraticCurveTo(-0.09, v + 0.11, 0, v + 0.13), e.quadraticCurveTo(0.09, v + 0.11, 0.18, v + 0.16), e.quadraticCurveTo(0.1, v + 0.22, 0, v + 0.2), e.quadraticCurveTo(-0.1, v + 0.22, -0.18, v + 0.16), e.fill(), e.fillStyle = "rgba(0,0,0,0.08)", e.beginPath(), e.arc(0, v + 0.28, 0.06, 0, Math.PI), e.fill(), e.fillStyle = "rgba(0,0,0,0.18)", e.beginPath(), e.ellipse(0, v - 0.17, 0.38, 0.08, 0, 0, Math.PI), e.fill(), e.fillStyle = se, e.beginPath(), e.moveTo(-0.34, v - 0.26), e.lineTo(-0.28, v - 0.58), e.quadraticCurveTo(-0.14, v - 0.52, 0, v - 0.57), e.quadraticCurveTo(0.14, v - 0.52, 0.28, v - 0.58), e.lineTo(0.34, v - 0.26), e.closePath(), e.fill(), e.fillStyle = o, e.beginPath(), e.ellipse(0, v - 0.55, 0.15, 0.05, 0, 0, Math.PI * 2), e.fill(), e.fillStyle = he, e.beginPath(), e.roundRect(-0.35, v - 0.35, 0.7, 0.11, 0.03), e.fill(), e.fillStyle = se, e.beginPath(), e.ellipse(0, v - 0.24, 0.49, 0.14, 0, 0, Math.PI * 2), e.fill(), e.fillStyle = o, e.beginPath(), e.ellipse(0, v - 0.22, 0.48, 0.08, 0, 0, Math.PI), e.fill();
 }
-
-function getRoom(code) {
-  const c = normalizeCode(code);
-  if (!c) return null;
-  return rooms.get(c) || null;
+var ln = 8, V = 16, $ = 80, Un = $ + 16, rn = 7.4, Yn = 28, Zn = 9.2, Vn = 4000, Jn = 3500, Qn = 10000, ge = [
+    "#ff5a5f",
+    "#ffb020",
+    "#ffe14d",
+    "#4cd964",
+    "#22c3c3",
+    "#4a90ff",
+    "#a86bff",
+    "#ff6bd6"
+  ], K = (e, S, M) => Math.max(S, Math.min(M, e)), J = (e, S) => e + Math.random() * (S - e), ie = e => Math.round(e * 100) / 100, W = e => String(e).replace(/[&<>"']/g, S => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    "\"": "&quot;",
+    "'": "&#39;"
+  }[S] || S)), on = e => {
+    let S = 0;
+    for (let M = 0; M < e.length; M++)
+      S = S * 31 + e.charCodeAt(M) | 0;
+    return Math.abs(S);
+  };
+function sn(e) {
+  let S = e >>> 0;
+  return () => {
+    S = S + 1831565813 >>> 0;
+    let M = S;
+    return M = Math.imul(M ^ M >>> 15, M | 1), M ^= M + Math.imul(M ^ M >>> 7, M | 61), ((M ^ M >>> 14) >>> 0) / 4294967296;
+  };
 }
-
-function emitRoom(room, event, payload, exceptSocketId) {
-  for (const p of room.players.values()) {
-    if (exceptSocketId && p.socketId === exceptSocketId) continue;
-    const sock = io.sockets.sockets.get(p.socketId);
-    if (sock) sock.emit(event, payload);
+function Ke(e, S = Math.random) {
+  for (let M = e.length - 1; M > 0; M--) {
+    let y = Math.floor(S() * (M + 1));
+    [e[M], e[y]] = [
+      e[y],
+      e[M]
+    ];
   }
+  return e;
 }
-
-function broadcastPlayers(room) {
-  emitRoom(room, "players", {
-    players: room.listPlayers(),
-    hostId: room.hostId,
-    creatorId: room.state.creatorId || null,
-  });
+var Nn = new Map();
+function Xn(e, S) {
+  let M = e + "|" + S.toFixed(2), y = Nn.get(M);
+  if (y)
+    return y;
+  let T = parseInt(e.slice(1), 16);
+  return y = "rgb(" + Math.min(255, Math.round((T >> 16 & 255) * S)) + "," + Math.min(255, Math.round((T >> 8 & 255) * S)) + "," + Math.min(255, Math.round((T & 255) * S)) + ")", Nn.set(M, y), y;
 }
-
-function cleanupIdleRooms() {
-  const t = now();
-  for (const [code, room] of rooms) {
-    const emptyTooLong =
-      room.players.size === 0 &&
-      room.emptyAt != null &&
-      t - room.emptyAt > EMPTY_ROOM_MS;
-    const idleTooLong = t - room.lastActivity > IDLE_ROOM_MS;
-    if (emptyTooLong || idleTooLong) {
-      room.stopHostTick();
-      rooms.delete(code);
-    }
-  }
+function $n(e, S, M) {
+  let y = parseInt(e.slice(1), 16), T = parseInt(S.slice(1), 16), N = H => Math.round((y >> H & 255) * (1 - M) + (T >> H & 255) * M);
+  return "rgb(" + N(16) + "," + N(8) + "," + N(0) + ")";
 }
-setInterval(cleanupIdleRooms, 15_000);
-
-io.on("connection", (socket) => {
-  socket.emit("hello", { serverNow: now(), version: "1.0.0" });
-
-  socket.on("create_room", (payload, ack) => {
+var we = null, Oe = !1;
+function de() {
+  if (!we)
     try {
-      const name = String((payload && payload.name) || "Oyuncu").slice(0, 16);
-      const code = genCode();
-      const room = new Room(code, socket.id, name);
-      const playerId = genId();
-      const player = new Player(playerId, name, socket.id);
-      room.addPlayer(player);
-      rooms.set(code, room);
-      socketIndex.set(socket.id, { roomCode: code, playerId });
-      socket.join(code);
-
-      const snap = room.snapshot(playerId);
-      if (typeof ack === "function") {
-        ack({
-          ok: true,
-          playerId,
-          name: player.name,
-          ...snap,
-        });
-      }
-    } catch (err) {
-      console.error("create_room", err);
-      if (typeof ack === "function") ack({ ok: false, error: "create_failed" });
+      let e = window.AudioContext || window.webkitAudioContext;
+      we = new e();
+    } catch {
     }
-  });
+  return we && we.state === "suspended" && we.resume().catch(() => {
+  }), we;
+}
+function xn() {
+  return Oe = !Oe, Oe;
+}
 
-  socket.on("join_room", (payload, ack) => {
-    try {
-      const code = normalizeCode((payload && payload.code) || "");
-      const name = String((payload && payload.name) || "Oyuncu").slice(0, 16);
-      const room = getRoom(code);
-
-      if (!code || !room) {
-        if (typeof ack === "function") ack({ ok: false, error: "room_not_found" });
-        return;
-      }
-      if (room.players.size >= MAX_PLAYERS) {
-        if (typeof ack === "function") ack({ ok: false, error: "room_full" });
-        return;
-      }
-
-      // Ban check from room state.adm if present
-      const adm = room.state && room.state.adm;
-      // Device bans are enforced client-side with did; server can block by id list later
-
-      const playerId = genId();
-      const player = new Player(playerId, name, socket.id);
-      room.addPlayer(player);
-      // Always index/join with the room's canonical code
-      const roomCode = room.code;
-      socketIndex.set(socket.id, { roomCode, playerId });
-      socket.join(roomCode);
-
-      // Notify others
-      emitRoom(
-        room,
-        "player_join",
-        { player: player.public(), hostId: room.hostId },
-        socket.id
-      );
-      broadcastPlayers(room);
-
-      if (typeof ack === "function") {
-        ack({
-          ok: true,
-          playerId,
-          name: player.name,
-          ...room.snapshot(playerId),
-        });
-      }
-    } catch (err) {
-      console.error("join_room", err);
-      if (typeof ack === "function") ack({ ok: false, error: "join_failed" });
-    }
-  });
-
-  socket.on("set_name", (payload) => {
-    const idx = socketIndex.get(socket.id);
-    if (!idx) return;
-    const room = getRoom(idx.roomCode);
-    if (!room) return;
-    const player = room.players.get(idx.playerId);
-    if (!player) return;
-    const name = String((payload && payload.name) || "").trim().slice(0, 16);
-    if (!name) return;
-    player.name = name;
-    room.touch();
-    emitRoom(room, "player_update", { id: player.id, name: player.name });
-    broadcastPlayers(room);
-  });
-
-  socket.on("player_state", (partial) => {
-    const idx = socketIndex.get(socket.id);
-    if (!idx) return;
-    const room = getRoom(idx.roomCode);
-    if (!room) return;
-    const player = room.players.get(idx.playerId);
-    if (!player || !partial || typeof partial !== "object") return;
-
-    for (const k of Object.keys(partial)) {
-      if (partial[k] === null) delete player.state[k];
-      else player.state[k] = partial[k];
-    }
-    room.touch();
-
-    // Relay to others (high frequency — keep payload small)
-    emitRoom(
-      room,
-      "player_state",
-      { id: player.id, state: partial, full: false },
-      socket.id
-    );
-  });
-
-  socket.on("room_state", (partial) => {
-    const idx = socketIndex.get(socket.id);
-    if (!idx) return;
-    const room = getRoom(idx.roomCode);
-    if (!room) return;
-
-    // Only host (or creator for lobby start) may set authoritative room state
-    const isHost = idx.playerId === room.hostId;
-    const isCreator = room.state.creatorId === idx.playerId;
-    if (!isHost && !isCreator) return;
-    if (!partial || typeof partial !== "object") return;
-
-    for (const k of Object.keys(partial)) {
-      if (partial[k] === null) delete room.state[k];
-      else room.state[k] = partial[k];
-    }
-    room.touch();
-
-    emitRoom(room, "room_state", { state: partial, full: false, serverNow: now() }, null);
-  });
-
-  socket.on("ping_check", (clientTs, ack) => {
-    if (typeof ack === "function") ack({ serverNow: now(), clientTs });
-  });
-
-  socket.on("leave_room", () => {
-    handleDisconnect(socket);
-  });
-
-  socket.on("disconnect", () => {
-    handleDisconnect(socket);
-  });
-});
-
-function handleDisconnect(socket) {
-  const idx = socketIndex.get(socket.id);
-  if (!idx) return;
-  socketIndex.delete(socket.id);
-
-  const room = getRoom(idx.roomCode);
-  if (!room) return;
-
-  const leaving = room.players.get(idx.playerId);
-  const result = room.removePlayer(idx.playerId);
-
-  // Do NOT delete empty rooms immediately — createNewRoom leaves then
-  // redirects to ?room=CODE; friends also join by code. Grace period
-  // is handled by cleanupIdleRooms (EMPTY_ROOM_MS).
-  if (result.empty) {
+function j(e, S = 0.12, M = "sine", y = 0.07, T = null, N = 0) {
+  if (Oe)
     return;
+  let H = de();
+  if (H)
+    try {
+      let I = H.currentTime + N, p = H.createOscillator(), w = H.createGain();
+      p.type = M, p.frequency.setValueAtTime(e, I), T && p.frequency.exponentialRampToValueAtTime(T, I + S), w.gain.setValueAtTime(y, I), w.gain.exponentialRampToValueAtTime(0.0001, I + S), p.connect(w).connect(H.destination), p.start(I), p.stop(I + S + 0.02);
+    } catch {
+    }
+}
+function O(e) {
+  e === "green" ? (j(523, 0.12, "triangle", 0.09), j(784, 0.18, "triangle", 0.09, null, 0.1)) : e === "red" ? (j(180, 0.35, "sawtooth", 0.08, 90), j(240, 0.2, "square", 0.04)) : e === "boom" ? (j(160, 0.5, "sawtooth", 0.12, 40), j(90, 0.6, "square", 0.08, 30)) : e === "fin" ? [
+    523,
+    659,
+    784,
+    1047
+  ].forEach((S, M) => j(S, 0.16, "triangle", 0.09, null, M * 0.08)) : e === "tick" ? j(660, 0.08, "square", 0.05) : e === "go" ? (j(880, 0.3, "square", 0.07), j(1320, 0.35, "triangle", 0.07, null, 0.08)) : e === "jump" ? j(300, 0.12, "sine", 0.05, 520) : e === "pop" ? j(420, 0.1, "sine", 0.04, 200) : e === "hit" ? (j(140, 0.14, "square", 0.08, 60), j(700, 0.05, "triangle", 0.05)) : e === "fall" && j(500, 0.5, "sine", 0.06, 90);
+}
+/* ===== Admin: odadan çıkarılan oyuncu ekranı (modül düzeyi) ===== */
+function admRoomUrl(code) {
+  try {
+    let u = new URL(location.href);
+    u.searchParams.delete("menu");
+    if (code) u.searchParams.set("room", code);
+    return u.toString();
+  } catch (_) { return location.href; }
+}
+function admMenuUrl() {
+  try {
+    let u = new URL(location.href);
+    u.searchParams.delete("room");
+    u.searchParams.set("menu", "1");
+    return u.toString();
+  } catch (_) { return location.pathname + "?menu=1"; }
+}
+function admShowGone(type, code) {
+  if (document.getElementById("admGone")) return;
+  let ban = type === "ban", d = document.createElement("div");
+  d.id = "admGone";
+  d.innerHTML = '<div class="card panel"><div class="ic">' + (ban ? "\u26D4" : "\uD83D\uDC62") + '</div><h2>' +
+    (ban ? "Banlandın" : "Lobiden atıldın") + '</h2><p>' +
+    (ban ? "Yönetici seni bu lobiden banladı. Bu lobiye tekrar giremezsin."
+         : "Yönetici seni lobiden çıkardı. İstersen aynı lobiye tekrar girebilirsin.") +
+    '</p><div class="row2"></div></div>';
+  let row = d.querySelector(".row2");
+  if (!ban) {
+    let b = document.createElement("button");
+    b.className = "go"; b.textContent = "Tekrar gir";
+    b.onclick = () => { location.href = admRoomUrl(code); };
+    row.appendChild(b);
   }
+  let m = document.createElement("button");
+  m.className = "alt"; m.textContent = "Ana menü";
+  m.onclick = () => { location.href = admMenuUrl(); };
+  row.appendChild(m);
+  document.body.appendChild(d);
+}
 
-  emitRoom(room, "player_leave", {
-    id: idx.playerId,
-    name: leaving ? leaving.name : "Oyuncu",
-    hostId: room.hostId,
-    creatorId: room.state.creatorId,
-  });
-  broadcastPlayers(room);
-
-  // If host changed, notify everyone
-  if (result.wasHost) {
-    emitRoom(room, "host_change", {
-      hostId: room.hostId,
-      creatorId: room.state.creatorId,
+function et() {
+  let e = p => document.getElementById(p), S = (() => {
+      try {
+        return new URLSearchParams(location.search);
+      } catch {
+        return new URLSearchParams("");
+      }
+    })(), M = null, y = null, T = !1;
+  // No room in URL → show Create/Join menu. Never auto-create a room on load.
+  let isMenuMode = !S.get("room");
+  if (isMenuMode) {
+    try { document.body.classList.add("menu-mode"); } catch (_) {}
+    // Normalize URL so refresh stays on menu (optional ?menu=1)
+    try {
+      if (S.get("menu") !== "1") {
+        let u = new URL(location.href);
+        u.searchParams.set("menu", "1");
+        history.replaceState(null, "", u.toString());
+      }
+    } catch (_) {}
+  }
+  function N(codeOpt) {
+    let p = (_, L) => {
+        for (let C in L)
+          L[C] === null ? delete _[C] : _[C] = L[C];
+      }, w = {
+        id: "local",
+        name: "Sen",
+        state: {},
+        setState(_) {
+          p(this.state, _);
+        }
+      }, q = {
+        code: codeOpt || "TEST",
+        link: typeof location !== "undefined" ? (location.href.split("?")[0] + "?room=" + (codeOpt || "TEST")) : "",
+        game: null,
+        ping: 0,
+        me: w,
+        players: [w],
+        host: w,
+        isHost: !0,
+        state: {},
+        setState(_) {
+          p(this.state, _);
+        },
+        player(_) {
+          return q.players.find(L => L.id === _) || null;
+        },
+        now() {
+          return Date.now();
+        },
+        onState() {
+        },
+        onPlayerState() {
+        },
+        onJoin() {
+        },
+        onLeave() {
+        },
+        onHostChange() {
+        },
+        on() {
+        },
+        send() {
+        },
+        onHostTick(_) {
+          let L = performance.now();
+          setInterval(() => {
+            let C = performance.now();
+            _(C - L), L = C;
+          }, 33);
+        },
+        submitScore: async () => ({}),
+        leave() {
+        }
+      };
+    return q;
+  }
+  function normalizeRoomCode(raw) {
+    return String(raw || "").trim().toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 8);
+  }
+  function mintRoom(entry) {
+    try {
+      parent.postMessage({ antics: "mint", entry: entry || "private" }, "*");
+    } catch (_) {}
+  }
+  function goToRoomCode(code) {
+    let c = normalizeRoomCode(code);
+    if (!c || c.length < 4) return false;
+    try {
+      let u = new URL(location.href);
+      u.searchParams.delete("menu");
+      u.searchParams.set("room", c);
+      location.href = u.toString();
+      return true;
+    } catch (_) {
+      try {
+        location.search = "?room=" + encodeURIComponent(c);
+        return true;
+      } catch (__) {}
+    }
+    return false;
+  }
+  function createNewRoom() {
+    de();
+    // Standalone: sunucuda oda oluştur, kod ile yönlendir
+    import("./mp-client.js").then(async mod => {
+      try {
+        let su = localStorage.getItem("antics_mp_server");
+        if (su && mod.setServerUrl) mod.setServerUrl(su);
+      } catch (_) {}
+      let nm = "";
+      try { nm = (e("nameIn") && e("nameIn").value) || sessionStorage.getItem("antics_name") || ""; } catch (_) {}
+      try {
+        let room = await mod.joinRoom({ name: nm || "Oyuncu" });
+        let code = room && room.code;
+        // Do not leave() here — keep the room occupied until page navigation
+        // disconnects. Server also keeps empty rooms for EMPTY_ROOM_MS so
+        // create→redirect→join and friends joining by code still work.
+        if (code) {
+          goToRoomCode(code);
+          return;
+        }
+      } catch (err) {
+        console.warn(err);
+        let note = e("lobbyNote");
+        if (note) note.textContent = "Oda açılamadı: " + (err && err.message ? err.message : "sunucu hatası");
+      }
+      // fallback: menu kal
+    }).catch(() => {
+      let note = e("lobbyNote");
+      if (note) note.textContent = "mp-client yüklenemedi.";
     });
-    // Also patch room state so clients see new creator if reassigned
-    if (room.state.creatorId) {
-      emitRoom(room, "room_state", {
-        state: { creatorId: room.state.creatorId },
-        full: false,
-        serverNow: now(),
+  }
+  // Menü: Oda kur / Katıl (sayfa açılışında oda oluşturulmaz)
+  (function setupMenuDoors() {
+    function tryJoinFromMenu() {
+      de();
+      let raw = (e("menuJoinCode") && e("menuJoinCode").value) || "";
+      let note = e("lobbyNote");
+      if (!goToRoomCode(raw)) {
+        if (note) {
+          note.style.display = "block";
+          note.textContent = "Geçerli bir oda kodu gir (en az 4 karakter).";
+        }
+        return;
+      }
+      if (note) note.textContent = "Odaya bağlanılıyor…";
+    }
+    let bp = e("doorPrivate");
+    if (bp) bp.onclick = () => {
+      de();
+      let note = e("lobbyNote");
+      if (note) {
+        note.style.display = "block";
+        note.textContent = "Oda oluşturuluyor…";
+      }
+      createNewRoom();
+    };
+    let bj = e("doorJoin");
+    if (bj) bj.onclick = () => tryJoinFromMenu();
+    let joinInp = e("menuJoinCode");
+    if (joinInp) {
+      joinInp.addEventListener("keydown", ev => {
+        if (ev.key === "Enter") {
+          ev.preventDefault();
+          tryJoinFromMenu();
+        }
       });
     }
+    let save = e("menuServerSave");
+    if (save) save.onclick = () => {
+      de();
+      let v = (e("menuServerUrl") && e("menuServerUrl").value || "").trim().replace(/\/$/, "");
+      if (!v) return;
+      try { localStorage.setItem("antics_mp_server", v); } catch (_) {}
+      import("./mp-client.js").then(m => { if (m.setServerUrl) m.setServerUrl(v); }).catch(() => {});
+      let note = e("lobbyNote");
+      if (note) {
+        note.style.display = "block";
+        note.textContent = "Sunucu kaydedildi: " + v;
+      }
+    };
+    try {
+      let inp = e("menuServerUrl");
+      if (inp) inp.value = localStorage.getItem("antics_mp_server") || "http://localhost:3001";
+    } catch (_) {}
+  })();
+  // mint_failed dinle
+  addEventListener("message", ev => {
+    let d = ev && ev.data;
+    if (d && d.antics === "mint_failed") {
+      let note = e("lobbyNote");
+      if (note) note.textContent = d.reason || "Oda açılamadı. Tekrar dene.";
+    }
+  });
+  function connectRoom(opts) {
+    opts = opts || {};
+    // Safety: never create a room from page load without an explicit code
+    if (!opts.room) {
+      try { location.href = admMenuUrl(); } catch (_) { location.search = "?menu=1"; }
+      return;
+    }
+    let joinOpts = { room: opts.room };
+    // Standalone multiplayer client (Socket.IO) — replaces Antics /sdk/v1.js
+    import("./mp-client.js").then(p => {
+      M = p;
+      try {
+        let su = localStorage.getItem("antics_mp_server");
+        if (su && p.setServerUrl) p.setServerUrl(su);
+      } catch (_) {}
+      let nm = "";
+      try { nm = (e("nameIn") && e("nameIn").value) || sessionStorage.getItem("antics_name") || ""; } catch (_) {}
+      if (nm) joinOpts.name = nm;
+      return p.joinRoom(joinOpts);
+    }).then(p => {
+      y = p;
+      try { document.body.classList.remove("menu-mode"); } catch (_) {}
+      I();
+    }).catch(err => {
+      console.warn("MP connect failed", err);
+      let msg = (err && err.message) ? String(err.message) : "Bağlantı hatası";
+      let isNotFound = /room_not_found|bulunamadı|not found/i.test(msg);
+      let isTimeout = /zaman aşımı|timeout/i.test(msg);
+      try {
+        sessionStorage.setItem(
+          "antics_join_err",
+          isNotFound
+            ? "Room not found — oda kodu hatalı veya süresi dolmuş."
+            : isTimeout
+              ? "Sunucuya bağlanılamadı (zaman aşımı). Sunucu adresini kontrol et."
+              : msg
+        );
+      } catch (_) {}
+      try { location.href = admMenuUrl(); } catch (_) { location.search = "?menu=1"; }
+    });
+  }
+  // menu / no room: only show Create Room + Join Room UI — do NOT connect
+  if (isMenuMode) {
+    try {
+      let g = JSON.parse(sessionStorage.getItem("antics_adm_gone") || "null");
+      if (g) { sessionStorage.removeItem("antics_adm_gone"); admShowGone(g.type, g.code); }
+    } catch (_) {}
+    // Surface join errors (room not found, etc.) after redirect back to menu
+    try {
+      let je = sessionStorage.getItem("antics_join_err");
+      if (je) {
+        sessionStorage.removeItem("antics_join_err");
+        let note = e("lobbyNote");
+        if (note) {
+          note.style.display = "block";
+          note.textContent = je;
+        }
+      }
+    } catch (_) {}
+    import("./mp-client.js").then(p => {
+      M = p;
+      try {
+        let su = localStorage.getItem("antics_mp_server");
+        if (su && p.setServerUrl) p.setServerUrl(su);
+        let inp = e("menuServerUrl");
+        if (inp) inp.value = (p.getServerUrl && p.getServerUrl()) || su || "http://localhost:3001";
+      } catch (_) {}
+    }).catch(() => { T = !0; });
+    e("nameBtn") && (e("nameBtn").onclick = n => {
+      de();
+      let nm = (e("nameIn").value || "").trim().slice(0, 16);
+      try {
+        if (nm) sessionStorage.setItem("antics_name", nm);
+      } catch (_) {}
+      try { parent.postMessage({ antics: "set_name", name: nm }, "*"); } catch (_) {}
+      n.currentTarget.blur();
+    });
+    function menuOpenHelp() { let h = e("helpOv"); if (h) h.classList.add("show"); de(); }
+    function menuOpenSettings() {
+      let s = e("settingsOv"); if (s) s.classList.add("show");
+      let b = e("togMute"); if (b) { b.textContent = Oe ? "Kapalı" : "Açık"; b.className = "tog " + (Oe ? "alt" : "go"); }
+      de();
+    }
+    e("lobbyHelpBtn") && (e("lobbyHelpBtn").onclick = menuOpenHelp);
+    e("lobbySettingsBtn") && (e("lobbySettingsBtn").onclick = menuOpenSettings);
+    e("helpClose") && (e("helpClose").onclick = () => { let h = e("helpOv"); if (h) h.classList.remove("show"); });
+    e("settingsClose") && (e("settingsClose").onclick = () => { let s = e("settingsOv"); if (s) s.classList.remove("show"); });
+    e("togMute") && (e("togMute").onclick = () => { xn(); let b = e("togMute"); if (b) { b.textContent = Oe ? "Kapalı" : "Açık"; b.className = "tog " + (Oe ? "alt" : "go"); } });
+    e("togFs") && (e("togFs").onclick = () => {
+      try {
+        if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(() => {});
+        else document.exitFullscreen().catch(() => {});
+      } catch (_) {}
+    });
+    return;
+  }
+  // Only reach here when URL has ?room=CODE — join that room (never auto-create)
+  connectRoom({ room: S.get("room") });
+  function I() {
+    let p = y.me, w = () => y.state || {}, q = new Map(), _ = n => q.set(n.id, n.name);
+    y.players.forEach(_);
+    let L = n => q.get(n) || w().names && w().names[n] || "Oyuncu", C = n => y.players.find(a => a.id === n) || null, x = n => {
+        let a = n && n.state && n.state.col;
+        return ge[(typeof a == "number" ? a : on(n ? n.id : "x")) % ge.length];
+      }, Q = n => {
+        let a = C(n);
+        return a ? x(a) : "#8d8d99";
+      }, o = {
+        x: 0,
+        y: 0,
+        z: 0,
+        vx: 0,
+        vy: 0,
+        vz: 0,
+        kx: 0,
+        kz: 0,
+        gr: !0,
+        fx: 0,
+        fz: 1,
+        st: "lobby",
+        fa: null,
+        rd: null,
+        rdy: !1,
+        col: null,
+        oc: null,
+        ot: null,
+        cp: null,
+        char: localStorage.getItem("antics_royale_char") || "char1"
+      }, he = -1000000000, ne = !1, te = 0, z = 0, F = null, U = new Set();
+    function ee(n) {
+      for (let a in n)
+        a in o && (o[a] = n[a]);
+      p.setState(n);
+    }
+    let v = 0, ce = "";
+    function He(n = !1) {
+      let a = performance.now(), i = o.vx + o.kx, t = o.vz + o.kz, l = ie(o.x) + "," + ie(o.y) + "," + ie(o.z) + "," + ie(i) + "," + ie(t);
+      !n && l === ce && a - v < 400 || (ce = l, v = a, p.setState({
+        x: ie(o.x),
+        y: ie(Math.max(o.y, -30)),
+        z: ie(o.z),
+        vx: ie(i),
+        vz: ie(t),
+        at: Math.round(y.now())
+      }));
+    }
+    let fn = -1000000000;
+    function un() {
+      let n = performance.now();
+      if (n - fn < 600)
+        return;
+      fn = n;
+      let a = y.players.filter(l => l.id !== p.id && typeof l.state.col == "number"), i = new Set(a.map(l => l.state.col)), t = typeof o.col == "number" && a.some(l => l.state.col === o.col && l.id < p.id);
+      if (typeof o.col != "number" || t) {
+        let l = -1;
+        for (let r = 0; r < ge.length; r++)
+          if (!i.has(r)) {
+            l = r;
+            break;
+          }
+        l < 0 && (l = on(p.id) % ge.length), ee({ col: l });
+      }
+    }
+    let Ae = (n = w()) => (n.roster || []).filter(a => !(n.elim || []).includes(a) && C(a)), lt = (n, a = w()) => (a.roster || []).includes(n) && !(a.elim || []).includes(n);
+    function it(n) {
+      let a = w(), i = Ae(a), t = i.length, l = Math.max(0, i.indexOf(p.id)), d = n.build ? Ze(n, a) : null, r = n.spawn(l, t, d);
+      o.x = r.x, o.z = r.z, o.y = 0, o.vx = o.vy = o.vz = o.kx = o.kz = 0, o.gr = !0, o.cp = null, He(!0);
+    }
+    function dn() {
+      o.x = J(-9, 9), o.z = J(-6, 4), o.y = 0, o.vx = o.vy = o.vz = o.kx = o.kz = 0, o.gr = !0, o.cp = null, He(!0);
+    }
+    let Te = [], re = 0, ye = 0, Me = 0, ve = !0;
+    function fe(n, a, i, t, l = 16, r = 5) {
+      for (let c = 0; c < l; c++) {
+        let u = Math.random() * Math.PI * 2, f = J(1, r);
+        Te.push({
+          x: n,
+          y: a,
+          z: i,
+          vx: Math.cos(u) * f,
+          vy: J(2, r * 1.4),
+          vz: Math.sin(u) * f,
+          life: J(0.5, 1.1),
+          max: 1.1,
+          color: t,
+          size: J(0.08, 0.2)
+        });
+      }
+    }
+    let be = [];
+    function _e(n, a = "") {
+      be.push({
+        text: n,
+        kind: a,
+        until: performance.now() + 5500
+      }), be.length > 5 && be.shift();
+    }
+    let ze = null;
+    function We(n, a = 2200) {
+      ze = {
+        html: n,
+        until: performance.now() + a
+      };
+    }
+    let je = {
+        vx: 0,
+        vz: 0
+      }, hn = {
+        x0: -60,
+        x1: 60,
+        z0: -60,
+        z1: 60
+      }, Re = {
+        day: {
+          top: "#58b7ff",
+          bot: "#dff5ff",
+          sun: "#fff6b8",
+          clouds: !0,
+          hills: !0
+        },
+        sunset: {
+          top: "#ff8a7a",
+          bot: "#ffe6c7",
+          sun: "#fff0a8",
+          clouds: !0
+        },
+        sea: {
+          top: "#3ea8ff",
+          bot: "#d9f4ff",
+          sun: "#fffbd0",
+          clouds: !0
+        },
+        candy: {
+          top: "#8f7bff",
+          bot: "#ffd6f5",
+          sun: "#fff2b8",
+          clouds: !0
+        },
+        night: {
+          top: "#170c3a",
+          bot: "#6a2f8f",
+          stars: !0
+        }
+      }, rt = n => Ae(n).filter(a => {
+        let i = C(a);
+        return i && i.state.rd === n.rid && i.state.st === "fin";
+      }).length, Ne = (n, a, i, t, l) => ({
+        x: n,
+        y: i * Math.sin(t),
+        z: a - i * Math.cos(t),
+        pitch: t,
+        cyf: l
+      }), cn = n => Math.max(1, Math.ceil(n / 2)), yn = {
+        id: "redlight",
+        name: "Kırmızı Işık, Yeşil Işık",
+        kind: "race",
+        duration: 35000,
+        rules: [
+          "Yeşil ışıkta koş, kırmızı ışıkta dur!",
+          "Kırmızıda hareket eden oyuncu elenir.",
+          "Bitiş çizgisine ulaşan hayatta kalır. Süre: 35 sn."
+        ],
+        spawn(n, a) {
+          return {
+            x: a > 1 ? -12 + 24 * n / (a - 1) : 0,
+            z: -2
+          };
+        },
+        camera(n) {
+          return {
+            x: n.x * 0.75,
+            y: 4.6,
+            z: n.z - 9.5,
+            pitch: 0,
+            cyf: 0.34
+          };
+        },
+        bounds(n) {
+          return n === "lobby" ? {
+            x0: -15.3,
+            x1: 15.3,
+            z0: -9,
+            z1: 14
+          } : {
+            x0: -15.3,
+            x1: 15.3,
+            z0: o.st === "fin" ? $ + 0.6 : -4,
+            z1: $ + 13
+          };
+        },
+        finishZ() {
+          return $;
+        },
+        hostStart(n) {
+          return {
+            light: "green",
+            lightAt: n,
+            nextAt: n + J(3200, 5200)
+          };
+        },
+        hostTick(n, a) {
+          return !n.nextAt || a < n.nextAt ? null : n.light === "green" ? {
+            light: "red",
+            lightAt: a,
+            nextAt: a + J(2200, 4200)
+          } : {
+            light: "green",
+            lightAt: a,
+            nextAt: a + J(1500, 5200)
+          };
+        },
+        localRule(n, a, i) {
+          if (n.light !== "red")
+            return;
+          let t = a - (n.lightAt || 0), l = 520 + Math.min(300, (y.ping || 0) * 0.5);
+          t < l || (Math.hypot(o.vx, o.vz) > 0.9 || i) && vn("z");
+        },
+        world(n, a, i) {
+          return At(n, a, i), [];
+        },
+        hud(n) {
+          return "Bitiren: " + rt(n) + "/" + Ae(n).length;
+        },
+        banner() {
+          return null;
+        },
+        hint: "WASD: hareket \xB7 SPACE: zıpla"
+      }, ue = 6, De = 6, Ge = 4.5, ot = 4, st = {
+        id: "platform",
+        name: "Düşen Platform",
+        kind: "survival",
+        duration: 35000,
+        void: !0,
+        fall: "out",
+        rules: [
+          "Platformlar kırmızıya döner ve düşer.",
+          "Aşağı düşen oyuncu elenir. Zıplayarak ayakta kal!",
+          "Yarısı elenince tur biter."
+        ],
+        target: cn,
+        build(n) {
+          let a = sn(n), i = ue * De, t = [...Array(i).keys()], l = Ke(t.slice(), a), r = new Array(i);
+          return l.forEach((c, u) => {
+            r[c] = {
+              fallAt: 6 + u * 0.78 * (1 - 0.42 * u / i) + a() * 0.3,
+              vanish: a() < 0.3,
+              cx: (c % ue - (ue - 1) / 2) * Ge,
+              cz: (Math.floor(c / ue) - (De - 1) / 2) * Ge,
+              alt: (c % ue + Math.floor(c / ue)) % 2 === 0
+            };
+          }), {
+            tiles: r,
+            order: t.slice().sort((c, u) => r[u].cz - r[c].cz)
+          };
+        },
+        spawn(n, a) {
+          let i = n / Math.max(1, a) * Math.PI * 2 + 0.4;
+          return {
+            x: Math.cos(i) * 8,
+            z: Math.sin(i) * 8
+          };
+        },
+        camera(n) {
+          return Ne(n.x * 0.15, n.z * 0.15, 27, 0.72, 0.5);
+        },
+        bounds: () => ({
+          x0: -20,
+          x1: 20,
+          z0: -20,
+          z1: 20
+        }),
+        support(n, a, i, t, l) {
+          let r = Math.floor(n / Ge + ue / 2), c = Math.floor(a / Ge + De / 2);
+          return r < 0 || r >= ue || c < 0 || c >= De || i >= l.tiles[c * ue + r].fallAt ? null : je;
+        },
+        world(n, a, i, t, l) {
+          Fe(Re.sunset, i), en(-11, "#ff7a3d", "#b81d3a", "rgba(255,214,102,.22)", i);
+          let r = ot / 2;
+          for (let c of l.order) {
+            let u = l.tiles[c], f = t - u.fallAt, d = f < 0 && f > -1.5, h = 0, b = 1, m = 0, g = 0;
+            if (f >= 0) {
+              if (u.vanish || (h = -12 * f * f, h < -16))
+                continue;
+              b = K(1 + h / 16, 0.2, 1);
+            } else
+              d && (u.vanish && (b = 0.5 + 0.4 * Math.sin(f * 40)), m = (Math.random() - 0.5) * 0.12, g = (Math.random() - 0.5) * 0.12);
+            let k = u.cx + m, A = u.cz + g, R = u.alt ? "#8fe9d4" : "#6fd6ff", B = d ? $n(R, "#ff4d4d", 0.5 + 0.5 * Math.sin(t * 22)) : R;
+            Ee([
+              [
+                k - r,
+                A - r
+              ],
+              [
+                k + r,
+                A - r
+              ],
+              [
+                k + r,
+                A + r
+              ],
+              [
+                k - r,
+                A + r
+              ]
+            ], -0.9 + h, h, B, u.alt ? "#3aa89a" : "#3b8fd0", b);
+          }
+          return [];
+        },
+        hud(n, a, i) {
+          return i ? "Kalan platform: " + i.tiles.filter(t => a < t.fallAt).length + "/" + i.tiles.length : "";
+        },
+        banner() {
+          return "Platformlar düşüyor!";
+        },
+        hint: "WASD: hareket \xB7 SPACE: zıpla (boşlukları atla)"
+      }, ft = {
+        sky: Re.sea,
+        ab1: "#2b8cf0",
+        ab2: "#124b9c",
+        glow: "rgba(255,255,255,.14)",
+        top: "#cdb9ff",
+        r1: "#b79cff",
+        r2: "#ffd166",
+        side: "#7a5cc7",
+        radius: n => n < 40 ? 11 : Math.max(6.5, 11 - (n - 40) * 0.15),
+        rim: n => n >= 40
+      }, bn = {
+        sky: Re.night,
+        ab1: "#ff5a3d",
+        ab2: "#8a0f2e",
+        glow: "rgba(255,214,102,.2)",
+        top: "#3b2560",
+        r1: "#4d3080",
+        r2: "#ff3d6e",
+        side: "#1d1035",
+        radius: n => n < 5 ? 12 : Math.max(2, 12 - (n - 5) * 0.18),
+        rim: () => !0
+      };
+    function mn(n, a) {
+      let i = a && a.ring || 7;
+      return Object.assign({
+        kind: "survival",
+        void: !0,
+        fall: "out",
+        push: !0,
+        dash: !0,
+        cfg: n,
+        spawn(t, l) {
+          let r = t / Math.max(1, l) * Math.PI * 2 + 0.4;
+          return {
+            x: Math.cos(r) * i,
+            z: Math.sin(r) * i
+          };
+        },
+        camera(t, l, r) {
+          let c = n.radius(r);
+          return Ne(t.x * 0.2, t.z * 0.2, 9 + c * 1.35, 0.72, 0.5);
+        },
+        bounds: () => ({
+          x0: -16,
+          x1: 16,
+          z0: -16,
+          z1: 16
+        }),
+        support(t, l, r) {
+          return Math.hypot(t, l) <= n.radius(r) + 0.05 ? je : null;
+        },
+        world(t, l, r, c) {
+          return Rt(n, c, r), [];
+        }
+      }, a);
+    }
+    let ut = mn(ft, {
+        id: "brawl",
+        name: "Arena İtişi",
+        duration: 40000,
+        ring: 7,
+        rules: [
+          "Rakiplerine çarpınca savrulurlar — dışarı it!",
+          "SHIFT / E ile atıl (dash), güçlü vuruşta uçarlar. Düşen elenir.",
+          "Süre uzarsa arena küçülür. Yarısı elenince tur biter."
+        ],
+        target: cn,
+        hud(n, a) {
+          return a < 40 ? "Küçülmeye: " + Math.max(0, Math.ceil(40 - a)) + " sn" : "Arena küçülüyor!";
+        },
+        banner(n, a) {
+          return a < 40 ? "İt ve ayakta kal!" : "Arena küçülüyor!";
+        },
+        hint: "WASD: hareket \xB7 SPACE: zıpla \xB7 SHIFT / E: atıl"
+      }), dt = mn(bn, {
+        id: "final",
+        name: "Son Arena",
+        final: !0,
+        duration: 38000,
+        ring: 8,
+        rules: [
+          "Güvenli alan gittikçe küçülüyor!",
+          "Rakiplerine çarp / atıl — savrulurlar! SHIFT / E ile atıl.",
+          "Son kalan oyuncu genel şampiyon olur."
+        ],
+        target: () => 1,
+        hud(n, a) {
+          return "Güvenli alan: " + bn.radius(a).toFixed(1) + " m";
+        },
+        banner() {
+          return "Alan küçülüyor!";
+        },
+        hint: "WASD: hareket \xB7 SPACE: zıpla \xB7 SHIFT / E: atıl"
+      });
+    function ht(n) {
+      let a = sn(n), i = (u, f) => u + a() * (f - u), t = [], l = [];
+      t.push({
+        x: 0,
+        w: 14,
+        z0: -8,
+        z1: 12,
+        cp: !0
+      });
+      let r = 12, c = Ke([
+          "sweep",
+          "stones",
+          "movers",
+          "sweep2"
+        ], a);
+      for (let u of c)
+        if (r += i(2.2, 3.1), u === "sweep")
+          t.push({
+            x: 0,
+            w: 14,
+            z0: r,
+            z1: r + 16,
+            cp: !0
+          }), l.push({
+            x: 0,
+            z: r + 8,
+            len: 13,
+            sp: i(1.3, 1.9) * (a() < 0.5 ? -1 : 1),
+            ph: a() * 6.28,
+            h: 0.85
+          }), r += 16;
+        else if (u === "sweep2")
+          t.push({
+            x: 0,
+            w: 14,
+            z0: r,
+            z1: r + 22,
+            cp: !0
+          }), l.push({
+            x: 0,
+            z: r + 6,
+            len: 12,
+            sp: i(1.6, 2.2),
+            ph: a() * 6.28,
+            h: 0.85
+          }), l.push({
+            x: 0,
+            z: r + 15,
+            len: 12,
+            sp: -i(1.6, 2.2),
+            ph: a() * 6.28,
+            h: 0.85
+          }), r += 22;
+        else if (u === "stones") {
+          let f = 5 + Math.floor(a() * 2), d = 0;
+          for (let h = 0; h < f; h++)
+            h > 0 && (r += i(2.2, 3)), d = K(d + i(-4, 4), -4.5, 4.5), t.push({
+              x: d,
+              w: 3.6,
+              z0: r,
+              z1: r + 3.6,
+              cp: h === 0
+            }), r += 3.6;
+        } else {
+          for (let f = 0; f < 3; f++)
+            f > 0 && (r += i(2.4, 3)), t.push({
+              x: 0,
+              w: 6,
+              z0: r,
+              z1: r + 4.2,
+              amp: i(3, 4.6),
+              sp: i(0.7, 1.15),
+              ph: a() * 6.28
+            }), r += 4.2;
+          r += i(2.4, 3), t.push({
+            x: 0,
+            w: 9,
+            z0: r,
+            z1: r + 6,
+            cp: !0
+          }), r += 6;
+        }
+      return r += i(2.2, 3), t.push({
+        x: 0,
+        w: 18,
+        z0: r,
+        z1: r + 16,
+        cp: !0,
+        fin: !0
+      }), {
+        plats: t,
+        bars: l,
+        finishZ: r + 3,
+        endZ: r + 16
+      };
+    }
+    var stonesBuild = function (n) {
+      let a = sn(n), i = (u, f) => u + a() * (f - u), t = [], r = 0, safe = [];
+      t.push({
+        x: 0,
+        w: 12,
+        z0: -6,
+        z1: 2,
+        cp: !0,
+        safe: !0
+      });
+      r = 2;
+      for (let c = 0; c < 9; c++) {
+        let leftSafe = a() < 0.5;
+        safe.push(leftSafe);
+        // Daha yakın bloklar: yan boşluk ve ileri boşluk azaltıldı
+        t.push({
+          x: -2.35,
+          w: 3.0,
+          z0: r,
+          z1: r + 3.4,
+          cp: c === 0,
+          safe: leftSafe,
+          pair: c
+        });
+        t.push({
+          x: 2.35,
+          w: 3.0,
+          z0: r,
+          z1: r + 3.4,
+          cp: !1,
+          safe: !leftSafe,
+          pair: c
+        });
+        r += 3.55;
+      }
+      t.push({
+        x: 0,
+        w: 14,
+        z0: r,
+        z1: r + 12,
+        cp: !0,
+        safe: !0,
+        fin: !0
+      });
+      return {
+        plats: t,
+        safe: safe,
+        finishZ: r + 4,
+        endZ: r + 12
+      };
+    };
+    var stones = {
+      id: "stones",
+      name: "Cam Köprü",
+      kind: "race",
+      duration: 40000,
+      void: !0,
+      fall: "out",
+      rules: [
+        "Çift platformlardan birini seç. Biri sağlam, biri kırılır!",
+        "Kırılan camdan düşen elenir.",
+        "Bitişe ulaşanlar hayatta kalır."
+      ],
+      build: stonesBuild,
+      spawn(n, a) {
+        return {
+          x: a > 1 ? -5 + 10 * n / (a - 1) : 0,
+          z: -4
+        };
+      },
+      camera(n) {
+        return Ne(n.x * 0.4, n.z + 3, 14, 0.5, 0.48);
+      },
+      bounds(n, a) {
+        return {
+          x0: -16,
+          x1: 16,
+          z0: -10,
+          z1: a.endZ + 2
+        };
+      },
+      finishZ: n => n.finishZ,
+      support(n, a, i, t, l) {
+        for (let r of l.plats) {
+          if (a < r.z0 - 0.2 || a > r.z1 + 0.2)
+            continue;
+          if (Math.abs(n - r.x) <= r.w / 2 + 0.2) {
+            if (r.safe === !1)
+              return null;
+            return {
+              vx: 0,
+              vz: 0,
+              plat: r
+            };
+          }
+        }
+        return null;
+      },
+      world(n, a, i, t, l) {
+        Fe(Re.sea, i);
+        en(-10, "#3ea8ff", "#124b9c", "rgba(255,255,255,.14)", i);
+        let plats = l.plats.slice().sort((u, f) => f.z0 + f.z1 - (u.z0 + u.z1));
+        for (let u of plats) {
+          if (u.z1 < P.z - 12 || u.z0 > P.z + 140)
+            continue;
+          let d = u.x - u.w / 2, h = u.x + u.w / 2, b = u.fin ? "#ffffff" : "rgba(180,220,255,0.55)";
+          Ee([
+            [
+              d,
+              u.z0
+            ],
+            [
+              h,
+              u.z0
+            ],
+            [
+              h,
+              u.z1
+            ],
+            [
+              d,
+              u.z1
+            ]
+          ], -0.9, 0, b, u.fin ? "#b9a6e0" : "#7eb8d8");
+        }
+        let r = l.finishZ;
+        for (let u = 0; u < 2; u++)
+          for (let f = 0; f < 8; f++)
+            Pe(-8 + f * 2, -8 + f * 2 + 2, r + u * 1.3, r + u * 1.3 + 1.3, 0.01, f + u & 1 ? "#ffffff" : "#24123f");
+        Fn(r, 8.5, "BİTİŞ");
+        return [];
+      },
+      hud(n, a, i) {
+        return "Köprü: %" + (i ? K(Math.round(Math.max(0, o.z) / i.finishZ * 100), 0, 100) : 0);
+      },
+      banner() {
+        return "Doğru camı seç!";
+      },
+      hint: "WASD: hareket \xB7 SPACE: zıpla \xB7 Doğru platforma atla"
+    };
+    var lavaBuild = function (n) {
+      let a = sn(n), islands = [], count = 12 + Math.floor(a() * 4);
+      for (let i = 0; i < count; i++) {
+        let ang = i / count * Math.PI * 2 + a() * 0.3, rad = 4 + a() * 9;
+        islands.push({
+          x: Math.cos(ang) * rad,
+          z: Math.sin(ang) * rad,
+          r: 1.6 + a() * 0.9,
+          fallAt: 8 + i * 1.1 + a() * 2,
+          alt: i % 2 === 0
+        });
+      }
+      return {
+        islands: islands,
+        order: [...Array(count).keys()].sort((c, u) => islands[u].fallAt - islands[c].fallAt)
+      };
+    };
+    var lava = {
+      id: "lava",
+      name: "Lav Adaları",
+      kind: "survival",
+      duration: 30000,
+      void: !0,
+      fall: "out",
+      rules: [
+        "Adalar sırayla lavın içine batar.",
+        "Batan adadan düşen elenir.",
+        "Yarısı elenince tur biter."
+      ],
+      target: cn,
+      build: lavaBuild,
+      spawn(n, a, data) {
+        if (data && data.islands && data.islands.length) {
+          let isl = data.islands, step = Math.max(1, Math.floor(isl.length / Math.max(1, a))), pick = isl[n * step % isl.length];
+          return {
+            x: pick.x,
+            z: pick.z
+          };
+        }
+        let i = n / Math.max(1, a) * Math.PI * 2;
+        return {
+          x: Math.cos(i) * 6,
+          z: Math.sin(i) * 6
+        };
+      },
+      camera(n) {
+        return Ne(n.x * 0.2, n.z * 0.2, 22, 0.7, 0.5);
+      },
+      bounds: () => ({
+        x0: -22,
+        x1: 22,
+        z0: -22,
+        z1: 22
+      }),
+      support(n, a, i, t, l) {
+        for (let is of l.islands) {
+          if (i >= is.fallAt)
+            continue;
+          if (Math.hypot(n - is.x, a - is.z) <= is.r + 0.15)
+            return je;
+        }
+        return null;
+      },
+      world(n, a, i, t, l) {
+        Fe(Re.sunset, i);
+        en(-11, "#ff7a3d", "#b81d3a", "rgba(255,214,102,.22)", i);
+        for (let idx of l.order) {
+          let is = l.islands[idx], f = i - is.fallAt, h = 0, b = 1;
+          if (f >= 0) {
+            h = -14 * f * f;
+            if (h < -18)
+              continue;
+            b = K(1 + h / 18, 0.15, 1);
+          } else if (f > -1.2) {
+            b = 0.6 + 0.4 * Math.sin(f * 30);
+          }
+          let col = is.alt ? "#ff9f43" : "#ff6b35", side = is.alt ? "#e67e22" : "#c0392b";
+          if (f > -1.5 && f < 0)
+            col = $n(col, "#ff4d4d", 0.4 + 0.4 * Math.sin(i * 20));
+          Ee(qe(is.r, 16).map(p => [
+            is.x + p[0],
+            is.z + p[1]
+          ]), -0.9 + h, h, col, side, b);
+        }
+        return [];
+      },
+      hud(n, a, i) {
+        return i ? "Kalan ada: " + i.islands.filter(t => a < t.fallAt).length + "/" + i.islands.length : "";
+      },
+      banner() {
+        return "Lav yükseliyor!";
+      },
+      hint: "WASD: hareket \xB7 SPACE: zıpla (adalar arası)"
+    };
+    var hill = {
+      id: "hill",
+      name: "Kral Tepesi",
+      kind: "survival",
+      duration: 30000,
+      void: !0,
+      fall: "out",
+      push: !0,
+      dash: !0,
+      rules: [
+        "Sarı zirvenin üstünde durarak puan kazan!",
+        "Rakiplerini iterek düşür. SHIFT/E ile atıl.",
+        "Süre bitince en çok puanı olan kazanır."
+      ],
+      target: cn,
+      spawn(n, a) {
+        let i = n / Math.max(1, a) * Math.PI * 2;
+        return {
+          x: Math.cos(i) * 10,
+          z: Math.sin(i) * 10
+        };
+      },
+      camera(n) {
+        return Ne(n.x * 0.25, n.z * 0.25, 18, 0.68, 0.48);
+      },
+      bounds: () => ({
+        x0: -18,
+        x1: 18,
+        z0: -18,
+        z1: 18
+      }),
+      support(n, a, i) {
+        return Math.hypot(n, a) <= 13.6 ? je : null;
+      },
+      world(n, a, i) {
+        Fe(Re.candy, i);
+        en(-10, "#8a6de0", "#4d3399", "rgba(255,255,255,.12)", i);
+        Ee(qe(14, 48), -1.2, 0, "#9b59b6", "#6c3483");
+        Ee(qe(7, 32), -0.6, 0, "#bb8fce", "#7d3c98");
+        Ee(qe(3.2, 24), 0, 0.8, "#f1c40f", "#d4ac0d");
+        pe(qe(3.2, 24).map(p => [
+          p[0],
+          0.82,
+          p[1]
+        ]), "#f7dc6f", null);
+        let c = 0.55 + 0.45 * Math.sin(i * 5);
+        pe(qe(3.4, 32).map(p => [
+          p[0],
+          0.85,
+          p[1]
+        ]), null, "rgba(255,215,0," + c.toFixed(2) + ")", 4);
+        pe(qe(3.6, 28).map(p => [
+          p[0],
+          0.9,
+          p[1]
+        ]), null, "rgba(255,240,120," + (0.25 + 0.25 * Math.sin(i * 7)).toFixed(2) + ")", 2);
+        return [];
+      },
+      hud(n, a) {
+        let mine = (typeof o !== "undefined" && o.hp) ? o.hp : 0;
+        return "Tepe puanın: " + mine;
+      },
+      banner() {
+        return "Sarı zirvede puan kazan!";
+      },
+      hint: "WASD: hareket \xB7 SPACE: zıpla \xB7 SHIFT/E: atıl \xB7 Sarıda puan"
+    };
+    var bladesBuild = function (n) {
+      let a = sn(n), i = (u, f) => u + a() * (f - u), t = [], l = [], r = 0;
+      t.push({
+        x: 0,
+        w: 12,
+        z0: -6,
+        z1: 4,
+        cp: !0
+      });
+      r = 4;
+      for (let s = 0; s < 4; s++) {
+        r += i(2, 3);
+        t.push({
+          x: 0,
+          w: 14,
+          z0: r,
+          z1: r + 14,
+          cp: !0
+        });
+        l.push({
+          x: 0,
+          z: r + 4,
+          len: 11,
+          sp: i(1.4, 2.1) * (a() < 0.5 ? -1 : 1),
+          ph: a() * 6.28,
+          h: 0.9
+        });
+        l.push({
+          x: 0,
+          z: r + 10,
+          len: 11,
+          sp: -i(1.5, 2.2) * (a() < 0.5 ? -1 : 1),
+          ph: a() * 6.28,
+          h: 0.9
+        });
+        r += 14;
+        if (s < 3) {
+          r += i(1.5, 2.5);
+          for (let k = 0; k < 2; k++) {
+            let dx = i(-3, 3);
+            t.push({
+              x: dx,
+              w: 4,
+              z0: r,
+              z1: r + 3.5,
+              cp: k === 0
+            });
+            r += 3.8;
+          }
+        }
+      }
+      r += 2;
+      t.push({
+        x: 0,
+        w: 16,
+        z0: r,
+        z1: r + 14,
+        cp: !0,
+        fin: !0
+      });
+      return {
+        plats: t,
+        bars: l,
+        finishZ: r + 5,
+        endZ: r + 14
+      };
+    };
+    var blades = {
+      id: "blades",
+      name: "Dönen Bıçaklar",
+      kind: "race",
+      duration: 42000,
+      void: !0,
+      fall: "respawn",
+      rules: [
+        "Dönen bıçaklardan kaç, platformlara bin.",
+        "Düşersen son kontrol noktasından devam.",
+        "Süre bitmeden bitişe ulaş!"
+      ],
+      build: bladesBuild,
+      spawn(n, a) {
+        return {
+          x: -4 + n % 3 * 4,
+          z: -4
+        };
+      },
+      camera(n) {
+        return Ne(n.x * 0.55, n.z + 4, 15, 0.4, 0.5);
+      },
+      bounds(n, a) {
+        return {
+          x0: -20,
+          x1: 20,
+          z0: -10,
+          z1: a.endZ + 2
+        };
+      },
+      finishZ: n => n.finishZ,
+      support(n, a, i, t, l) {
+        for (let r of l.plats) {
+          if (a < r.z0 - 0.15 || a > r.z1 + 0.15)
+            continue;
+          let c = r.x;
+          if (Math.abs(n - c) <= r.w / 2 + 0.15)
+            return {
+              vx: 0,
+              vz: 0,
+              plat: r
+            };
+        }
+        return null;
+      },
+      hazards(n, a, i, t) {
+        let l = performance.now();
+        for (let r of t.bars) {
+          let c = r.len / 2;
+          if (Math.abs(o.z - r.z) > c + 1.2)
+            continue;
+          let u = r.ph + r.sp * a, f = Math.cos(u), d = Math.sin(u), h = o.x - r.x, b = o.z - r.z, m = K(h * f + b * d, -c, c), g = r.x + f * m, k = r.z + d * m, A = o.x - g, R = o.z - k, B = Math.hypot(A, R);
+          if (B < 0.7 && o.y < r.h + 0.2 && l > pn) {
+            let le = Math.sign(r.sp) || 1, Z = -d * le, G = f * le, Be = B > 0.001 ? A / B : Z, qt = B > 0.001 ? R / B : G;
+            o.kx += Be * 6 + Z * 11, o.kz += qt * 6 + G * 11, o.vy = Math.max(o.vy, 5), o.gr = !1, pn = l + 320, re = Math.max(re, 0.5), fe(o.x, 1, o.z, "#ff3d6e", 14, 5), O("hit");
+          }
+        }
+      },
+      world(n, a, i, t, l) {
+        return Ct(n, i, t, l);
+      },
+      hud(n, a, i) {
+        return "Bıçaklar: %" + (i ? K(Math.round(Math.max(0, o.z) / i.finishZ * 100), 0, 100) : 0);
+      },
+      banner() {
+        return "Bıçaklardan kaç!";
+      },
+      hint: "WASD: hareket \xB7 SPACE: zıpla \xB7 Bıçaklardan uzak dur"
+    };
+    var colorsBuild = function (n) {
+      let a = sn(n), cols = [
+          "#ff5a5f",
+          "#ffb020",
+          "#4cd964",
+          "#4a90ff",
+          "#a86bff"
+        ], tiles = [], grid = 5, size = 3.4;
+      for (let z = 0; z < grid; z++)
+        for (let x = 0; x < grid; x++) {
+          tiles.push({
+            x: (x - (grid - 1) / 2) * size,
+            z: (z - (grid - 1) / 2) * size,
+            w: size * 0.92,
+            col: cols[Math.floor(a() * cols.length)],
+            idx: z * grid + x
+          });
+        }
+      return {
+        tiles: tiles,
+        cols: cols,
+        grid: grid,
+        size: size
+      };
+    };
+    var colors = {
+      id: "colors",
+      name: "Renkli Karolar",
+      kind: "survival",
+      duration: 36000,
+      void: !0,
+      fall: "out",
+      rules: [
+        "Kısa hazırlık sonrası bir renk duyurulur — hemen o renge koş!",
+        "Sadece duyurulan renk güvenli; diğerleri kararır ve düşersin.",
+        "Yanlış renkte kalan elenir. Yarısı elenince tur biter."
+      ],
+      target: cn,
+      build: colorsBuild,
+      // colMode: "all" = kısa ara (hepsi güvenli), "pick" = sadece safeCol güvenli
+      // Renk pick anında seçilir ve hemen duyurulur (gecikme yok)
+      hostStart(n) {
+        // İlk 2 sn kısa hazırlık, sonra ilk renk hemen gelir
+        return {
+          colMode: "all",
+          safeCol: -1,
+          nextColAt: n + 2000,
+          lightAt: n
+        };
+      },
+      hostTick(n, a) {
+        if (!n.nextColAt || a < n.nextColAt)
+          return null;
+        if (n.colMode === "all") {
+          // Ara bitti → renk HEMEN seçilir ve duyurulur (4 sn)
+          let next = Math.floor(Math.random() * 5);
+          if (typeof n.safeCol === "number" && n.safeCol >= 0)
+            next = (n.safeCol + 1 + Math.floor(Math.random() * 3)) % 5;
+          return {
+            colMode: "pick",
+            safeCol: next,
+            nextColAt: a + 4000,
+            lightAt: a
+          };
+        }
+        // Pick bitti → çok kısa ara (1.5 sn), sonra yine renk
+        return {
+          colMode: "all",
+          safeCol: n.safeCol,
+          nextColAt: a + 1500,
+          lightAt: a
+        };
+      },
+      spawn(n, a) {
+        let i = n / Math.max(1, a) * Math.PI * 2;
+        return {
+          x: Math.cos(i) * 4.5,
+          z: Math.sin(i) * 4.5
+        };
+      },
+      camera(n) {
+        return Ne(n.x * 0.15, n.z * 0.15, 20, 0.72, 0.5);
+      },
+      bounds: () => ({
+        x0: -12,
+        x1: 12,
+        z0: -12,
+        z1: 12
+      }),
+      support(n, a, i, t, l) {
+        let cols = l.cols;
+        let mode = t.colMode || "all";
+        // "all" veya turun ilk 1 sn: her karo güvenli (doğum / geçiş)
+        if (mode === "all" || i < 1)
+          return je;
+        let safe = t.safeCol;
+        // safeCol henüz yoksa (senkron gecikmesi) düşürme
+        if (typeof safe !== "number" || safe < 0)
+          return je;
+        for (let tile of l.tiles) {
+          if (Math.abs(n - tile.x) <= tile.w / 2 + 0.1 && Math.abs(a - tile.z) <= tile.w / 2 + 0.1) {
+            if (tile.col === cols[safe])
+              return je;
+            return null;
+          }
+        }
+        return null;
+      },
+      localRule(n, a, i) {
+      },
+      world(n, a, i, t, l) {
+        Fe(Re.night, i);
+        en(-10, "#2c1a4d", "#0f0a1f", "rgba(255,100,200,.1)", i);
+        let mode = t.colMode || "all";
+        let safe = t.safeCol;
+        let cols = l.cols;
+        let sinceLight = t.lightAt ? Math.max(0, (a - t.lightAt) / 1000) : 99;
+        // Pick anında kısa flaş: sadece güvenli renk parlar
+        let flash = sinceLight < 0.4 ? (1 - sinceLight / 0.4) : 0;
+        let allMode = mode === "all";
+        let hasSafe = typeof safe === "number" && safe >= 0;
+        for (let tile of l.tiles) {
+          let isSafe = allMode || (hasSafe && tile.col === cols[safe]);
+          let col = tile.col;
+          let b = 1;
+          let edge = "#222";
+          if (allMode) {
+            // Kısa ara: hepsi soft parlar
+            let pulse = 0.45 + 0.35 * Math.sin(i * 5 + tile.idx * 0.7);
+            col = $n(tile.col, "#ffffff", 0.12 + 0.2 * pulse + flash * 0.25);
+            edge = "#fff";
+          } else if (isSafe) {
+            // Güvenli renk: anında net, güçlü parıltı
+            let pulse = 0.6 + 0.4 * Math.sin(i * 9);
+            col = $n(tile.col, "#ffffff", 0.25 + 0.3 * pulse + flash * 0.5);
+            edge = "#fff";
+          } else {
+            // Yanlış renk: ANINDA neredeyse siyah (hepsi yanmasın)
+            col = $n(tile.col, "#0a0a10", 0.88);
+            b = 0.28;
+            edge = "#111";
+          }
+          Ee([
+            [
+              tile.x - tile.w / 2,
+              tile.z - tile.w / 2
+            ],
+            [
+              tile.x + tile.w / 2,
+              tile.z - tile.w / 2
+            ],
+            [
+              tile.x + tile.w / 2,
+              tile.z + tile.w / 2
+            ],
+            [
+              tile.x - tile.w / 2,
+              tile.z + tile.w / 2
+            ]
+          ], -0.9, 0, col, edge, b);
+          // Glow sadece güvenli / ara modunda
+          if (isSafe || allMode) {
+            let c = allMode
+              ? (0.25 + 0.25 * Math.sin(i * 6 + tile.idx) + flash * 0.25)
+              : (0.55 + 0.4 * Math.sin(i * 8 + tile.idx) + flash * 0.45);
+            pe([
+              [
+                tile.x - tile.w / 2,
+                0.05,
+                tile.z - tile.w / 2
+              ],
+              [
+                tile.x + tile.w / 2,
+                0.05,
+                tile.z - tile.w / 2
+              ],
+              [
+                tile.x + tile.w / 2,
+                0.05,
+                tile.z + tile.w / 2
+              ],
+              [
+                tile.x - tile.w / 2,
+                0.05,
+                tile.z + tile.w / 2
+              ]
+            ], null, "rgba(255,255,255," + Math.min(1, c).toFixed(2) + ")", allMode ? 2 : 4);
+            if (isSafe && !allMode) {
+              let glow = 0.4 + 0.45 * Math.sin(i * 11) + flash * 0.55;
+              pe([
+                [
+                  tile.x - tile.w / 2 - 0.12,
+                  0.14,
+                  tile.z - tile.w / 2 - 0.12
+                ],
+                [
+                  tile.x + tile.w / 2 + 0.12,
+                  0.14,
+                  tile.z - tile.w / 2 - 0.12
+                ],
+                [
+                  tile.x + tile.w / 2 + 0.12,
+                  0.14,
+                  tile.z + tile.w / 2 + 0.12
+                ],
+                [
+                  tile.x - tile.w / 2 - 0.12,
+                  0.14,
+                  tile.z + tile.w / 2 + 0.12
+                ]
+              ], null, "rgba(255,255,180," + Math.min(1, glow).toFixed(2) + ")", 3);
+            }
+          }
+        }
+        return [];
+      },
+      hud(n, a, i) {
+        let cols = [
+          "Kırmızı",
+          "Turuncu",
+          "Yeşil",
+          "Mavi",
+          "Mor"
+        ];
+        let left = 0;
+        if (n.nextColAt && n.playAt)
+          left = Math.max(0, Math.ceil((n.nextColAt - (n.playAt + a * 1000)) / 1000));
+        if ((n.colMode || "all") === "all")
+          return "Hazırlan · sonraki renk geliyor (" + left + " sn)";
+        return "Güvenli: " + (cols[n.safeCol] || "?") + " (" + left + " sn)";
+      },
+      banner(n, a) {
+        let cols = [
+          "KIRMIZI",
+          "TURUNCU",
+          "YEŞİL",
+          "MAVİ",
+          "MOR"
+        ];
+        let left = 0;
+        if (n.nextColAt && n.playAt)
+          left = Math.max(0, Math.ceil((n.nextColAt - (n.playAt + a * 1000)) / 1000));
+        if ((n.colMode || "all") === "all")
+          return "⏳ HAZIRLAN · " + left + " sn";
+        // Renk pick ile aynı anda gösterilir (gecikme yok)
+        return "🎯 " + (cols[n.safeCol] || "...") + " · " + left + " sn";
+      },
+      hint: "WASD: hareket \xB7 SPACE: zıpla \xB7 Duyurulan renge koş!"
+    };
+    let pn = 0, Ue = [
+        yn,
+        st,
+        ut,
+        stones,
+        hill,
+        blades,
+        {
+          id: "course",
+          name: "Engel Parkuru",
+          kind: "race",
+          duration: 45000,
+          void: !0,
+          fall: "respawn",
+          rules: [
+            "Dönen engellerden zıpla, boşlukları at, platformlara bin.",
+            "Düşersen son kontrol noktasından devam edersin.",
+            "Süre bitmeden bitişe ulaşamayan oyuncu elenir."
+          ],
+          build: ht,
+          spawn(n, a) {
+            return {
+              x: -5 + n % 4 * 3.33,
+              z: -6 + Math.floor(n / 4) * 2.6
+            };
+          },
+          camera(n) {
+            return Ne(n.x * 0.6, n.z + 5, 16, 0.42, 0.5);
+          },
+          bounds(n, a) {
+            return {
+              x0: -24,
+              x1: 24,
+              z0: -12,
+              z1: a.endZ + 2
+            };
+          },
+          finishZ: n => n.finishZ,
+          support(n, a, i, t, l) {
+            for (let r of l.plats) {
+              if (a < r.z0 - 0.15 || a > r.z1 + 0.15)
+                continue;
+              let c = r.x, u = 0;
+              if (r.amp) {
+                let f = r.ph + r.sp * i;
+                c += r.amp * Math.sin(f), u = r.amp * r.sp * Math.cos(f);
+              }
+              if (Math.abs(n - c) <= r.w / 2 + 0.15)
+                return {
+                  vx: u,
+                  vz: 0,
+                  plat: r
+                };
+            }
+            return null;
+          },
+          hazards(n, a, i, t) {
+            let l = performance.now();
+            for (let r of t.bars) {
+              let c = r.len / 2;
+              if (Math.abs(o.z - r.z) > c + 1)
+                continue;
+              let u = r.ph + r.sp * a, f = Math.cos(u), d = Math.sin(u), h = o.x - r.x, b = o.z - r.z, m = K(h * f + b * d, -c, c), g = r.x + f * m, k = r.z + d * m, A = o.x - g, R = o.z - k, B = Math.hypot(A, R);
+              if (B < 0.62 && o.y < r.h + 0.15 && l > pn) {
+                let le = Math.sign(r.sp) || 1, Z = -d * le, G = f * le, Be = B > 0.001 ? A / B : Z, qt = B > 0.001 ? R / B : G;
+                o.kx += Be * 5 + Z * 9, o.kz += qt * 5 + G * 9, o.vy = Math.max(o.vy, 4.4), o.gr = !1, pn = l + 350, re = Math.max(re, 0.4), fe(o.x, 1, o.z, "#ff3d6e", 10, 4), O("hit");
+              }
+            }
+          },
+          world(n, a, i, t, l) {
+            return Ct(n, i, t, l);
+          },
+          hud(n, a, i) {
+            return "Parkur: %" + (i ? K(Math.round(Math.max(0, o.z) / i.finishZ * 100), 0, 100) : 0);
+          },
+          banner() {
+            return "Bitişe koş!";
+          },
+          hint: "WASD: hareket \xB7 SPACE: zıpla (engellerin üstünden)"
+        },
+        dt
+      ], Se = n => Ue.find(a => a.id === n) || Ue[0], Ye = (n, a) => a === "lobby" ? yn : Se(n.mg), gn = "", Mn = null;
+    function Ze(n, a) {
+      let i = a.rid + "|" + n.id + "|" + a.seed;
+      return i !== gn && (gn = i, Mn = n.build ? n.build(a.seed >>> 0) : null), Mn;
+    }
+    function Ve(n, a) {
+      if (!n.playAt)
+        return 0;
+      let i = (n.phase === "roundEnd" || n.phase === "gameEnd") && n.endedAt ? n.endedAt : a;
+      return Math.max(0, (i - n.playAt) / 1000);
+    }
+    function vn(n) {
+      o.st === "run" && (n = n || "z", o.vx = o.vz = 0, ee({
+        st: "out",
+        oc: n,
+        ot: Math.round(y.now()),
+        vx: 0,
+        vz: 0
+      }), z = performance.now(), n === "f" ? (re = 0.5, ye = 0.5, O("fall"), We("<div class=\"bad\">Düştün!</div><div class=\"small\">Elendin, izleyici oldun</div>", 2600)) : (re = 1, ye = 1, fe(o.x, 1.2, o.z, "#ff3d6e", 22, 6), O("boom"), We("<div class=\"bad\">Elendin!</div><div class=\"small\">Kırmızı ışıkta hareket ettin</div>", 2600)));
+    }
+    function ct() {
+      o.st === "run" && (ee({
+        st: "fin",
+        fa: Math.round(y.now())
+      }), fe(o.x, 1.5, o.z, "#ffd23f", 26, 7), O("fin"), We("<div class=\"good\">Bitirdin!</div>", 2000));
+    }
+    function yt() {
+      let n = o.cp, a = 0, i = -2;
+      n && (a = K(o.x, n.x - n.w / 2 + 1, n.x + n.w / 2 - 1), i = n.z0 + 1.5), fe(o.x, 0, o.z, "#8f7bff", 10, 4), o.x = a, o.z = i, o.y = 1.2, o.vy = 0, o.vx = o.vz = o.kx = o.kz = 0, o.gr = !1, O("pop"), He(!0);
+    }
+    let Je = null, zn = null;
+    function bt() {
+      let n = w(), a = n.phase || "lobby";
+      if (a === Je && n.rid === zn)
+        return;
+      let i = Je;
+      if (Je = a, zn = n.rid, i === null && a !== "lobby" && ee({
+          st: "spec",
+          rd: null,
+          fa: null,
+          oc: null
+        }), a === "lobby")
+        // Lobide herkes bekler — oyun karakteri "run" olmaz
+        dn(), ee({
+          st: "lobby",
+          rd: null,
+          fa: null,
+          rdy: !1,
+          oc: null,
+          ot: null
+        }), F = null, ve = !0, Me = 1;
+      else if (a === "intro") {
+        // Sadece roster'daki oyuncular turda; diğerleri izler
+        // Roster yoksa (eski state) kimse run olmasın — lobiye zorla
+        let roster = n.roster || [];
+        let inRoster = roster.length ? roster.includes(p.id) : false;
+        if (inRoster) {
+          it(Se(n.mg)), o.hp = 0, o._hpAcc = 0, ee({
+            st: "run",
+            rd: n.rid,
+            fa: null,
+            oc: null,
+            ot: null,
+            hp: 0
+          });
+        } else {
+          ee({
+            st: "spec",
+            rd: n.rid,
+            fa: null,
+            oc: null
+          });
+        }
+        F = null, ye = 0, ze = null, ve = !0, Me = 1, O("tick");
+      } else if (a === "roundEnd")
+        n.results && n.results.q.includes(p.id) && O("fin");
+      else if (a === "gameEnd") {
+        n.winner === p.id && O("fin");
+        let t = (n.scores || {})[p.id];
+        if (y.game && t > 0)
+          try {
+            Promise.resolve(y.submitScore(t)).catch(() => {
+            });
+          } catch {
+          }
+      } else if (a === "play") {
+        // Ortadan katılanlar sadece izler (roster dışı)
+        let roster = n.roster || [];
+        if (roster.length && !roster.includes(p.id) && o.st !== "spec" && o.st !== "out") {
+          ee({ st: "spec", rd: n.rid, fa: null, oc: null });
+        }
+      }
+    }
+    function Sn(n, a, i, t, l) {
+      let r = y.now(), c = a.filter(f => !i.includes(f) && C(f)), u = Se(t[n]);
+      y.setState(Object.assign({
+        phase: "intro",
+        round: n + 1,
+        rid: Math.floor(r),
+        mg: u.id,
+        endsAt: r + Vn,
+        seed: Math.random() * 4294967296 >>> 0,
+        n0: c.length,
+        light: "green",
+        lightAt: r,
+        nextAt: null,
+        results: null,
+        playAt: null,
+        endedAt: null
+      }, l || {}));
+    }
+    function isRealHost() {
+      // Offline test mode: always host
+      if (T) return !0;
+      // SDK: host object matches me, or isHost flag without conflicting host
+      if (y.host && y.host.id === p.id) return !0;
+      if (y.isHost && (!y.host || y.host.id === p.id)) return !0;
+      // Fallback: alone in room or no host assigned yet
+      if (!y.host && y.players.length <= 1) return !0;
+      return !1;
+    }
+    function playerReady(pl) {
+      if (!pl) return !1;
+      if (pl.id === p.id) return !!o.rdy;
+      return !!(pl.state && pl.state.rdy);
+    }
+    function kn() {
+      // Sadece odayı kuran (creatorId) başlatır — host değişse de kurucu sabit
+      let stNow = y.state || {};
+      let ph = stNow.phase || "lobby";
+      if (ph !== "lobby" && ph)
+        return;
+      let _cr = stNow.creatorId;
+      // Kurucu yoksa ve yalnız/host isen bir kez ata; asla başkasının yerine geçme
+      if (!_cr) {
+        if (!(T || isRealHost() || y.players.length <= 1)) return;
+        try { y.setState({ creatorId: p.id }); } catch (_) {}
+        _cr = p.id;
+      }
+      if (_cr !== p.id)
+        return;
+      let n = y.players.slice(0, ln);
+      if (!n.length) n = [p];
+      let a = n.map(f => f.id), i = {}, t = {};
+      n.forEach(f => {
+        i[f.id] = f.name, t[f.id] = 0;
+      });
+      let allIds = Ue.map(f => f.id), nonFinal = Ue.filter(f => !f.final).map(f => f.id);
+      let r = Ke(nonFinal.slice());
+      // URL ?mg=id1,id2 ile özel sıra (geliştirici/test)
+      let fromUrl = (S.get("mg") || "").split(",").map(f => f.trim()).filter(f => allIds.includes(f));
+      if (fromUrl.length) r = fromUrl;
+      // Klasik mod: karışık mini oyunlar + sonda final
+      let u = fromUrl.length ? r.slice() : r.concat(["final"]);
+      Sn(0, a, [], u, {
+        order: u,
+        roster: a,
+        names: i,
+        elim: [],
+        scores: t,
+        startCount: a.length,
+        autoAt: null,
+        winner: null,
+        wname: null
+      });
+    }
+    function Pn() {
+      if (!isRealHost())
+        return;
+      let _c = (y.state || {}).creatorId || p.id;
+      y.setState({
+        phase: "lobby",
+        round: 0,
+        rid: null,
+        roster: [],
+        elim: [],
+        scores: {},
+        order: null,
+        seed: null,
+        n0: null,
+        playAt: null,
+        endedAt: null,
+        winner: null,
+        wname: null,
+        results: null,
+        autoAt: null,
+        light: "green",
+        lightAt: y.now(),
+        creatorId: _c
+      });
+    }
+    function mt(n, a, i, t, l) {
+      let r = a.n0 || t.length, c = r > 1, u = i >= a.endsAt;
+      if (n.kind === "race") {
+        let m = t.filter(R => l(R).st === "fin").sort((R, B) => l(R).fa - l(B).fa);
+        if (t.filter(R => l(R).st === "run").length > 0 && !u)
+          return null;
+        let k = m, A = "";
+        return !k.length && t.length && c && (k = [t.slice().sort((B, le) => (C(le).state.z || 0) - (C(B).state.z || 0))[0]], A = "Kimse bitiremedi! En ileri giden kurtuldu."), {
+          q: k,
+          note: A
+        };
+      }
+      let f = t.filter(m => l(m).st === "run"), d = c ? n.target(r) : 0;
+      if (!(f.length <= d || u))
+        return null;
+      let h = f, b = "";
+      if (!h.length && t.length && c && (h = [t.slice().sort((g, k) => (l(k).ot || 0) - (l(g).ot || 0))[0]], b = "Hepsi aynı anda düştü! En son düşen kurtuldu."), n.final && h.length > 1) {
+        let m = g => {
+          let k = C(g).state;
+          return Math.hypot(k.x || 0, k.z || 0);
+        };
+        h = [h.slice().sort((g, k) => m(g) - m(k))[0]], b = "Süre doldu! Merkeze en yakın oyuncu şampiyon.";
+      }
+      // Kral Tepesi: en çok tepe puanı olanlar kazanır
+      if (n.id === "hill" && h.length > 1) {
+        h = h.slice().sort((g, k) => (l(k).hp || 0) - (l(g).hp || 0));
+        let top = l(h[0]).hp || 0;
+        b = "En çok tepe puanı: " + top + " · " + (L(h[0]) || "");
+      }
+      return {
+        q: h,
+        note: b
+      };
+    }
+    function pt(n, a) {
+      let i = y.now(), t = Object.assign({}, n.scores || {}), l = a.q, c = (n.roster || []).filter(f => !(n.elim || []).includes(f)).filter(f => !l.includes(f)), u = (n.elim || []).concat(c);
+      l.forEach((f, d) => {
+        t[f] = (t[f] || 0) + 100 + (l.length - d) * 10;
+      }), y.setState({
+        phase: "roundEnd",
+        endsAt: i + Jn,
+        endedAt: i,
+        results: {
+          q: l,
+          e: c,
+          note: a.note || ""
+        },
+        elim: u,
+        scores: t,
+        light: "green",
+        lightAt: i
+      });
+    }
+    function gt(n, a) {
+      let i = y.now(), t = Object.assign({}, n.scores || {}), l = a[0] || null;
+      l && (t[l] = (t[l] || 0) + 250), y.setState({
+        phase: "gameEnd",
+        endsAt: i + Qn,
+        winner: l,
+        wname: l ? L(l) : null,
+        scores: t
+      });
+    }
+    function Mt() {
+      if (isRealHost())
+        try {
+          let n = y.state || {}, a = y.now(), i = n.phase;
+          if (!i) {
+            y.setState({
+              phase: "lobby",
+              round: 0,
+              roster: [],
+              elim: [],
+              scores: {},
+              light: "green",
+              lightAt: a,
+              // Sadece tek kişiyken kurucu ol; yoksa mevcut creatorId kalsın
+              creatorId: n.creatorId || (y.players.length <= 1 ? p.id : null)
+            });
+            return;
+          }
+          if (i === "lobby") {
+            // Kurucu SABİT: ilk giren / odayı açan. Çıksa bile başkasına geçmez.
+            // Sadece henüz atanmamışsa ve odada tek kişi / host isen ata.
+            if (!n.creatorId && isRealHost() && y.players.length <= 1) {
+              y.setState({ creatorId: p.id });
+              n.creatorId = p.id;
+            }
+            // ASLA otomatik başlatma
+            if (n.autoAt) y.setState({ autoAt: null });
+          } else if (i === "intro") {
+            if (a >= n.endsAt) {
+              let t = Se(n.mg);
+              y.setState(Object.assign({
+                phase: "play",
+                playAt: a,
+                endsAt: a + t.duration
+              }, t.hostStart ? t.hostStart(a) : {}));
+            }
+          } else if (i === "play") {
+            let t = Se(n.mg), l = t.hostTick ? t.hostTick(n, a) : null;
+            l && y.setState(l);
+            let r = Ae(n), u = mt(t, n, a, r, f => {
+                let d = C(f).state;
+                return d.rd === n.rid ? d : { st: "run" };
+              });
+            u && pt(n, u);
+          } else if (i === "roundEnd") {
+            if (a >= n.endsAt) {
+              let t = n.roster || [], l = n.elim || [], r = n.order || [], c = t.filter(b => !l.includes(b) && C(b)), u = (n.startCount || t.length) <= 1, f = !!Se(n.mg).final, d = n.round || r.length;
+              !u && c.length <= 2 && d < r.length - 1 && (d = r.length - 1), f || d >= r.length || (u ? c.length === 0 : c.length <= 1) ? gt(n, c) : Sn(d, t, l, r);
+            }
+          } else
+            i === "gameEnd" && a >= n.endsAt && Pn();
+        } catch (n) {
+          console.warn("hostTick", n);
+        }
+    }
+    y.onHostTick(Mt), addEventListener("keydown", n => {
+      n.target && n.target.tagName === "INPUT" || ([
+        "Space",
+        "ArrowUp",
+        "ArrowDown",
+        "ArrowLeft",
+        "ArrowRight"
+      ].includes(n.code) && n.preventDefault(), de(), n.repeat || (n.code === "Space" && (he = performance.now()), n.code === "KeyM" && xn(), [
+        "ShiftLeft",
+        "ShiftRight",
+        "KeyE"
+      ].includes(n.code) && (ne = !0), [
+        "KeyQ",
+        "KeyE",
+        "KeyA",
+        "KeyD",
+        "ArrowLeft",
+        "ArrowRight"
+      ].includes(n.code) && Qe() && vt([
+        "KeyQ",
+        "KeyA",
+        "ArrowLeft"
+      ].includes(n.code) ? -1 : 1)), U.add(n.code));
+    }), addEventListener("keyup", n => {
+      n.code === "Space" && !(n.target && n.target.tagName === "INPUT") && n.preventDefault(), U.delete(n.code);
+    }), addEventListener("blur", () => U.clear()), document.addEventListener("visibilitychange", () => {
+      document.hidden && U.clear();
+    }), addEventListener("pointerdown", () => de()), e("startBtn").onclick = n => {
+      de();
+      // Misafir asla başlatamaz
+      if (!isLobbyHostView()) {
+        n.currentTarget.blur();
+        return;
+      }
+      let st0 = w();
+      // Kurucu sabit: sadece boşsa (ilk kurulum) claim; doluysa yalnızca kurucu başlatır
+      if (!st0.creatorId) {
+        try { y.setState({ creatorId: p.id }); } catch (_) {}
+      } else if (st0.creatorId !== p.id) {
+        n.currentTarget.blur();
+        return;
+      }
+      kn();
+      n.currentTarget.blur();
+    }, e("lobbyBtn").onclick = n => {
+      de(), Pn(), n.currentTarget.blur();
+    };
+
+    /* ===== Pause / Ayarlar / Yardım UI ===== */
+    let gamePaused = false;
+    const pauseOv = e("pauseOv"), settingsOv = e("settingsOv"), helpOv = e("helpOv");
+    function syncMuteBtn() {
+      let b = e("togMute");
+      if (b) {
+        b.textContent = Oe ? "Kapalı" : "Açık";
+        b.className = "tog " + (Oe ? "alt" : "go");
+      }
+    }
+    function openPause() {
+      let ph = (w().phase || "lobby");
+      if (ph === "lobby" || ph === "gameEnd") return;
+      gamePaused = true;
+      if (pauseOv) pauseOv.classList.add("show");
+      U.clear();
+      clearMobileMove && clearMobileMove();
+      de();
+    }
+    function closePause() {
+      gamePaused = false;
+      if (pauseOv) pauseOv.classList.remove("show");
+    }
+    function openSettings() {
+      if (settingsOv) settingsOv.classList.add("show");
+      syncMuteBtn();
+      de();
+    }
+    function closeSettings() {
+      if (settingsOv) settingsOv.classList.remove("show");
+    }
+    function openHelp() {
+      if (helpOv) helpOv.classList.add("show");
+      de();
+    }
+    function closeHelp() {
+      if (helpOv) helpOv.classList.remove("show");
+    }
+    function closeAllUi() {
+      closePause();
+      closeSettings();
+      closeHelp();
+    }
+    e("btnPause") && (e("btnPause").onclick = () => { de(); openPause(); });
+    e("btnHelpInGame") && (e("btnHelpInGame").onclick = () => { de(); openHelp(); });
+    e("pauseResume") && (e("pauseResume").onclick = () => { de(); closePause(); });
+    e("pauseSettings") && (e("pauseSettings").onclick = () => { de(); openSettings(); });
+    e("pauseHelp") && (e("pauseHelp").onclick = () => { de(); openHelp(); });
+    e("pauseLobby") && (e("pauseLobby").onclick = n => {
+      de();
+      closeAllUi();
+      if (isRealHost()) Pn();
+      else {
+        try { if (typeof y.leave === "function") y.leave(); } catch (_) {}
+        try { location.href = (typeof admMenuUrl === "function" ? admMenuUrl() : (location.pathname + "?menu=1")); } catch (_) {}
+      }
+      n.currentTarget && n.currentTarget.blur();
+    });
+    e("settingsClose") && (e("settingsClose").onclick = () => { de(); closeSettings(); });
+    e("helpClose") && (e("helpClose").onclick = () => { de(); closeHelp(); });
+    e("lobbyHelpBtn") && (e("lobbyHelpBtn").onclick = () => { de(); openHelp(); });
+    e("lobbySettingsBtn") && (e("lobbySettingsBtn").onclick = () => { de(); openSettings(); });
+    e("togMute") && (e("togMute").onclick = () => {
+      de();
+      xn();
+      syncMuteBtn();
+      O("pop");
+    });
+    e("togFs") && (e("togFs").onclick = () => {
+      de();
+      try {
+        if (!document.fullscreenElement) {
+          document.documentElement.requestFullscreen().catch(() => {});
+          e("togFs").textContent = "Kapat";
+        } else {
+          document.exitFullscreen().catch(() => {});
+          e("togFs").textContent = "Aç";
+        }
+      } catch (_) {}
+    });
+    document.addEventListener("fullscreenchange", () => {
+      let b = e("togFs");
+      if (b) b.textContent = document.fullscreenElement ? "Kapat" : "Aç";
+    });
+    // ESC: pause aç/kapa (INPUT'ta değilken)
+    addEventListener("keydown", n => {
+      if (n.code !== "Escape") return;
+      if (n.target && (n.target.tagName === "INPUT" || n.target.tagName === "TEXTAREA")) return;
+      n.preventDefault();
+      de();
+      if (helpOv && helpOv.classList.contains("show")) { closeHelp(); return; }
+      if (settingsOv && settingsOv.classList.contains("show")) { closeSettings(); return; }
+      if (gamePaused) closePause();
+      else openPause();
+    });
+    // Pause iken hareket/update'i dondurmak için Pt sarmalayıcısı aşağıda bağlanır
+    const _PtOrig = typeof Pt === "function" ? null : null; // Pt henüz tanımlı değil — loop'ta kontrol
+
+    /* ===== Mobil dokunmatik kontroller ===== */
+    let touchMoveKeys = new Set(), stickPtr = null, jumpPtr = null, dashPtr = null;
+    const isTouchDevice = "ontouchstart" in window || navigator.maxTouchPoints > 0 || (window.matchMedia && matchMedia("(pointer: coarse)").matches);
+    function setMobileKeys(dx, dy) {
+      for (let k of ["KeyW", "KeyS", "KeyA", "KeyD", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"]) {
+        if (touchMoveKeys.has(k)) U.delete(k);
+      }
+      touchMoveKeys.clear();
+      const dead = 0.22;
+      if (dy < -dead) { U.add("KeyW"); touchMoveKeys.add("KeyW"); }
+      if (dy > dead) { U.add("KeyS"); touchMoveKeys.add("KeyS"); }
+      if (dx < -dead) { U.add("KeyA"); touchMoveKeys.add("KeyA"); }
+      if (dx > dead) { U.add("KeyD"); touchMoveKeys.add("KeyD"); }
+    }
+    function clearMobileMove() {
+      for (let k of touchMoveKeys) U.delete(k);
+      touchMoveKeys.clear();
+      setMobileKeys(0, 0);
+      let knob = e("stickKnob");
+      if (knob) { knob.style.transform = "translate(0,0)"; }
+    }
+    function setupMobileControls() {
+      let zone = e("stickZone"), knob = e("stickKnob"), btnJ = e("btnJump"), btnD = e("btnDash");
+      if (!zone || !knob || !btnJ || !btnD) return;
+      const maxR = 42;
+      function onStickStart(ev) {
+        if (stickPtr !== null) return;
+        let t = ev.changedTouches ? ev.changedTouches[0] : ev;
+        stickPtr = t.identifier !== undefined ? t.identifier : "mouse";
+        de();
+        onStickMove(ev);
+        ev.preventDefault();
+      }
+      function onStickMove(ev) {
+        if (stickPtr === null) return;
+        let t = null;
+        if (ev.changedTouches) {
+          for (let i = 0; i < ev.changedTouches.length; i++) {
+            if (ev.changedTouches[i].identifier === stickPtr) { t = ev.changedTouches[i]; break; }
+          }
+        } else if (stickPtr === "mouse") t = ev;
+        if (!t) return;
+        let rect = zone.getBoundingClientRect();
+        let cx = rect.left + rect.width / 2, cy = rect.top + rect.height / 2;
+        let dx = t.clientX - cx, dy = t.clientY - cy;
+        let len = Math.hypot(dx, dy) || 1;
+        let cl = Math.min(len, maxR);
+        let nx = dx / len * cl, ny = dy / len * cl;
+        knob.style.transform = "translate(" + nx + "px," + ny + "px)";
+        setMobileKeys(nx / maxR, ny / maxR);
+        ev.preventDefault();
+      }
+      function onStickEnd(ev) {
+        if (stickPtr === null) return;
+        let end = false;
+        if (ev.changedTouches) {
+          for (let i = 0; i < ev.changedTouches.length; i++) {
+            if (ev.changedTouches[i].identifier === stickPtr) { end = true; break; }
+          }
+        } else if (stickPtr === "mouse") end = true;
+        if (!end) return;
+        stickPtr = null;
+        clearMobileMove();
+        ev.preventDefault();
+      }
+      zone.addEventListener("touchstart", onStickStart, { passive: false });
+      zone.addEventListener("touchmove", onStickMove, { passive: false });
+      zone.addEventListener("touchend", onStickEnd, { passive: false });
+      zone.addEventListener("touchcancel", onStickEnd, { passive: false });
+      function bindBtn(el, onDown, onUp) {
+        el.addEventListener("touchstart", ev => {
+          if (ev.changedTouches.length) {
+            de();
+            onDown(ev.changedTouches[0].identifier);
+            el.classList.add("active");
+            ev.preventDefault();
+          }
+        }, { passive: false });
+        el.addEventListener("touchend", ev => {
+          for (let i = 0; i < ev.changedTouches.length; i++) {
+            onUp(ev.changedTouches[i].identifier);
+          }
+          el.classList.remove("active");
+          ev.preventDefault();
+        }, { passive: false });
+        el.addEventListener("touchcancel", ev => {
+          for (let i = 0; i < ev.changedTouches.length; i++) {
+            onUp(ev.changedTouches[i].identifier);
+          }
+          el.classList.remove("active");
+        }, { passive: false });
+      }
+      bindBtn(btnJ, id => {
+        jumpPtr = id;
+        he = performance.now();
+        U.add("Space");
+      }, id => {
+        if (jumpPtr === id) { jumpPtr = null; U.delete("Space"); }
+      });
+      bindBtn(btnD, id => {
+        dashPtr = id;
+        ne = true;
+        U.add("ShiftLeft");
+      }, id => {
+        if (dashPtr === id) { dashPtr = null; U.delete("ShiftLeft"); }
+      });
+    }
+    setupMobileControls();
+    function updateMobileUI(phase) {
+      let show = isTouchDevice && phase !== "lobby" && phase !== "gameEnd";
+      document.body.classList.toggle("show-mobile", show);
+      let btnD = e("btnDash");
+      if (btnD) {
+        let a = w(), l = Ye(a, phase);
+        btnD.style.display = (l && l.dash) ? "" : "none";
+      }
+      if (!show) clearMobileMove();
+    }
+
+    function wn() {
+      let n = e("nameIn").value.trim().slice(0, 16);
+      try { sessionStorage.setItem("antics_name", n); } catch {}
+      try {
+        if (y && typeof y.setName === "function") y.setName(n);
+        else if (y && y.me) { y.me.name = n || y.me.name; }
+      } catch {}
+      try {
+        parent.postMessage({
+          antics: "set_name",
+          name: n
+        }, "*");
+      } catch {
+      }
+    }
+    e("nameBtn").onclick = n => {
+      wn(), n.currentTarget.blur();
+    }, e("nameIn").addEventListener("keydown", n => {
+      n.key === "Enter" && wn();
+    }), e("nameIn").value = /^Guest \d+$/.test(p.name) ? "" : p.name;
+    let An = e("charBtn1"), Tn = e("charBtn2");
+    An && Tn && (An.onclick = () => Rn("char1"), Tn.onclick = () => Rn("char2"));
+    function Rn(n) {
+      de(), O("pop"), o.char = n, localStorage.setItem("antics_royale_char", n), ee({ char: n }), Cn(), fe(o.x, 1, o.z, n === "char1" ? "#ffb020" : "#4a90ff", 12, 3);
+    }
+    function Cn() {
+      let n = e("charBtn1"), a = e("charBtn2");
+      !n || !a || (o.char === "char1" ? (n.classList.add("selected"), a.classList.remove("selected")) : (a.classList.add("selected"), n.classList.remove("selected")));
+    }
+    Cn();
+
+    function Qe() {
+      return o.st === "spec" || o.st === "out" && performance.now() - z > 1800;
+    }
+    function In() {
+      return y.players.filter(n => n.id !== p.id && (n.state.st === "run" || n.state.st === "fin")).map(n => n.id).sort();
+    }
+    function vt(n) {
+      let a = In();
+      if (!a.length)
+        return;
+      let i = a.indexOf(F || "");
+      F = a[(i + n + a.length) % a.length];
+    }
+    let me = new Map();
+    y.onLeave(n => {
+      _(n), me.delete(n.id), _e(n.name + " ayrıldı");
+    }), y.onJoin(n => {
+      _(n);
+    });
+    function zt(n) {
+      for (let a of y.players) {
+        let i = a.state || {}, t = me.get(a.id);
+        if (t || (t = {
+            x: i.x || 0,
+            y: i.y || 0,
+            z: i.z || 0,
+            fall: 0,
+            walk: 0,
+            vx: 0,
+            vz: 0
+          }, me.set(a.id, t)), a.id === p.id)
+          t.x = o.x, t.y = o.y, t.z = o.z, t.vx = o.vx + o.kx, t.vz = o.vz + o.kz;
+        else {
+          let u = K((y.now() - (i.at || y.now())) / 1000, 0, 0.25), f = (i.x || 0) + (i.vx || 0) * u, d = (i.z || 0) + (i.vz || 0) * u;
+          let imp = hitImp.get(a.id);
+          if (imp) {
+            f += imp.ox || 0;
+            d += imp.oz || 0;
+          }
+          if (Math.hypot(f - t.x, d - t.z) > 10 || Math.abs((i.y || 0) - t.y) > 6)
+            t.x = f, t.z = d, t.y = i.y || 0;
+          else {
+            let h = 1 - Math.exp(-n * (imp ? 8 : 16));
+            t.x += (f - t.x) * h, t.z += (d - t.z) * h, t.y += ((i.y || 0) + (imp && imp.oy || 0) - t.y) * h;
+          }
+          t.vx = (i.vx || 0) + (imp ? imp.kx * 0.5 : 0);
+          t.vz = (i.vz || 0) + (imp ? imp.kz * 0.5 : 0);
+        }
+        let l = a.id === p.id ? o.st : i.st, r = a.id === p.id ? o.oc : i.oc, c = l === "out" && r !== "f";
+        t.fall = K(t.fall + (c ? n * 3.2 : -n * 6), 0, 1), t.walk += Math.hypot(t.vx, t.vz) * n * 1.5;
+      }
+    }
+    let En = new Map();
+    function St() {
+      let n = w();
+      for (let a of y.players) {
+        let i = a.state || {}, t = n.phase === "play" && i.rd === n.rid ? i.st : null, l = En.get(a.id);
+        if (t === l || (En.set(a.id, t), l !== "run"))
+          continue;
+        let r = me.get(a.id);
+        t === "out" && a.id !== p.id ? (i.oc === "f" ? _e(a.name + " düştü ve elendi!", "bad") : (_e(a.name + " hareket etti ve elendi!", "bad"), r && fe(r.x, 1.2, r.z, "#ff3d6e", 16, 5)), O("pop")) : t === "fin" && a.id !== p.id && (_e(a.name + " bitiş çizgisine ulaştı!", "good"), r && fe(r.x, 1.5, r.z, "#ffd23f", 16, 6));
+      }
+    }
+    let Ln = new Map();
+    // Geçici yerel savrulma (rakip görsel tahmini) — ağ state gelene kadar
+    let hitImp = new Map();
+    function kt(n) {
+      let a = performance.now();
+      let mapId = (Ye(n, n.phase || "play") || {}).id || "";
+      let isArena = mapId === "final" || mapId === "brawl";
+      let hitRad = isArena ? 1.65 : 1.45;
+      for (let i of y.players) {
+        if (i.id === p.id)
+          continue;
+        let t = i.state;
+        if (t.st !== "run" || t.rd !== n.rid)
+          continue;
+        let l = me.get(i.id);
+        if (!l || l.y < -0.6 || o.y < -0.6)
+          continue;
+        // d,h = benden rakibe doğru birim vektör (rakibi savuracağımız yön)
+        let rx = l.x - o.x, rz = l.z - o.z, u = Math.hypot(rx, rz);
+        if (u >= hitRad)
+          continue;
+        let d = u > 0.0001 ? rx / u : 1, h = u > 0.0001 ? rz / u : 0;
+        // Çakışmayı ayır (ben geri, rakip ileri — yerel tahmin)
+        let overlap = (hitRad - u) * (isArena ? 1.35 : 1.15);
+        o.x -= d * overlap * 0.55;
+        o.z -= h * overlap * 0.55;
+        l.x += d * overlap * 0.45;
+        l.z += h * overlap * 0.45;
+        let myVx = o.vx + o.kx, myVz = o.vz + o.kz;
+        let theirVx = (t.vx || 0), theirVz = (t.vz || 0);
+        // Benim rakibe doğru hız bileşenim
+        let myInto = myVx * d + myVz * h;
+        // Rakibin bana doğru hız bileşeni
+        let theirInto = -(theirVx * d + theirVz * h);
+        let mySpd = Math.hypot(myVx, myVz);
+        let theirSpd = Math.hypot(theirVx, theirVz);
+        let isDash = Math.hypot(o.kx, o.kz) > 5;
+        // Karşılıklı itme — saldıran daha az savrulur, vurulan daha çok
+        // Rakibe doğru hareket ediyorsan veya temas varsa savrulma (dash şart değil)
+        let pushing = myInto > 0.15 || mySpd > 2.5;
+        if (pushing && a - (Ln.get(i.id) || 0) > (isArena ? 70 : 90)) {
+          Ln.set(i.id, a);
+          // Orta seviye itme — dash olmadan da savrulur, dash biraz ekstra verir
+          let base = isArena ? 5.2 : 3.2;
+          let fromSpeed = Math.max(0, myInto) * (isArena ? 1.8 : 1.4) + (mySpd > 3 ? (mySpd - 3) * (isArena ? 0.45 : 0.3) : 0);
+          let dashBonus = isDash ? (isArena ? 5.5 : 4) : 0;
+          let knockThem = base + fromSpeed + dashBonus;
+          // Üst sınır: çok uzağa fırlatmasın
+          knockThem = Math.min(knockThem, isArena ? 12 : 9);
+          // Sen az geriye git
+          let knockMe = Math.min(isArena ? 3.2 : 4, knockThem * 0.28 + Math.max(0, theirInto) * 1.2);
+          o.kx -= d * knockMe;
+          o.kz -= h * knockMe;
+          // Rakibi savur
+          let imp = hitImp.get(i.id) || { kx: 0, kz: 0, vy: 0, ox: 0, oz: 0, oy: 0 };
+          imp.kx += d * knockThem;
+          imp.kz += h * knockThem;
+          imp.ox = (imp.ox || 0) + d * Math.min(1.4, knockThem * 0.08);
+          imp.oz = (imp.oz || 0) + h * Math.min(1.4, knockThem * 0.08);
+          // Hafif yukarı — sadece biraz
+          if (knockThem > 6) {
+            imp.vy = Math.max(imp.vy || 0, isDash ? 4.5 : 2.8);
+            imp.oy = Math.max(imp.oy || 0, isDash ? 0.35 : 0.18);
+            l.y = Math.max(l.y, 0.08);
+          }
+          let ik = Math.hypot(imp.kx, imp.kz);
+          if (ik > 22) { imp.kx *= 22 / ik; imp.kz *= 22 / ik; }
+          hitImp.set(i.id, imp);
+          l.x += d * Math.min(0.7, knockThem * 0.03);
+          l.z += h * Math.min(0.7, knockThem * 0.03);
+          l.vx = (l.vx || 0) + d * knockThem * 0.25;
+          l.vz = (l.vz || 0) + h * knockThem * 0.25;
+          O("hit");
+          re = Math.max(re, Math.min(0.55, knockThem / 16));
+          fe(l.x, 1.1, l.z, isDash ? "#ffd23f" : "#ff6bd6", isDash ? 16 : 12, isDash ? 5 : 4);
+          fe(o.x, 0.9, o.z, "#ffffff", 6, 3);
+        } else if (myInto > 0) {
+          o.kx -= d * myInto * 0.35;
+          o.kz -= h * myInto * 0.35;
+        }
+      }
+    }
+    function applyHitImpulses(n) {
+      for (let [id, imp] of [...hitImp.entries()]) {
+        let l = me.get(id);
+        let pl = C(id);
+        if (!l || !pl || (pl.state && pl.state.st !== "run")) {
+          hitImp.delete(id);
+          continue;
+        }
+        imp.ox = (imp.ox || 0) + imp.kx * n;
+        imp.oz = (imp.oz || 0) + imp.kz * n;
+        if (imp.vy) {
+          imp.oy = (imp.oy || 0) + imp.vy * n;
+          imp.vy -= 24 * n;
+          if ((imp.oy || 0) < 0) { imp.oy = 0; imp.vy = 0; }
+        }
+        l.x += imp.kx * n;
+        l.z += imp.kz * n;
+        if (imp.oy) l.y = Math.max(l.y, imp.oy);
+        let damp = Math.exp(-n * 1.55);
+        imp.kx *= damp;
+        imp.kz *= damp;
+        // offset da yavaşça sönsün (ağ state yakalasın)
+        let od = Math.exp(-n * 0.9);
+        imp.ox *= od;
+        imp.oz *= od;
+        imp.oy = (imp.oy || 0) * Math.exp(-n * 1.8);
+        if (Math.hypot(imp.kx, imp.kz) < 0.06 && Math.abs(imp.vy || 0) < 0.08 && Math.hypot(imp.ox || 0, imp.oz || 0) < 0.05)
+          hitImp.delete(id);
+        else
+          hitImp.set(id, imp);
+      }
+    }
+    let Bn = "";
+    function Pt(n) {
+      bt(), un();
+      let a = w(), i = a.phase || "lobby", t = y.now(), l = Ye(a, i), r = Ze(l, a), c = Ve(a, t), u = i === "play", f = i === "lobby" ? o.st === "lobby" : u && (o.st === "run" || o.st === "fin"), d = 0, h = 0;
+      f && ((U.has("KeyD") || U.has("ArrowRight")) && (d += 1), (U.has("KeyA") || U.has("ArrowLeft")) && (d -= 1), (U.has("KeyW") || U.has("ArrowUp")) && (h += 1), (U.has("KeyS") || U.has("ArrowDown")) && (h -= 1)), (d || h) && (o.fx = d, o.fz = h);
+      let b = Math.hypot(d, h) || 1, m = 1 - Math.exp(-n * 16);
+      if (o.vx += (d / b * rn - o.vx) * m, o.vz += (h / b * rn - o.vz) * m, !d && Math.abs(o.vx) < 0.35 && (o.vx = 0), !h && Math.abs(o.vz) < 0.35 && (o.vz = 0), ne && (ne = !1, f && l.dash && u && o.st === "run" && performance.now() >= te)) {
+        let Z = o.fx, G = o.fz, Be = Math.hypot(Z, G);
+        Be < 0.01 ? (Z = 0, G = 1) : (Z /= Be, G /= Be);
+        let dashPow = (l.id === "final" || l.id === "brawl") ? 26 : 24;
+        o.kx += Z * dashPow, o.kz += G * dashPow, te = performance.now() + 1100, O("jump"), fe(o.x, 0.4, o.z, "#ffffff", 6, 3);
+      }
+      l.push && u && o.st === "run" && kt(a);
+      let g = Math.exp(-n * 2);
+      o.kx *= g, o.kz *= g;
+      let k = Math.hypot(o.kx, o.kz);
+      k > 32 && (o.kx *= 32 / k, o.kz *= 32 / k), k < 0.06 && (o.kx = o.kz = 0), o.x += (o.vx + o.kx) * n, o.z += (o.vz + o.kz) * n;
+      let A = l.bounds(i, r);
+      o.x = K(o.x, A.x0, A.x1), o.z = K(o.z, A.z0, A.z1);
+      let R = l.void && i !== "lobby" && typeof l.support == "function" ? l.support(o.x, o.z, c, a, r) : je, B = !1;
+      if (!R && l.cfg && l.cfg.radius && o.st === "run") {
+        let _rr = l.cfg.radius(c), _hd = Math.hypot(o.x, o.z);
+        if (_hd > _rr) {
+          let _nx = o.x / (_hd || 1), _nz = o.z / (_hd || 1), _out = _hd - _rr;
+          o.kx += _nx * (8 + _out * 3) * n * 60, o.kz += _nz * (8 + _out * 3) * n * 60;
+          if (o.y > -0.05)
+            o.vy = Math.min(o.vy, -4);
+          if (_out > 1.5 && o.y < 0.2)
+            o.vy = Math.min(o.vy, -8);
+        }
+      }
+      f && o.gr && performance.now() - he < 120 && (o.vy = Zn, B = !0, he = -1000000000, o.gr = !1, O("jump")), o.vy -= Yn * n, o.y += o.vy * n, o.gr = !1, R && o.vy <= 0 && o.y <= 0.02 && o.y > -0.7 && (o.y = 0, o.vy = 0, o.gr = !0, u && (R.vx || R.vz) && (o.x += R.vx * n, o.z += R.vz * n), R.plat && R.plat.cp && !R.plat.amp && o.st === "run" && (o.cp = R.plat)), o.y < -40 && (o.y = -40, o.vy = 0), u && (o.y < (l.id === "final" || l.id === "brawl" ? -1.2 : l.fall === "respawn" ? -8 : -3.5) && (o.st === "run" || o.st === "fin" && l.fall === "respawn") && (l.fall === "respawn" ? yt() : vn("f")), o.st === "run" && l.id === "hill" && o.gr && Math.hypot(o.x, o.z) <= 3.2 && (o._hpAcc = (o._hpAcc || 0) + n, o._hpAcc >= 0.2 && (o.hp = (o.hp || 0) + Math.floor(o._hpAcc / 0.2), o._hpAcc %= 0.2, (o._hpSync = o._hpSync || 0), performance.now() - o._hpSync > 300 && (o._hpSync = performance.now(), ee({ hp: o.hp })))), o.st === "run" && (l.localRule && l.localRule(a, t, B), o.st === "run" && l.hazards && l.hazards(n, c, a, r), o.st === "run" && l.kind === "race" && o.z >= l.finishZ(r) && ct())), He();
+      let le = u && l.id === "redlight" ? a.rid + ":" + a.light + ":" + a.lightAt : (u && l.id === "colors" ? a.rid + ":col:" + (a.colMode || "all") + ":" + a.safeCol + ":" + a.lightAt : "");
+      le !== Bn && (Bn = le, le && a.playAt && t - (a.lightAt || 0) < 1500 && (a.lightAt || 0) > a.playAt + 50 && O(l.id === "colors" ? ((a.colMode === "pick") ? "go" : "tick") : (a.light === "red" ? "red" : "green"))), zt(n), applyHitImpulses(n), St();
+      for (let Z = Te.length - 1; Z >= 0; Z--) {
+        let G = Te[Z];
+        if (G.life -= n, G.life <= 0) {
+          Te.splice(Z, 1);
+          continue;
+        }
+        G.vy -= 14 * n, G.x += G.vx * n, G.y += G.vy * n, G.z += G.vz * n, G.y < 0 && l.id === "redlight" && (G.y = 0, G.vy *= -0.4);
+      }
+      re = Math.max(0, re - n * 2.2), ye = Math.max(0, ye - n * 1.6), Me = Math.max(0, Me - n * 1.7);
+    }
+    let Ce = e("cv"), s = Ce.getContext("2d"), Hn = getComputedStyle(document.body).fontFamily, D = 0, E = 0, ke = 1, oe = 0, Ie = 1, Xe = 0, $e = 0, P = {
+        x: 0,
+        y: 4.6,
+        z: -11,
+        pitch: 0,
+        cyf: 0.34,
+        cy: 0,
+        cp: 1,
+        sp: 0
+      };
+    function _n() {
+      Ie = Math.min(2, window.devicePixelRatio || 1), D = innerWidth, E = innerHeight, Ce.width = Math.round(D * Ie), Ce.height = Math.round(E * Ie), Ce.style.width = D + "px", Ce.style.height = E + "px", s.setTransform(Ie, 0, 0, Ie, 0, 0), ke = Math.max(E * 0.92, D * 0.5), P.cy = E * P.cyf, oe = P.cy - ke * Math.tan(P.pitch);
+    }
+    addEventListener("resize", _n), _n();
+    function Dn(n, a, i) {
+      let t = n - P.x, l = a - P.y, r = i - P.z;
+      return {
+        x: t,
+        y: l * P.cp + r * P.sp,
+        z: r * P.cp - l * P.sp
+      };
+    }
+    function Y(n, a, i) {
+      let t = Dn(n, a, i);
+      if (t.z < 0.25)
+        return null;
+      let l = ke / t.z;
+      return {
+        x: D / 2 + t.x * l + Xe,
+        y: P.cy - t.y * l + $e,
+        k: l
+      };
+    }
+    function xe(n, a, i) {
+      s.beginPath(), s.moveTo(n[0].x, n[0].y);
+      for (let t = 1; t < n.length; t++)
+        s.lineTo(n[t].x, n[t].y);
+      s.closePath(), s.fillStyle = a, s.fill(), i && (s.strokeStyle = i, s.lineWidth = 1, s.stroke());
+    }
+    function pe(n, a, i, t) {
+      let l = n.length, r = new Array(l), c = [], u = 0.3;
+      for (let f = 0; f < l; f++)
+        r[f] = Dn(n[f][0], n[f][1], n[f][2]);
+      for (let f = 0; f < l; f++) {
+        let d = r[f], h = r[(f + 1) % l], b = d.z >= u, m = h.z >= u;
+        if (b && c.push(d), b !== m) {
+          let g = (u - d.z) / (h.z - d.z);
+          c.push({
+            x: d.x + (h.x - d.x) * g,
+            y: d.y + (h.y - d.y) * g,
+            z: u
+          });
+        }
+      }
+      if (c.length < 3)
+        return !1;
+      s.beginPath();
+      for (let f = 0; f < c.length; f++) {
+        let d = c[f], h = ke / d.z, b = D / 2 + d.x * h + Xe, m = P.cy - d.y * h + $e;
+        f ? s.lineTo(b, m) : s.moveTo(b, m);
+      }
+      return s.closePath(), a && (s.fillStyle = a, s.fill()), i && (s.strokeStyle = i, s.lineWidth = t || 1, s.stroke()), !0;
+    }
+    function Pe(n, a, i, t, l, r) {
+      pe([
+        [
+          n,
+          l,
+          i
+        ],
+        [
+          a,
+          l,
+          i
+        ],
+        [
+          a,
+          l,
+          t
+        ],
+        [
+          n,
+          l,
+          t
+        ]
+      ], r, r);
+    }
+    function Gn(n, a, i, t, l) {
+      pe([
+        [
+          n,
+          0,
+          a
+        ],
+        [
+          n,
+          0,
+          i
+        ],
+        [
+          n,
+          t,
+          i
+        ],
+        [
+          n,
+          t,
+          a
+        ]
+      ], l, l);
+    }
+    function qe(n, a) {
+      let i = [];
+      for (let t = 0; t < a; t++) {
+        let l = t / a * Math.PI * 2;
+        i.push([
+          Math.cos(l) * n,
+          Math.sin(l) * n
+        ]);
+      }
+      return i;
+    }
+    function Ee(n, a, i, t, l, r) {
+      let c = n.length, u = 0;
+      for (let d = 0; d < c; d++) {
+        let h = n[d], b = n[(d + 1) % c];
+        u += h[0] * b[1] - b[0] * h[1];
+      }
+      let f = u > 0 ? 1 : -1;
+      r != null && (s.globalAlpha = r);
+      for (let d = 0; d < c; d++) {
+        let h = n[d], b = n[(d + 1) % c], m = (b[1] - h[1]) * f, g = -(b[0] - h[0]) * f, k = (h[0] + b[0]) / 2, A = (h[1] + b[1]) / 2;
+        if (m * (P.x - k) + g * (P.z - A) <= 0)
+          continue;
+        let R = Math.hypot(m, g) || 1, B = Xn(l, K(0.62 + 0.38 * ((-g * 0.75 - m * 0.35) / R), 0.45, 1.05));
+        pe([
+          [
+            h[0],
+            i,
+            h[1]
+          ],
+          [
+            b[0],
+            i,
+            b[1]
+          ],
+          [
+            b[0],
+            a,
+            b[1]
+          ],
+          [
+            h[0],
+            a,
+            h[1]
+          ]
+        ], B, B, 1);
+      }
+      pe(n.map(d => [
+        d[0],
+        i,
+        d[1]
+      ]), t, null), s.globalAlpha = 1;
+    }
+    let wt = [
+      {
+        x: 0.05,
+        y: 0.07,
+        s: 1.2,
+        v: 6
+      },
+      {
+        x: 0.3,
+        y: 0.14,
+        s: 0.9,
+        v: 4
+      },
+      {
+        x: 0.55,
+        y: 0.06,
+        s: 1.4,
+        v: 7
+      },
+      {
+        x: 0.78,
+        y: 0.16,
+        s: 1,
+        v: 5
+      },
+      {
+        x: 0.95,
+        y: 0.09,
+        s: 0.8,
+        v: 3
+      }
+    ];
+    function Fe(n, a) {
+      let i = oe, t = Math.max(i, E * 0.3), l = s.createLinearGradient(0, 0, 0, t);
+      if (l.addColorStop(0, n.top), l.addColorStop(1, n.bot), s.fillStyle = l, s.fillRect(0, 0, D, Math.max(0, i) + 2), !(i < E * 0.08)) {
+        if (n.stars) {
+          s.fillStyle = "#fff";
+          for (let r = 0; r < 70; r++) {
+            let c = r * 97 % 100 / 100 * D, u = r * 57 % 100 / 100 * i * 0.95;
+            s.globalAlpha = 0.5 + 0.5 * Math.sin(a * 2 + r), s.fillRect(c, u, 2, 2);
+          }
+          s.globalAlpha = 1;
+        }
+        if (n.sun && i > E * 0.12 && (s.fillStyle = n.sun, s.beginPath(), s.arc(D * 0.82, i * 0.42, Math.max(28, E * 0.055), 0, 7), s.fill()), n.clouds) {
+          s.fillStyle = "rgba(255,255,255,.92)";
+          let r = D * 1.4;
+          for (let c of wt) {
+            let u = (c.x * r - P.x * 10 + a * c.v) % r;
+            u < 0 && (u += r), u -= D * 0.2;
+            let f = Math.min(c.y * E * 1.6 + 8, i * 0.8), d = c.s * E * 0.045;
+            s.beginPath(), s.arc(u, f, d, 0, 7), s.arc(u + d * 1.1, f - d * 0.35, d * 1.15, 0, 7), s.arc(u + d * 2.3, f, d * 0.95, 0, 7), s.rect(u, f, d * 2.3, d * 0.9), s.fill();
+          }
+        }
+        if (n.hills) {
+          let r = (c, u, f, d, h) => {
+            s.fillStyle = c, s.beginPath(), s.moveTo(0, i + 2);
+            for (let b = 0; b <= D + 12; b += 12) {
+              let m = (b + P.x * h) * f, g = i - d - u * (0.5 + 0.5 * Math.sin(m)) * (0.6 + 0.4 * Math.sin(m * 2.3 + 1));
+              s.lineTo(b, g);
+            }
+            s.lineTo(D, i + 2), s.closePath(), s.fill();
+          };
+          r("#a6e3b0", E * 0.1, 0.0042, E * 0.005, 3), r("#7fd18a", E * 0.05, 0.0075, 0, 6);
+        }
+      }
+    }
+    function en(n, a, i, t, l) {
+      let r = Math.max(0, oe), c = s.createLinearGradient(0, r, 0, E);
+      c.addColorStop(0, a), c.addColorStop(1, i), s.fillStyle = c, s.fillRect(0, r, D, E - r);
+      let u = l * 1.4 % 12;
+      for (let f = Math.floor((P.z - 30) / 12) * 12; f < P.z + 220; f += 12) {
+        let d = f + u;
+        pe([
+          [
+            -400,
+            n,
+            d
+          ],
+          [
+            400,
+            n,
+            d
+          ],
+          [
+            400,
+            n,
+            d + 3.6
+          ],
+          [
+            -400,
+            n,
+            d + 3.6
+          ]
+        ], t);
+      }
+    }
+    function qn(n, a, i) {
+      let t = Y(n, 0, a);
+      if (!t || t.k > ke / 4)
+        return;
+      let l = t.k, r = 3 + i % 3;
+      s.fillStyle = "#8a5a3b", s.fillRect(t.x - 0.3 * l, t.y - 1.6 * l, 0.6 * l, 1.6 * l);
+      let c = [
+        "#3fbf6a",
+        "#35a85c",
+        "#4fd17a"
+      ];
+      s.fillStyle = c[i % 3], s.beginPath(), s.arc(t.x, t.y - (r - 0.4) * l, 1.7 * l, 0, 7), s.arc(t.x - 1 * l, t.y - (r - 1.4) * l, 1.4 * l, 0, 7), s.arc(t.x + 1 * l, t.y - (r - 1.4) * l, 1.4 * l, 0, 7), s.fill();
+    }
+    function At(n, a, i) {
+      Fe(Re.day, i);
+      let t = 5, l = Math.floor((P.z + 0.3) / t) * t, r = Math.min($ + 40, P.z + 150), c = s.createLinearGradient(0, oe, 0, E);
+      c.addColorStop(0, "#b6ea7a"), c.addColorStop(1, "#7fd05a"), s.fillStyle = c, s.fillRect(0, oe, D, E - oe);
+      for (let f = r; f >= l; f -= t) {
+        let d = Math.round(f / t), h = d & 1;
+        Pe(-220, -V, f, f + t, 0, h ? "#a5e46c" : "#9adc60"), Pe(V, 220, f, f + t, 0, h ? "#a5e46c" : "#9adc60");
+        let b;
+        f >= $ && f < $ + 30 ? b = h ? "#8bf0b4" : "#78e6a2" : b = h ? "#f6dfae" : "#eed19a", f >= -30 && f < $ + 30 && Pe(-V, V, f, f + t, 0, b);
+      }
+      let u = s.createLinearGradient(0, oe, 0, oe + E * 0.16);
+      u.addColorStop(0, "rgba(230,248,255,.85)"), u.addColorStop(1, "rgba(230,248,255,0)"), s.fillStyle = u, s.fillRect(0, oe, D, E * 0.16), Pe(-V, V, 0, 0.6, 0.01, "#ffffff");
+      for (let f = 0; f < 2; f++)
+        for (let d = 0; d < 16; d++)
+          Pe(-V + d * 2, -V + d * 2 + 2, $ + f * 1.2, $ + f * 1.2 + 1.2, 0.01, d + f & 1 ? "#ffffff" : "#24123f");
+      for (let f = r; f >= l; f -= t) {
+        let d = Math.round(f / t);
+        f >= -30 && f < $ + 30 && (Gn(-V - 0.4, f, f + t, 1.4, d & 1 ? "#ff5c8a" : "#fff5f8"), Gn(V + 0.4, f, f + t, 1.4, d & 1 ? "#ff5c8a" : "#fff5f8")), d % 2 === 0 && (qn(-(V + 5 + d * 7 % 6), f + 1, Math.abs(d)), qn(V + 6 + d * 5 % 5, f + 3, Math.abs(d) + 1));
+      }
+      Tt(n, a), Fn($, V, "BİTİŞ");
+    }
+    function Fn(n, a, i) {
+      let t = Y(-a, 0, n), l = Y(a, 0, n), r = Y(-a, 10.6, n), c = Y(a, 10.6, n);
+      if (!t || !l || !r || !c)
+        return;
+      let u = 1.5 * t.k;
+      s.fillStyle = "#ff3d6e", s.fillRect(t.x - u / 2, r.y, u, t.y - r.y), s.fillRect(l.x - u / 2, c.y, u, l.y - c.y);
+      let f = Y(-a, 10.8, n), d = Y(a, 10.8, n), h = Y(a, 8.2, n), b = Y(-a, 8.2, n);
+      xe([
+        f,
+        d,
+        h,
+        b
+      ], "#24123f", "#ffd23f");
+      let m = Math.max(10, 1.5 * t.k);
+      s.font = "900 " + m + "px " + Hn, s.textAlign = "center", s.textBaseline = "middle", s.fillStyle = "#ffd23f", s.fillText(i, (t.x + l.x) / 2, (f.y + b.y) / 2);
+    }
+    function Tt(n, a) {
+      let i = Y(0, 0, Un);
+      if (!i)
+        return;
+      let t = i.k, l = i.x, r = i.y, c = n.phase === "play", u = c && n.light === "red", f = (a - (n.lightAt || 0)) / 1000, d = c ? u ? K(f / 0.25, 0, 1) : 1 - K(f / 0.5, 0, 1) : 0;
+      s.fillStyle = "rgba(0,0,0,.16)", s.beginPath(), s.ellipse(l, r, 3.6 * t, 0.9 * t, 0, 0, 7), s.fill(), xe([
+        {
+          x: l - 3.4 * t,
+          y: r
+        },
+        {
+          x: l + 3.4 * t,
+          y: r
+        },
+        {
+          x: l + 1.4 * t,
+          y: r - 7.4 * t
+        },
+        {
+          x: l - 1.4 * t,
+          y: r - 7.4 * t
+        }
+      ], "#ff9f43"), xe([
+        {
+          x: l - 3.4 * t,
+          y: r
+        },
+        {
+          x: l + 3.4 * t,
+          y: r
+        },
+        {
+          x: l + 3 * t,
+          y: r - 1.3 * t
+        },
+        {
+          x: l - 3 * t,
+          y: r - 1.3 * t
+        }
+      ], "#ffd166"), s.fillStyle = "#fff", s.beginPath(), s.ellipse(l, r - 7.3 * t, 1.6 * t, 0.55 * t, 0, 0, 7), s.fill(), s.fillStyle = "#ffd7b0", s.save(), s.translate(l - 1.7 * t, r - 6.8 * t), s.rotate(0.35), s.fillRect(-0.45 * t, 0, 0.9 * t, 3.4 * t), s.restore(), s.save(), s.translate(l + 1.7 * t, r - 6.8 * t), s.rotate(-0.35), s.fillRect(-0.45 * t, 0, 0.9 * t, 3.4 * t), s.restore();
+      let h = r - 10.4 * t, b = 2.8 * t, m = Math.max(0.1, Math.abs(Math.cos(d * Math.PI))), g = b * m, k = d > 0.5;
+      if (u) {
+        let B = s.createRadialGradient(l, h, b * 0.6, l, h, b * 2.6);
+        B.addColorStop(0, "rgba(255,30,60,.55)"), B.addColorStop(1, "rgba(255,30,60,0)"), s.fillStyle = B, s.beginPath(), s.arc(l, h, b * 2.6, 0, 7), s.fill();
+      }
+      s.fillStyle = "#3b2a20", s.beginPath(), s.arc(l - g * 1.05, h + 0.5 * t, 0.95 * t, 0, 7), s.arc(l + g * 1.05, h + 0.5 * t, 0.95 * t, 0, 7), s.fill(), s.fillStyle = k ? "#ffd7b0" : "#3b2a20", s.beginPath(), s.ellipse(l, h, Math.max(g, 0.12 * t), b, 0, 0, 7), s.fill(), k ? (s.fillStyle = "#3b2a20", s.beginPath(), s.ellipse(l, h, g, b, 0, Math.PI, 0), s.fill(), s.fillStyle = "#ffd7b0", s.beginPath(), s.ellipse(l, h - 0.2 * t, g * 0.9, b * 0.7, 0, 0, Math.PI), s.fill(), s.fillStyle = u ? "#ff1e3c" : "#2a1a12", u && (s.shadowColor = "#ff1e3c", s.shadowBlur = 16), s.beginPath(), s.ellipse(l - 1 * t * m, h + 0.2 * t, 0.42 * t * m, 0.6 * t, 0, 0, 7), s.ellipse(l + 1 * t * m, h + 0.2 * t, 0.42 * t * m, 0.6 * t, 0, 0, 7), s.fill(), s.shadowBlur = 0, s.strokeStyle = "#b5533c", s.lineWidth = Math.max(1, 0.15 * t), s.beginPath(), s.arc(l, h + 1.2 * t, 0.55 * t * m, 0.1, Math.PI - 0.1), s.stroke()) : (s.fillStyle = "#ff3d6e", s.beginPath(), s.ellipse(l, h - b * 0.85, 1.3 * t, 0.6 * t, 0, 0, 7), s.fill());
+      let A = r - 16.6 * t, R = u ? "#ff1e3c" : "#2ee59d";
+      s.fillStyle = "#24123f", s.fillRect(l - 0.18 * t, A, 0.36 * t, 3.2 * t), s.fillStyle = "#24123f", s.beginPath(), s.arc(l, A, 2 * t, 0, 7), s.fill(), s.shadowColor = R, s.shadowBlur = 24, s.fillStyle = R, s.beginPath(), s.arc(l, A, 1.5 * t, 0, 7), s.fill(), s.shadowBlur = 0;
+    }
+    function Rt(n, a, i) {
+      Fe(n.sky, i), en(-10, n.ab1, n.ab2, n.glow, i);
+      let t = n.radius(a), l = 56;
+      Ee(qe(t, l), -1.4, 0, n.top, n.side);
+      let r = (c, u) => pe(qe(c, l).map(f => [
+        f[0],
+        0.01,
+        f[1]
+      ]), u, null);
+      if (r(t * 0.78, n.r1), r(t * 0.56, n.top), r(t * 0.34, n.r1), r(t * 0.12, n.r2), n.rim(a)) {
+        let c = 0.65 + 0.35 * Math.sin(i * 6);
+        pe(qe(t, 64).map(u => [
+          u[0],
+          0.03,
+          u[1]
+        ]), null, "rgba(255,61,110," + c.toFixed(2) + ")", 4);
+      }
+    }
+    function Ct(n, a, i, t) {
+      Fe(Re.candy, a), en(-10, "#8a6de0", "#4d3399", "rgba(255,255,255,.12)", a);
+      let l = t.plats.slice().sort((u, f) => f.z0 + f.z1 - (u.z0 + u.z1));
+      for (let u of l) {
+        if (u.z1 < P.z - 12 || u.z0 > P.z + 150)
+          continue;
+        let f = u.x;
+        u.amp && (f += u.amp * Math.sin(u.ph + u.sp * i));
+        let d = f - u.w / 2, h = f + u.w / 2, b = u.fin ? "#ffffff" : u.amp ? "#ffb703" : u.cp ? "#7ee2b8" : "#ff8fb1";
+        Ee([
+          [
+            d,
+            u.z0
+          ],
+          [
+            h,
+            u.z0
+          ],
+          [
+            h,
+            u.z1
+          ],
+          [
+            d,
+            u.z1
+          ]
+        ], -0.9, 0, b, u.fin ? "#b9a6e0" : b === "#ffb703" ? "#b57e00" : b === "#7ee2b8" ? "#2f9e7a" : "#c94f78");
+      }
+      let r = t.finishZ;
+      for (let u = 0; u < 2; u++)
+        for (let f = 0; f < 9; f++)
+          Pe(-9 + f * 2, -9 + f * 2 + 2, r + u * 1.4, r + u * 1.4 + 1.4, 0.01, f + u & 1 ? "#ffffff" : "#24123f");
+      Fn(r, 9.5, "BİTİŞ");
+      let c = [];
+      for (let u of t.bars)
+        c.push({
+          z: u.z,
+          fn: () => It(u, i)
+        });
+      return c;
+    }
+    function It(n, a) {
+      let i = n.len / 2, t = 0.3, l = n.ph + n.sp * a, r = Math.cos(l), c = Math.sin(l), u = -c, f = r, d = [
+          [
+            n.x + r * i + u * t,
+            n.z + c * i + f * t
+          ],
+          [
+            n.x + r * i - u * t,
+            n.z + c * i - f * t
+          ],
+          [
+            n.x - r * i - u * t,
+            n.z - c * i - f * t
+          ],
+          [
+            n.x - r * i + u * t,
+            n.z - c * i + f * t
+          ]
+        ];
+      Ee(d, 0.15, n.h, "#ff3d6e", "#a3163f"), Ee(qe(0.6, 10).map(h => [
+        n.x + h[0],
+        n.z + h[1]
+      ]), 0, 1.15, "#ffd23f", "#b58900");
+    }
+    function Et(n, a, i, t, l, r) {
+      let c = r.slice(), u = [];
+      for (let d of y.players) {
+        let h = d.id === p.id ? o.st : d.state.st;
+        if (!h || h === "spec")
+          continue;
+        let b = me.get(d.id);
+        !b || b.y < -13 || c.push({
+          z: b.z,
+          p: d,
+          r: b,
+          st: h
+        });
+      }
+      c.sort((d, h) => h.z - d.z);
+      let f = a === "gameEnd" ? n.winner : null;
+      for (let d of c) {
+        if (d.fn) {
+          d.fn();
+          continue;
+        }
+        let {
+            p: h,
+            r: b,
+            st: m
+          } = d, g = Y(b.x, 0, b.z), k = Y(b.x, b.y, b.z);
+        if (!g || !k)
+          continue;
+        let A = g.k;
+        (!(i.void && a !== "lobby" && t) || !!i.support(b.x, b.z, l, n, t)) && b.y > -0.3 && (s.fillStyle = "rgba(0,0,0,.22)", s.beginPath(), s.ellipse(g.x, g.y, 0.62 * A * (1 - K(b.y, 0, 3) * 0.15), 0.2 * A, 0, 0, 7), s.fill());
+        let B = Math.hypot(b.vx, b.vz) > 0.6 && b.y < 0.05, le = h.id === p.id ? o.oc : h.state.oc, Z = (h.id === p.id ? o.char : h.state && h.state.char) || "char1";
+        an(s, {
+          sx: k.x,
+          sy: k.y,
+          u: A,
+          color: x(h),
+          walk: b.walk,
+          moving: B,
+          fall: b.fall,
+          out: m === "out" && le !== "f",
+          fin: m === "fin" || h.id === f,
+          alpha: m === "out" && le !== "f" ? 0.9 : 1,
+          charType: Z
+        }), b.fall < 0.6 && b.y > -6 && u.push({
+          p: h,
+          r: b,
+          u: A
+        });
+      }
+      for (let {
+            p: d,
+            r: h,
+            u: b
+          } of u) {
+        let m = Y(h.x, h.y + 2.45, h.z);
+        if (!m)
+          continue;
+        let g = K(b * 0.36, 11, 21);
+        s.font = "800 " + g + "px " + Hn, s.textAlign = "center", s.textBaseline = "middle";
+        let k = d.name + (d.id === p.id ? " \u2605" : ""), A = s.measureText(k).width + 14;
+        s.fillStyle = d.id === p.id ? "rgba(46,229,157,.92)" : "rgba(36,18,63,.78)", s.beginPath(), s.roundRect(m.x - A / 2, m.y - g * 0.85, A, g * 1.7, g * 0.85), s.fill(), s.fillStyle = d.id === p.id ? "#24123f" : "#fff", s.fillText(k, m.x, m.y);
+      }
+    }
+    function Lt() {
+      for (let n of Te) {
+        let a = Y(n.x, n.y, n.z);
+        a && (s.globalAlpha = K(n.life / n.max * 1.4, 0, 1), s.fillStyle = n.color, s.beginPath(), s.arc(a.x, a.y, Math.max(1.5, n.size * a.k), 0, 7), s.fill());
+      }
+      s.globalAlpha = 1;
+    }
+    function Bt(n, a, i, t, l) {
+      let r = p.id;
+      if (Qe()) {
+        let b = In();
+        b.includes(F || "") || (F = b[0] || null), F && (r = F);
+      }
+      let c = me.get(r) || {
+          x: o.x,
+          z: o.z
+        }, u = a.camera(c, i, t, l), f = ve ? 1 : 1 - Math.exp(-n * 9), d = ve ? 1 : 1 - Math.exp(-n * 11), h = ve ? 1 : 1 - Math.exp(-n * 6);
+      P.x += (u.x - P.x) * f, P.z += (u.z - P.z) * d, P.y += (u.y - P.y) * h, P.pitch += (u.pitch - P.pitch) * h, P.cyf += (u.cyf - P.cyf) * h, ve = !1, P.cy = E * P.cyf, P.cp = Math.cos(P.pitch), P.sp = Math.sin(P.pitch), oe = P.cy - ke * Math.tan(P.pitch);
+    }
+    let Le = [];
+    function Ht(n, a) {
+      let i = w(), t = i.phase || "lobby", l = y.now(), r = Ye(i, t), c = Ze(r, i), u = Ve(i, l);
+      Bt(n, r, i, u, c), Xe = (Math.random() - 0.5) * re * 16, $e = (Math.random() - 0.5) * re * 16, s.clearRect(0, 0, D, E);
+      let f = r.world(i, l, a, u, c) || [];
+      Et(i, t, r, c, u, f), Lt(), ye > 0 && (s.fillStyle = "rgba(255,30,70," + ye * 0.45 + ")", s.fillRect(0, 0, D, E)), t === "gameEnd" && i.winner && Le.length < 120 && Math.random() < 0.7 && Le.push({
+        x: Math.random() * D,
+        y: -12,
+        vx: J(-30, 30),
+        vy: J(90, 220),
+        r: Math.random() * 6,
+        vr: J(-6, 6),
+        c: ge[Math.random() * ge.length | 0],
+        s: J(6, 12)
+      });
+      for (let d = Le.length - 1; d >= 0; d--) {
+        let h = Le[d];
+        if (h.x += h.vx * n, h.y += h.vy * n, h.r += h.vr * n, h.y > E + 20 || t !== "gameEnd") {
+          Le.splice(d, 1);
+          continue;
+        }
+        s.save(), s.translate(h.x, h.y), s.rotate(h.r), s.fillStyle = h.c, s.fillRect(-h.s / 2, -h.s / 4, h.s, h.s / 2), s.restore();
+      }
+      Me > 0 && (s.fillStyle = "rgba(36,18,63," + K(Me, 0, 1) + ")", s.fillRect(0, 0, D, E));
+    }
+    let ae = {
+        tl: e("tl"),
+        tr: e("tr"),
+        tc: e("tc"),
+        msg: e("msg"),
+        feed: e("feed"),
+        hint: e("hint"),
+        ping: e("ping"),
+        plist: e("plist"),
+        note: e("lobbyNote")
+      }, Kn = "", nn = -1, tn = !1;
+    function On(n, a) {
+      let i = n.roster || [], t = n.scores || {};
+      return i.slice().sort((l, r) => (t[r] || 0) - (t[l] || 0)).map(l => {
+        let r = (n.elim || []).includes(l), c = r ? "\uD83D\uDC80" : "";
+        if (!r && !a && n.phase === "play") {
+          let u = C(l);
+          u && u.state.rd === n.rid && (c = u.state.st === "fin" ? "\u2705" : u.state.st === "out" ? "\u274C" : "\uD83C\uDFC3");
+        }
+        return a && n.winner === l && (c = "\uD83D\uDC51"), "<div class=\"row" + (l === p.id ? " me" : "") + (r ? " out" : "") + "\"><i style=\"background:" + Q(l) + "\"></i><span class=\"n\">" + W(L(l)) + "</span><span class=\"sc\">" + (t[l] || 0) + "</span><span>" + c + "</span></div>";
+      }).join("");
+    }
+    function X(n, a) {
+      n._h !== a && (n._h = a, n.innerHTML = a);
+    }
+    function _t() {
+      let n = w(), a = n.phase || "lobby", i = y.now(), t = performance.now(), l = Ye(n, a), r = Ze(l, n), c = Ve(n, i), u = a === "play" && l.id === "redlight" && n.light === "red", f = "ph-" + a + (u ? " red" : "");
+      if (f !== Kn) {
+        let hadMobile = document.body.classList.contains("show-mobile");
+        document.body.className = f + (hadMobile ? " show-mobile" : "");
+        Kn = f;
+      }
+      // Lobi veya bitişte pause kapansın
+      if ((a === "lobby" || a === "gameEnd") && gamePaused) closeAllUi();
+      updateMobileUI(a);
+      if (a !== "lobby") {
+        let m = Ae(n).length, g = (n.roster || []).length, k = (n.order || []).length || 8, A = (a === "play" || a === "intro") && l.hud ? l.hud(n, c, r) : "";
+        X(ae.tl, "<div class=\"h\">Mini oyun " + (n.round || 1) + "/" + k + "</div><div class=\"m\">" + W(l.name) + "</div><div class=\"big\">Kalan oyuncu <b>" + m + "</b>/" + g + "</div>" + (A ? "<div class=\"sub\">" + W(A) + "</div>" : "")), X(ae.tr, "<div class=\"ttl\">Skor</div>" + On(n, !1));
+      }
+      if (a === "play") {
+        let m = Math.max(0, Math.ceil((n.endsAt - i) / 1000)), g;
+        if (l.id === "redlight")
+          g = "<div class=\"lb " + (u ? "red" : "green") + "\">" + (u ? "Kırmızı ışık \u2014 DUR!" : "Yeşil ışık \u2014 KOŞ!") + "</div>";
+        else {
+          let k = l.banner ? l.banner(n, c) : l.name;
+          g = "<div class=\"lb " + (l.id === "final" || l.id === "brawl" && c >= 40 ? "warn" : "wait") + "\">" + W(k) + "</div>";
+        }
+        X(ae.tc, g + "<div class=\"tm" + (m <= 10 ? " low" : "") + "\">" + m + " sn</div>");
+      } else
+        a === "intro" ? X(ae.tc, "<div class=\"lb wait\">Hazırlan\u2026</div>") : X(ae.tc, "");
+      let d = "", h = Qe();
+      if (ze && t < ze.until ? d = ze.html : ze = null, a === "intro" && !d) {
+        let m = (n.endsAt - i) / 1000;
+        if (m > 3.2)
+          d = "<div class=\"k\">Mini oyun " + (n.round || 1) + "/" + ((n.order || []).length || 8) + "</div><div class=\"t\">" + W(l.name) + "</div><div class=\"d\">" + l.rules.map(W).join("<br>") + "</div>" + (o.st === "spec" ? "<div class=\"small\">Bu turda izleyicisin.</div>" : "");
+        else {
+          let g = Math.max(1, Math.ceil(m));
+          d = "<div class=\"cnt\" data-c=\"" + g + "\">" + g + "</div>", g !== nn && (nn = g, O("tick"));
+        }
+      } else
+        nn = -1;
+      if (a === "play" && !d && (n.playAt && i - n.playAt < 1200 ? d = "<div class=\"go\">BAŞLA!</div>" : o.st === "fin" ? d = "<div class=\"small\">Bitirdin! Diğer oyuncuların sonucu bekleniyor\u2026</div>" : h && (d = "<div class=\"small\">İzliyorsun \xB7 A / D ile oyuncu değiştir" + (F ? " \xB7 " + W(L(F)) : "") + "</div>")), a === "play" && n.playAt && i - n.playAt < 1200 && !tn && (tn = !0, O("go")), a !== "play" && (tn = !1), a === "roundEnd" && n.results) {
+        let m = n.results, g = m.q.includes(p.id) ? "good" : m.e.includes(p.id) ? "bad" : "";
+        d = (g === "good" ? "<div class=\"good\">Hayatta kaldın!</div>" : g === "bad" ? "<div class=\"bad\">Elendin</div>" : "<div class=\"k\">Tur bitti</div>") + "<div class=\"list\">" + (m.q.length ? "\u2705 Kazananlar: " + m.q.map(k => W(L(k))).join(", ") + "<br>" : "") + (m.e.length ? "\uD83D\uDC80 Elenenler: " + m.e.map(k => W(L(k))).join(", ") : "Kimse elenmedi") + (m.note ? "<br><span style=\"color:var(--sun)\">" + W(m.note) + "</span>" : "") + "</div>";
+      }
+      X(ae.msg, a === "gameEnd" ? "" : d);
+      for (let m = be.length - 1; m >= 0; m--)
+        be[m].until < t && be.splice(m, 1);
+      X(ae.feed, be.map(m => "<div class=\"" + m.kind + "\">" + W(m.text) + "</div>").join(""));
+      let b = l.hint || "";
+      if (a === "lobby")
+        b = isTouchDevice ? "Sol: yön \xB7 Sağ: zıpla / atıl \xB7 Oda kodunu paylaş" : "WASD: hareket \xB7 SPACE: zıpla \xB7 M: ses \xB7 Oda kodunu paylaş";
+      else if (h)
+        b = isTouchDevice ? "İzliyorsun" : "A / D: izlenen oyuncu \xB7 M: ses";
+      else if (isTouchDevice) {
+        b = l.dash ? "Sol joystick: hareket \xB7 Zıpla / Atıl" : "Sol joystick: hareket \xB7 Sağ: zıpla";
+        if (l.dash) {
+          let m = Math.max(0, (te - t) / 1000);
+          b += " (" + (m > 0 ? m.toFixed(1) + " sn" : "hazır") + ")";
+        }
+      } else if (l.dash) {
+        let m = Math.max(0, (te - t) / 1000);
+        b = l.hint + " (" + (m > 0 ? m.toFixed(1) + " sn" : "hazır") + ")";
+      }
+      X(ae.hint, W(b)), X(ae.ping, T ? "çevrimdışı test modu" : "ping " + Math.round(y.ping || 0) + " ms"), a === "lobby" && Dt(n), a === "gameEnd" && Gt(n, i);
+    }
+    // URL'de room = bir odaya bağlanıldı (invite veya kod)
+    let arrivedViaInvite = !!(S.get("room"));
+    function isLobbyHostView() {
+      if (T) return true;
+      let st = w() || {};
+      let cid = st.creatorId;
+      // Kurucu id atanmışsa sadece o kişi kurucu görünümü alır (çıkmış olsa bile başkası almaz)
+      if (cid) return cid === p.id;
+      // Henüz kurucu yok: yalnız / SDK host ilk giren olabilir
+      if (y.players.length <= 1) return true;
+      return isRealHost();
+    }
+    function applyGuestChrome(hostView) {
+      try {
+        document.body.classList.toggle("guest-lobby", !hostView);
+      } catch (_) {}
+      let hostOnly = e("roomHostOnly"), gw = e("guestWait");
+      if (hostOnly) hostOnly.style.display = hostView ? "" : "none";
+      if (gw) gw.style.display = hostView ? "none" : "block";
+      if (!hostView) {
+        let el = e("roomCodeEl");
+        if (el) { el.textContent = ""; el.classList.add("empty"); }
+      }
+    }
+    function updateRoomBox() {
+      let hostView = isLobbyHostView();
+      applyGuestChrome(hostView);
+      let el = e("roomCodeEl"), hint = e("roomHint");
+      if (!hostView) return;
+      let code = (y && y.code) ? String(y.code) : "";
+      if (el) {
+        if (code) {
+          el.textContent = code;
+          el.classList.remove("empty");
+        } else {
+          el.textContent = T ? "çevrimdışı" : "bağlanıyor…";
+          el.classList.add("empty");
+        }
+      }
+      if (hint) {
+        if (T) hint.textContent = "Çevrimdışı test modu — gerçek oda için oyunu Antics üzerinde aç.";
+        else if (code) hint.textContent = "Kodu sadece sen görürsün. Arkadaşlarına söyle; onlar beklemede kalır, sen başlatırsın.";
+        else hint.textContent = "Oda kodu yükleniyor…";
+      }
+    }
+    function copyText(txt, btn) {
+      if (!txt) return;
+      let done = () => {
+        if (!btn) return;
+        let old = btn.textContent;
+        btn.textContent = "Kopyalandı!";
+        setTimeout(() => { btn.textContent = old; }, 1400);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(txt).then(done).catch(() => {
+          try {
+            let ta = document.createElement("textarea");
+            ta.value = txt; document.body.appendChild(ta); ta.select();
+            document.execCommand("copy"); document.body.removeChild(ta); done();
+          } catch (_) {}
+        });
+      } else {
+        try {
+          let ta = document.createElement("textarea");
+          ta.value = txt; document.body.appendChild(ta); ta.select();
+          document.execCommand("copy"); document.body.removeChild(ta); done();
+        } catch (_) {}
+      }
+    }
+    (function wireRoomButtons() {
+      let ccb = e("copyCodeBtn"), crb = e("createRoomBtn");
+      if (ccb) ccb.onclick = () => { de(); O("pop"); copyText(y && y.code ? String(y.code) : "", ccb); };
+      if (crb) crb.onclick = () => createNewRoom();
+      updateRoomBox();
+    })();
+    function Dt(n) {
+      let a = y.host;
+      updateRoomBox();
+      X(ae.plist, y.players.map(l => {
+        let c = ((l.id === p.id ? o.char : l.state && l.state.char) || "char1") === "char1" ? "\uD83E\uDDD4 Sakallı" : "\uD83C\uDFA9 Fötr Şapkalı";
+        return "<div class=\"pl" + (l.id === p.id ? " me" : "") + "\"><i style=\"background:" + x(l) + "\"></i><span class=\"n\">" + W(l.name) + (l.id === p.id ? " (sen)" : "") + "</span><span class=\"cbadge\">" + c + "</span>" + (a && l.id === a.id ? "<em>host</em>" : "") + (n.creatorId && l.id === n.creatorId ? "<em style=\"background:var(--mint)\">kurucu</em>" : "") + "</div>";
+      }).join(""));
+      let st = n || w();
+      // Kurucu sabit kalır; çıkmış kurucu yerine başkası atanmaz
+      if (!st.creatorId && isRealHost() && y.players.length <= 1) {
+        try { y.setState({ creatorId: p.id }); st = Object.assign({}, st, { creatorId: p.id }); } catch (_) {}
+      }
+      let hostView = isLobbyHostView();
+      let isCreator = !st.creatorId || st.creatorId === p.id;
+      // Sadece kurucu başlatır (SDK host değişse bile)
+      let canStart = hostView && isCreator;
+      if (T && isCreator) canStart = true;
+      if (!hostView) canStart = false;
+      let i = e("startBtn");
+      if (i) {
+        i.style.display = canStart ? "" : "none";
+        i.textContent = y.players.length < 2 ? "Solo başlat (test)" : "Oyunu başlat";
+        i.disabled = !1;
+      }
+      let t;
+      let codeStr = (y && y.code) ? String(y.code) : "";
+      if (!canStart) {
+        t = "Bekle — kurucu başlatmadan oyun açılmaz.";
+      } else if (y.players.length < 2) {
+        t = codeStr
+          ? ("Kodun: " + codeStr + " — arkadaşlarına paylaş; onlar odaya girince sen başlat.")
+          : ("Oda kur, kodu paylaş. Arkadaşlar odaya girince lobide bekler; sen başlatırsın.");
+      } else {
+        t = y.players.length + " oyuncu bekliyor. Hazır olunca «Oyunu başlat»a bas (otomatik başlamaz).";
+      }
+      X(ae.note, W(t));
+      let gw = e("guestWait");
+      if (gw && !canStart) {
+        let sub = gw.querySelector(".gw-sub");
+        if (sub) sub.innerHTML = "Kurucu başlatana kadar bekle. Oyun otomatik başlamaz.<br>" + y.players.length + " oyuncu lobide.";
+      }
+    }
+    function Gt(n, a) {
+      let i = (n.startCount || 1) <= 1;
+      n.winner ? (e("endIcon").textContent = "\uD83C\uDFC6", e("endTitle").textContent = i ? "Hayatta kaldın!" : "Genel şampiyon", e("endWho").textContent = n.wname || L(n.winner), e("endWho").style.color = Q(n.winner)) : (e("endIcon").textContent = "\uD83D\uDC80", e("endTitle").textContent = i ? "Oyun bitti" : "Şampiyon yok", e("endWho").textContent = ""), X(e("endRows"), On(n, !0)), X(e("endBack"), "Otomatik olarak lobiye dönülüyor: " + Math.max(0, Math.ceil((n.endsAt - a) / 1000)) + " sn"), e("lobbyBtn").style.display = y.isHost || y.host && y.host.id === p.id ? "" : "none";
+    }
+
+    /* =====================================================================
+       ADMIN SİSTEMİ
+       - Yönetici = odayı kuran (state.creatorId). İlk giren / odayı açan kişi.
+         SDK host değişse bile kurucu ve admin yetkisi BAŞKASINA GEÇMEZ.
+       - Komutlar kurucunun KENDİ oyuncu state'inde (player.state.adm) yayınlanır;
+         alıcılar yalnızca creatorId ile eşleşen oyuncunun adm verisini okur.
+       - Kick: oturum (sid) bazlı -> oyuncu yeni sayfa açınca tekrar girebilir.
+       - Ban: oyuncu id + cihaz kimliği (did) bazlı -> tekrar girse de atılır.
+       ===================================================================== */
+    const admSid = Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
+    let admDid = null;
+    try {
+      admDid = localStorage.getItem("antics_did");
+      if (!admDid) { admDid = "d" + Math.random().toString(36).slice(2, 12) + Date.now().toString(36); localStorage.setItem("antics_did", admDid); }
+    } catch (_) { admDid = admSid; }
+
+    let admBans = [], admKicks = [], admEv = [];
+    let admCache = { b: [], ev: [] };
+    let admWasAdmin = false, admPub = "", admGone = "", admSeen = null, admHostId = null, admOpen = false, admPend = null, admN = 0;
+    let admLobbyEl = null, admBtnEl = null, admFloatEl = null, admFloatBody = null;
+
+    function admIsAdmin() {
+      if (T) return true;
+      let cid = (w() || {}).creatorId;
+      // Kurucu sabit: sadece creatorId eşleşirse admin
+      if (cid) return cid === p.id;
+      // Henüz atanmamışsa (ilk saniyeler) host + yalnız oda
+      if (y.players.length <= 1 && (y.host ? y.host.id === p.id : y.isHost === true)) return true;
+      return false;
+    }
+    function admKey() { return "antics_bans_" + String(y.code || "x"); }
+    function admLoad() {
+      try { let r = JSON.parse(localStorage.getItem(admKey()) || "[]"); return Array.isArray(r) ? r : []; } catch (_) { return []; }
+    }
+    function admSave() { try { localStorage.setItem(admKey(), JSON.stringify(admBans)); } catch (_) {} }
+    function admFind(id) { return y.players.find(a => a.id === id) || null; }
+
+    // Kurucunun yayınladığı komut verisi (tek güvenilir kaynak)
+    function admRead() {
+      let cid = (w() || {}).creatorId;
+      let h = cid ? admFind(cid) : null;
+      // Kurucu çevrimdışıysa room state yedek; host'a güvenme
+      let d = h && h.state ? h.state.adm : null;
+      if (!d) { let st = w(); d = st && st.adm; }
+      return d && typeof d === "object" ? d : null;
+    }
+    function admPublish() {
+      let d = { b: admBans.map(b => [b.id, b.did || "", b.name || ""]), k: admKicks.slice(0, 30), ev: admEv.slice(-4) };
+      let str = JSON.stringify(d);
+      if (str === admPub) return;
+      admPub = str;
+      d.v = Date.now();
+      try { p.setState({ adm: d }); } catch (_) {}
+      try { y.setState({ adm: d }); } catch (_) {}
+    }
+    function admPushEv(type, name) {
+      admEv.push([Date.now().toString(36) + Math.random().toString(36).slice(2, 6), type, name || "Oyuncu"]);
+      admEv = admEv.slice(-4);
+    }
+
+    /* ---- Yönetici eylemleri ---- */
+    function admKick(id) {
+      if (!admIsAdmin() || id === p.id) return;
+      let t = admFind(id);
+      if (!t) return;
+      let k = t.state && t.state.sid ? t.state.sid : "id:" + id;
+      if (!admKicks.includes(k)) admKicks.push(k);
+      admPushEv("kick", t.name);
+      admPublish();
+    }
+    function admBan(id) {
+      if (!admIsAdmin() || id === p.id) return;
+      let t = admFind(id);
+      if (!t) return;
+      if (!admBans.some(b => b.id === id))
+        admBans.push({ id: id, did: (t.state && t.state.did) || "", name: t.name || "Oyuncu" });
+      admPushEv("ban", t.name);
+      admSave();
+      admPublish();
+    }
+    function admUnban(id) {
+      if (!admIsAdmin()) return;
+      admBans = admBans.filter(b => b.id !== id);
+      admSave();
+      admPublish();
+    }
+
+    /* ---- Hedef oyuncu tarafı: kick / ban uygula ---- */
+    function admEject(type) {
+      if (admGone) return;
+      admGone = type;
+      let code = String(y.code || S.get("room") || "");
+      let left = false;
+      try { if (typeof y.leave === "function") { y.leave(); left = true; } } catch (_) {}
+      if (!left) {
+        try { sessionStorage.setItem("antics_adm_gone", JSON.stringify({ type: type, code: code })); } catch (_) {}
+        location.href = admMenuUrl();
+        return;
+      }
+      admShowGone(type, code);
+    }
+    function admEnforce() {
+      if (admGone || admIsAdmin()) return;
+      let d = admRead();
+      if (!d) return;
+      let bans = Array.isArray(d.b) ? d.b : [], kicks = Array.isArray(d.k) ? d.k : [];
+      if (bans.some(b => b && (b[0] === p.id || (b[1] && b[1] === admDid)))) return admEject("ban");
+      if (kicks.includes(admSid) || kicks.includes("id:" + p.id)) return admEject("kick");
+    }
+
+    /* ---- Arayüz (yalnızca yönetici için oluşturulur) ---- */
+    function admPanelHtml() {
+      let now = performance.now(), h = '<div class="adm-h"><span>\uD83D\uDEE1 Admin Paneli</span><em>KURUCU</em></div>';
+      h += '<div class="adm-sub">Oyuncular (' + y.players.length + ')</div>';
+      h += y.players.map(l => {
+        let me = l.id === p.id, id = W(l.id);
+        let ban = admPend && admPend.id === l.id && now < admPend.until;
+        return '<div class="adm-row' + (me ? " me" : "") + '"><i style="background:' + x(l) + '"></i><span class="n">' + W(l.name) + (me ? " (sen)" : "") + '</span>' +
+          (me ? '<span class="tag">yönetici</span>' :
+            '<button class="kk" data-adm="kick" data-id="' + id + '">Kick</button>' +
+            '<button class="bb" data-adm="ban" data-id="' + id + '">' + (ban ? "Emin misin?" : "Ban") + '</button>') + '</div>';
+      }).join("");
+      if (y.players.length <= 1) h += '<div class="adm-empty">Odada başka oyuncu yok.</div>';
+      h += '<div class="adm-sub">Banlılar (' + admBans.length + ')</div>';
+      h += admBans.length
+        ? admBans.map(b => '<div class="adm-row"><span class="n">' + W(b.name || "Oyuncu") + '</span><button class="uu" data-adm="unban" data-id="' + W(b.id) + '">Banı kaldır</button></div>').join("")
+        : '<div class="adm-empty">Banlı oyuncu yok.</div>';
+      return h;
+    }
+    function admBuildUi() {
+      if (admBtnEl) return;
+      let pl = e("plist");
+      if (pl && pl.parentNode) {
+        admLobbyEl = document.createElement("div");
+        admLobbyEl.className = "adm-box";
+        pl.parentNode.insertBefore(admLobbyEl, pl.nextSibling);
+      }
+      admBtnEl = document.createElement("button");
+      admBtnEl.id = "admBtn"; admBtnEl.className = "go"; admBtnEl.textContent = "\uD83D\uDEE1 Admin";
+      admBtnEl.setAttribute("data-adm", "open");
+      document.body.appendChild(admBtnEl);
+      admFloatEl = document.createElement("div");
+      admFloatEl.id = "admFloat";
+      admFloatEl.innerHTML = '<div class="admcard panel"><div class="adm-body"></div><button class="alt" data-adm="close">Kapat</button></div>';
+      admFloatBody = admFloatEl.querySelector(".adm-body");
+      document.body.appendChild(admFloatEl);
+    }
+    function admTeardownUi() {
+      [admLobbyEl, admBtnEl, admFloatEl].forEach(n => { try { n && n.remove(); } catch (_) {} });
+      admLobbyEl = admBtnEl = admFloatEl = admFloatBody = null;
+      admOpen = false; admPend = null;
+    }
+    function admRender() {
+      if (!admBtnEl) return;
+      let lob = (w().phase || "lobby") === "lobby";
+      if (lob) admOpen = false;
+      let html = admPanelHtml();
+      if (admLobbyEl) { admLobbyEl.style.display = lob ? "" : "none"; X(admLobbyEl, html); }
+      admBtnEl.style.display = lob ? "none" : "block";
+      admFloatEl.style.display = admOpen ? "flex" : "none";
+      if (admOpen) X(admFloatBody, html);
+    }
+    document.addEventListener("click", ev => {
+      let b = ev.target && ev.target.closest ? ev.target.closest("[data-adm]") : null;
+      if (!b || !admIsAdmin() || admGone) return;
+      let act = b.getAttribute("data-adm"), id = b.getAttribute("data-id");
+      if (act === "open") admOpen = true;
+      else if (act === "close") { admOpen = false; admPend = null; }
+      else if (act === "kick") admKick(id);
+      else if (act === "unban") admUnban(id);
+      else if (act === "ban") {
+        // Ban geri alınması zahmetli: ilk tık onay ister (3 sn)
+        if (admPend && admPend.id === id && performance.now() < admPend.until) { admPend = null; admBan(id); }
+        else admPend = { id: id, until: performance.now() + 3000 };
+      }
+      try { b.blur(); } catch (_) {}
+      admRender();
+    });
+
+    /* ---- Yetki devri ---- */
+    function admBecome() {
+      let seen = new Set(), list = [];
+      (admCache.b || []).map(b => ({ id: b[0], did: b[1] || "", name: b[2] || "Oyuncu" })).concat(admLoad()).forEach(b => {
+        let k = b.id + "|" + b.did;
+        if (!seen.has(k)) { seen.add(k); list.push(b); }
+      });
+      admBans = list;
+      admKicks = [];
+      admEv = Array.isArray(admCache.ev) ? admCache.ev.slice(-4) : [];
+      admPub = "";
+      admSave();
+      admBuildUi();
+    }
+    function admResign() {
+      admTeardownUi();
+      admBans = []; admKicks = []; admPub = "";
+    }
+
+    /* ---- Herkes: host değişimi ve kick/ban bildirimleri (gerçek zamanlı) ---- */
+    function admHostWatch() {
+      // Kurucu sabit — SDK host değişse bile admin yetkisi devredilmez; bildirim yok
+      let cid = (w() || {}).creatorId;
+      if (cid) admHostId = cid;
+    }
+    function admEvents(isAdm) {
+      let d = isAdm ? { ev: admEv } : admRead();
+      if (!d || !Array.isArray(d.ev)) return;
+      if (admSeen === null) { admSeen = new Set(d.ev.map(q => q[0])); return; }
+      for (let q of d.ev) {
+        if (!q || admSeen.has(q[0])) continue;
+        admSeen.add(q[0]);
+        _e((q[2] || "Oyuncu") + (q[1] === "ban" ? " banlandı" : " kicklendi"), "bad");
+      }
+    }
+    function admTick() {
+      if (admGone) return;
+      try {
+        if (admN++ % 12 === 0) p.setState({ sid: admSid, did: admDid });
+        let adm = admIsAdmin();
+        if (adm && !admWasAdmin) admBecome();
+        if (!adm && admWasAdmin) admResign();
+        admWasAdmin = adm;
+        admHostWatch();
+        admEvents(adm);
+        if (adm) {
+          admKicks = admKicks.filter(k => y.players.some(a => k.indexOf("id:") === 0 ? "id:" + a.id === k : (a.state && a.state.sid) === k));
+          admCache = { b: admBans.map(b => [b.id, b.did, b.name]), ev: admEv.slice() };
+          admPublish();
+          admRender();
+        } else {
+          let d = admRead();
+          if (d) admCache = { b: Array.isArray(d.b) ? d.b : [], ev: Array.isArray(d.ev) ? d.ev : [] };
+          admEnforce();
+        }
+      } catch (err) { console.warn("admin", err); }
+    }
+    try { p.setState({ sid: admSid, did: admDid }); } catch (_) {}
+    setInterval(admTick, 350);
+    admTick();
+    /* ===== /ADMIN SİSTEMİ ===== */
+    T && (window.__antics = {
+      room: y,
+      L: o,
+      S: w
+    }), y.players.length && (w().phase || "lobby") !== "lobby" && (o.st = "spec"), p.setState({
+      st: o.st,
+      rdy: !1,
+      char: o.char,
+      x: 0,
+      y: 0,
+      z: 0,
+      vx: 0,
+      vz: 0,
+      at: Math.round(y.now())
+    }), dn(), (w().phase || "lobby") !== "lobby" && ee({ st: "spec" }), un(), P.x = o.x * 0.75, P.z = o.z - 9.5;
+    let Wn = performance.now();
+    function jn(n) {
+      let a = Math.min(0.05, Math.max(0.001, (n - Wn) / 1000));
+      Wn = n;
+      try {
+        // Pause: fizik/hareket dursun, sahne + HUD çizilmeye devam etsin
+        if (!gamePaused) Pt(a);
+        else U.clear();
+        Ht(a, n / 1000), _t();
+      } catch (i) {
+        console.error(i);
+      }
+      requestAnimationFrame(jn);
+    }
+    requestAnimationFrame(jn);
   }
 }
-
-server.listen(PORT, () => {
-  console.log(`Antics Royale MP server listening on :${PORT}`);
-});
+et();
+</script>
+</body>
+</html>
