@@ -9,7 +9,7 @@ const cors = require("cors");
 const crypto = require("crypto");
 
 const PORT = process.env.PORT || 3001;
-const MAX_PLAYERS = 8;
+const MAX_PLAYERS = 16;
 const CODE_LEN = 5;
 const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no I/O/0/1
 const IDLE_ROOM_MS = 45 * 60 * 1000;
