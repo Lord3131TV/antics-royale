@@ -1,0 +1,18 @@
+{
+  "name": "antics-royale-server",
+  "version": "1.0.0",
+  "description": "Realtime multiplayer server for Antics Royale 3D",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node index.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "socket.io": "^4.8.1"
+  }
+}
