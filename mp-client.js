@@ -9,13 +9,47 @@
  */
 import { io } from "https://cdn.socket.io/4.8.1/socket.io.esm.min.js";
 
-let SERVER_URL =
+const DEFAULT_SERVER_URL = "https://antics-royale.onrender.com";
+
+function normalizeServerUrl(url) {
+  let u = String(url || "").trim().replace(/\/$/, "");
+  if (!u) return DEFAULT_SERVER_URL;
+  // Eski localhost kayıtlarını Render'a taşı
+  try {
+    const host = new URL(u.includes("://") ? u : "http://" + u).hostname;
+    if (host === "localhost" || host === "127.0.0.1") return DEFAULT_SERVER_URL;
+  } catch (_) {
+    if (/localhost|127\.0\.0\.1/i.test(u)) return DEFAULT_SERVER_URL;
+  }
+  return u;
+}
+
+function readStoredServerUrl() {
+  try {
+    if (typeof localStorage === "undefined") return null;
+    const stored = localStorage.getItem("antics_mp_server");
+    if (!stored) return null;
+    const normalized = normalizeServerUrl(stored);
+    // Yanlışlıkla kaydedilmiş localhost'u kalıcı düzelt
+    if (normalized !== stored) {
+      try {
+        localStorage.setItem("antics_mp_server", normalized);
+      } catch (_) {}
+    }
+    return normalized;
+  } catch (_) {
+    return null;
+  }
+}
+
+let SERVER_URL = normalizeServerUrl(
   (typeof window !== "undefined" && window.ANTICS_MP_SERVER) ||
-  (typeof localStorage !== "undefined" && localStorage.getItem("antics_mp_server")) ||
-  "http://localhost:3001";
+    readStoredServerUrl() ||
+    DEFAULT_SERVER_URL
+);
 
 export function setServerUrl(url) {
-  SERVER_URL = String(url || "").replace(/\/$/, "");
+  SERVER_URL = normalizeServerUrl(url);
   try {
     localStorage.setItem("antics_mp_server", SERVER_URL);
   } catch (_) {}
