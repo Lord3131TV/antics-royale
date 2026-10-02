@@ -9,11 +9,10 @@
  */
 import { io } from "https://cdn.socket.io/4.8.1/socket.io.esm.min.js";
 
-const DEFAULT_SERVER = "https://antics-royale.onrender.com";
 let SERVER_URL =
   (typeof window !== "undefined" && window.ANTICS_MP_SERVER) ||
   (typeof localStorage !== "undefined" && localStorage.getItem("antics_mp_server")) ||
-  DEFAULT_SERVER;
+  "http://localhost:3001";
 
 export function setServerUrl(url) {
   SERVER_URL = String(url || "").replace(/\/$/, "");
@@ -112,7 +111,7 @@ export function joinRoom(opts = {}) {
           return;
         }
         try {
-          const room = buildRoom(socket, res);
+          const room = buildRoom(socket, res, !wantCode);
           settled = true;
           resolve(room);
         } catch (e) {
@@ -123,11 +122,13 @@ export function joinRoom(opts = {}) {
   });
 }
 
-function buildRoom(socket, res) {
+function buildRoom(socket, res, isCreator) {
   const playersMap = new Map();
-  let hostId = res.hostId || null;
-  let roomState = res.state ? { ...res.state } : { phase: "lobby" };
   let myId = res.playerId;
+  // Immediate host assignment for the first / creating player.
+  // Prevents the ~15 s wait when the server omits hostId or elects later.
+  let hostId = res.hostId || (isCreator ? myId : null);
+  let roomState = res.state ? { ...res.state } : { phase: "lobby" };
   let code = res.code;
   let ping = 0;
   let _serverOffset = (res.serverNow || Date.now()) - Date.now();
@@ -155,6 +156,11 @@ function buildRoom(socket, res) {
   (res.players || []).forEach((pl) => upsertPlayer(pl));
   if (!playersMap.has(myId)) {
     upsertPlayer({ id: myId, name: res.name || "Sen", state: {} });
+  }
+
+  // Safety: sole player must be host even if server omitted hostId
+  if (!hostId && playersMap.size <= 1) {
+    hostId = myId;
   }
 
   const me = playersMap.get(myId);
@@ -186,6 +192,10 @@ function buildRoom(socket, res) {
       if (pl.state) p.state = { ...pl.state };
     });
     if (msg.hostId) hostId = msg.hostId;
+    // If we are still the only player after a roster sync, claim host
+    if (!hostId && playersMap.size <= 1) {
+      hostId = myId;
+    }
   });
 
   socket.on("player_join", (msg) => {
@@ -204,6 +214,10 @@ function buildRoom(socket, res) {
     const p = playersMap.get(msg.id);
     playersMap.delete(msg.id);
     if (msg.hostId) hostId = msg.hostId;
+    // Last remaining player becomes host
+    if (!hostId && playersMap.size <= 1) {
+      hostId = myId;
+    }
     leaveListeners.forEach((fn) => {
       try {
         fn(p || { id: msg.id, name: msg.name || "Oyuncu", state: {} });
@@ -360,6 +374,17 @@ function buildRoom(socket, res) {
     } catch (_) {}
     socket.emit("set_name", { name: n });
   };
+
+  // If we claimed host locally, notify listeners immediately so UI/game can react
+  if (isCreator || hostId === myId) {
+    queueMicrotask(() => {
+      hostChangeListeners.forEach((fn) => {
+        try {
+          fn(me);
+        } catch (_) {}
+      });
+    });
+  }
 
   return room;
 }
