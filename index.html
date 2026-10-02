@@ -2590,40 +2590,61 @@ function et() {
       });
     }
     function mt(n, a, i, t, l) {
+      // Round başında / state yüklenmeden asla sonuç hesaplama
+      let playAt = a.playAt || 0;
+      if (!playAt || (i - playAt) < 2000)
+        return null;
+      if (!t || !t.length)
+        return null;
       let r = a.n0 || t.length, c = r > 1, u = i >= a.endsAt;
-      if (n.kind === "race") {
-        let m = t.filter(R => l(R).st === "fin").sort((R, B) => l(R).fa - l(B).fa);
-        if (t.filter(R => l(R).st === "run").length > 0 && !u)
-          return null;
-        let k = m, A = "";
-        return !k.length && t.length && c && (k = [t.slice().sort((B, le) => (C(le).state.z || 0) - (C(B).state.z || 0))[0]], A = "Kimse bitiremedi! En ileri giden kurtuldu."), {
-          q: k,
-          note: A
-        };
-      }
-      // —— Sarı Tepe (hill): sadece süre bitince veya 1 kişi kalınca bit; en düşük 2 puan elenir ——
-      if (n.id === "hill") {
-        let running = t.filter(m => {
-          let s = l(m) || {};
-          return s.st === "run";
+      // Kazanan adaylarından ölü/elenmişleri çıkar
+      function onlyAlive(ids) {
+        return (ids || []).filter(id => {
+          let s = l(id) || {};
+          return s.st === "run" || s.st === "fin";
         });
+      }
+      if (n.kind === "race") {
+        let runners = t.filter(R => (l(R) || {}).st === "run");
+        let finishers = t.filter(R => (l(R) || {}).st === "fin").sort((R, B) => (l(R).fa || 0) - (l(B).fa || 0));
+        // Hâlâ koşan varken ve süre dolmamışken bitirme
+        // NOT: runners===0 başlangıç desync'inde de olabilir → süre dolmadan bitirme
+        if (runners.length > 0 && !u)
+          return null;
+        if (runners.length === 0 && finishers.length === 0 && !u)
+          return null;
+        // Süre doldu veya herkes bitirdi/elendi
+        let k = finishers.slice();
+        let A = "";
+        if (!k.length && u) {
+          // Süre doldu, kimse fin değil → hâlâ koşanlar hayatta (Z ile seçim YOK)
+          k = runners.slice();
+          A = k.length ? "Süre doldu" : "Kimse bitiremedi";
+        }
+        k = onlyAlive(k);
+        return { q: k, note: A };
+      }
+      // —— Sarı Tepe (hill): süre bitince veya 1 kişi kalınca; en düşük 2 puan elenir ——
+      if (n.id === "hill") {
+        let running = t.filter(m => (l(m) || {}).st === "run");
         if (running.length > 1 && !u)
-          return null; // süre dolmadan, 1'den fazla ayaktayken bitirme
+          return null;
+        // Desync: hiç run yok ve süre dolmadı → bekle
+        if (running.length === 0 && !u)
+          return null;
         let needElim = Math.min(2, Math.max(0, t.length - 1));
         let scored = t.map(id => {
           let s = l(id) || {};
           let isOut = s.st === "out" || s.st === "spec";
           let hpVal = typeof s.hp === "number" ? s.hp : 0;
-          // Düşenler elenme önceliği için -1; ama gerçek puanı not için sakla
           return {
             id: id,
             hp: isOut ? -1 : hpVal,
-            realHp: isOut ? hpVal : hpVal,
+            realHp: hpVal,
             out: isOut,
             ot: s.ot || 0
           };
         });
-        // Düşük puan / düşmüş önce elenir; eşitlikte id (stabil, rastgele değil)
         scored.sort((A, B) => {
           if (A.hp !== B.hp) return A.hp - B.hp;
           if (A.out !== B.out) return A.out ? -1 : 1;
@@ -2631,36 +2652,54 @@ function et() {
           return String(A.id).localeCompare(String(B.id));
         });
         let elimSet = new Set(scored.slice(0, needElim).map(x => x.id));
-        let winners = scored.filter(x => !elimSet.has(x.id)).sort((A, B) => (B.realHp - A.realHp) || String(A.id).localeCompare(String(B.id)));
+        // Kazananlar: elenmeyenler — ama out olanlar kazanan olamaz
+        let winners = scored.filter(x => !elimSet.has(x.id) && !x.out)
+          .sort((A, B) => (B.realHp - A.realHp) || String(A.id).localeCompare(String(B.id)));
         let elimList = scored.filter(x => elimSet.has(x.id));
-        // Skor özeti: herkesin puanı görünsün
         let scoreLine = scored.slice().sort((A, B) => B.realHp - A.realHp).map(x => (L(x.id) || "?") + ":" + Math.max(0, x.realHp)).join(" · ");
         try {
           console.log("[HILL END] needElim=" + needElim + " scores=" + scoreLine + " elim=" + elimList.map(x => L(x.id)).join(","));
         } catch (_) {}
         let note = scoreLine + (elimList.length ? (" → elenen: " + elimList.map(x => L(x.id) || "?").join(", ")) : "");
-        return {
-          q: winners.map(x => x.id),
-          note: note
-        };
+        return { q: winners.map(x => x.id), note: note };
       }
-      let f = t.filter(m => l(m).st === "run"), d = c ? n.target(r) : 0;
-      if (!(f.length <= d || u))
+      // —— Diğer survival (arena vb.) ——
+      let f = t.filter(m => (l(m) || {}).st === "run");
+      let outs = t.filter(m => {
+        let s = l(m) || {};
+        return s.st === "out" || s.st === "spec";
+      });
+      let d = c ? n.target(r) : 0;
+      // Desync koruması: henüz kimse run değil ve süre dolmadı → bekle
+      if (f.length === 0 && !u)
         return null;
-      let h = f, b = "";
-      if (!h.length && t.length && c && (h = [t.slice().sort((g, k) => (l(k).ot || 0) - (l(g).ot || 0))[0]], b = "Hepsi aynı anda düştü! En son düşen kurtuldu."), n.final && h.length > 1) {
+      // Erken bitiş: yeterince elenmiş olmalı (sadece sayı düşük diye bitirme)
+      if (!u) {
+        if (f.length > d)
+          return null;
+        // Hedefe ulaşıldı ama hiç kimse elenmemişse (state gecikmesi) bekle
+        if (outs.length === 0 && f.length >= Math.max(1, t.length - 1))
+          return null;
+      }
+      let h = f.slice(), b = "";
+      // Tümü düştü + süre doldu: ölü oyuncuyu kazanan yapma
+      if (!h.length && u) {
+        h = [];
+        b = "Kimse ayakta kalmadı";
+      }
+      // Final arena: süre doldu, birden fazla ayakta → merkeze en yakın (sadece run)
+      if (n.final && h.length > 1 && u) {
         let m = g => {
-          let k = C(g).state;
+          let k = l(g) || {};
           return Math.hypot(k.x || 0, k.z || 0);
         };
-        h = [h.slice().sort((g, k) => m(g) - m(k))[0]], b = "Süre doldu! Merkeze en yakın oyuncu şampiyon.";
+        h = [h.slice().sort((g, k) => m(g) - m(k))[0]];
+        b = "Süre doldu! Merkeze en yakın oyuncu şampiyon.";
       }
-      return {
-        q: h,
-        note: b
-      };
+      h = onlyAlive(h);
+      return { q: h, note: b };
     }
-    function pt(n, a) {
+function pt(n, a) {
       let i = y.now(), l = a.q, c = (n.roster || []).filter(f => !(n.elim || []).includes(f)).filter(f => !l.includes(f)), u = (n.elim || []).concat(c);
       // Puan yok — sadece kazananlar (q) ve elenenler (e)
       y.setState({
