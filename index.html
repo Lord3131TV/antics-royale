@@ -508,8 +508,7 @@ body.ph-lobby #uiTopBtns{display:none}
   <div class="help-card panel">
     <h2>Nasıl oynanır?</h2>
     <ul>
-      <li><b>WASD / Ok tuşları</b> — hareket (kamera yönüne göre)</li>
-      <li><b>Mouse</b> — bakış (oyuna tıkla; 360° yatay, sınırlı dikey)</li>
+      <li><b>WASD / Ok tuşları</b> — hareket</li>
       <li><b>SPACE</b> — zıpla</li>
       <li><b>SHIFT veya E</b> — atıl (dash) — bazı oyunlarda</li>
       <li><b>M</b> — sesi aç/kapa</li>
@@ -3466,20 +3465,11 @@ function pt(n, a) {
         return;
       }
       let f = i === "lobby" ? o.st === "lobby" : u && (o.st === "run" || o.st === "fin"), d = 0, h = 0;
-      f && ((U.has("KeyD") || U.has("ArrowRight")) && (d += 1), (U.has("KeyA") || U.has("ArrowLeft")) && (d -= 1), (U.has("KeyW") || U.has("ArrowUp")) && (h += 1), (U.has("KeyS") || U.has("ArrowDown")) && (h -= 1));
-      // Kamera yönüne göre hareket (PC free-look); mobilde dünya ekseni
-      let moveX = d, moveZ = h;
-      if (f && (d || h) && freeLookActive()) {
-        let sy = Math.sin(lookYaw), cy = Math.cos(lookYaw);
-        // forward=(sy,cy), right=(cy,-sy)
-        moveX = d * cy + h * sy;
-        moveZ = -d * sy + h * cy;
-      }
-      (d || h) && (o.fx = moveX, o.fz = moveZ);
-      let b = Math.hypot(moveX, moveZ) || 1, m = 1 - Math.exp(-n * 16);
-      if (o.vx += (moveX / b * rn - o.vx) * m, o.vz += (moveZ / b * rn - o.vz) * m, !d && !h && Math.abs(o.vx) < 0.35 && (o.vx = 0), !d && !h && Math.abs(o.vz) < 0.35 && (o.vz = 0), ne && (ne = !1, f && l.dash && u && o.st === "run" && performance.now() >= te)) {
+      f && ((U.has("KeyD") || U.has("ArrowRight")) && (d += 1), (U.has("KeyA") || U.has("ArrowLeft")) && (d -= 1), (U.has("KeyW") || U.has("ArrowUp")) && (h += 1), (U.has("KeyS") || U.has("ArrowDown")) && (h -= 1)), (d || h) && (o.fx = d, o.fz = h);
+      let b = Math.hypot(d, h) || 1, m = 1 - Math.exp(-n * 16);
+      if (o.vx += (d / b * rn - o.vx) * m, o.vz += (h / b * rn - o.vz) * m, !d && Math.abs(o.vx) < 0.35 && (o.vx = 0), !h && Math.abs(o.vz) < 0.35 && (o.vz = 0), ne && (ne = !1, f && l.dash && u && o.st === "run" && performance.now() >= te)) {
         let Z = o.fx, G = o.fz, Be = Math.hypot(Z, G);
-        Be < 0.01 ? (Z = Math.sin(lookYaw), G = Math.cos(lookYaw)) : (Z /= Be, G /= Be);
+        Be < 0.01 ? (Z = 0, G = 1) : (Z /= Be, G /= Be);
         let dashPow = (l.id === "final" || l.id === "brawl") ? 26 : 24;
         o.kx += Z * dashPow, o.kz += G * dashPow, te = performance.now() + 1100, O("jump"), fe(o.x, 0.4, o.z, "#ffffff", 6, 3);
       }
@@ -3602,126 +3592,21 @@ function pt(n, a) {
         y: 4.6,
         z: -11,
         pitch: 0,
-        yaw: 0,
         cyf: 0.34,
         cy: 0,
         cp: 1,
-        sp: 0,
-        cyaw: 1,
-        syaw: 0
+        sp: 0
       };
-    // Serbest kamera (local): mouse look — multiplayer'a gitmez
-    let lookYaw = 0, lookPitch = 0.42;
-    let lookRmb = false; // sağ tık sürükleme (pointer lock yoksa)
-    const LOOK_SENS = 0.0035;
-    const LOOK_PITCH_MIN = -0.55, LOOK_PITCH_MAX = 1.15;
-    // Sadece gerçek mobil (show-mobile) iken kapat — dokunmatik ekranlı laptop'ta mouse çalışsın
-    function freeLookActive() {
-      // Gerçek mobil kontroller açıkken kapalı; PC (ve dokunmatik laptop) mouse ile bakabilsin
-      if (document.body.classList.contains("show-mobile")) return false;
-      if (gamePaused) return false;
-      let ph = (w().phase || "lobby");
-      if (ph === "gameEnd") return false;
-      // lobby + intro + play + roundEnd: serbest bakış açık
-      return true;
-    }
-    function applyLookDelta(dx, dy) {
-      if (!freeLookActive()) return;
-      if (!dx && !dy) return;
-      lookYaw += dx * LOOK_SENS;
-      // 360° sürekli; periyodik sadeleştir
-      lookYaw = ((lookYaw + Math.PI) % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2) - Math.PI;
-      lookPitch += dy * LOOK_SENS;
-      lookPitch = K(lookPitch, LOOK_PITCH_MIN, LOOK_PITCH_MAX);
-    }
-    // —— PC serbest kamera ——
-    (function setupMouseLook() {
-      function wantLook() {
-        try {
-          if (document.body.classList.contains("show-mobile")) return false;
-          if (gamePaused) return false;
-          let ph = (w() && w().phase) || "lobby";
-          if (ph === "gameEnd") return false;
-          return true;
-        } catch (_) { return false; }
-      }
-      function tryLock() {
-        if (!wantLook()) return;
-        if (document.pointerLockElement === Ce) return;
-        try {
-          let req = Ce.requestPointerLock || Ce.mozRequestPointerLock;
-          if (req) req.call(Ce);
-        } catch (_) {}
-      }
-      // Sol tık: pointer lock
-      function onClick(ev) {
-        if (ev.button != null && ev.button !== 0) return;
-        if (ev.target && (ev.target.closest("button") || ev.target.closest("input") || ev.target.closest("a") || ev.target.closest(".panel"))) return;
-        tryLock();
-      }
-      Ce.style.cursor = "crosshair";
-      Ce.addEventListener("click", onClick);
-      let hud = e("hud");
-      if (hud) hud.addEventListener("click", onClick, true);
-      // Sağ tık sürükle = look (lock olmadan da çalışır)
-      window.addEventListener("mousedown", ev => {
-        if (ev.button === 2 && wantLook()) {
-          lookRmb = true;
-          ev.preventDefault();
-        }
-      });
-      window.addEventListener("mouseup", ev => {
-        if (ev.button === 2) lookRmb = false;
-      });
-      window.addEventListener("contextmenu", ev => {
-        if (wantLook()) ev.preventDefault();
-      });
-      document.addEventListener("mousemove", ev => {
-        let locked = document.pointerLockElement === Ce || document.pointerLockElement === document.body;
-        if (!locked && !lookRmb) return;
-        applyLookDelta(ev.movementX || 0, ev.movementY || 0);
-      });
-      // Yedek: , ve . tuşları ile yatay bakış (mouse kilitlenmezse)
-      addEventListener("keydown", ev => {
-        if (!wantLook()) return;
-        if (ev.target && (ev.target.tagName === "INPUT" || ev.target.tagName === "TEXTAREA")) return;
-        const step = 0.12;
-        if (ev.code === "Comma") applyLookDelta(-step / LOOK_SENS, 0);
-        if (ev.code === "Period") applyLookDelta(step / LOOK_SENS, 0);
-        if (ev.code === "Semicolon") applyLookDelta(0, -step / LOOK_SENS);
-        if (ev.code === "Quote") applyLookDelta(0, step / LOOK_SENS);
-      });
-      // Oyun başlayınca otomatik lock dene (kullanıcı bir kez tıkladıysa)
-      let lastPh = "";
-      setInterval(() => {
-        try {
-          let ph = (w() && w().phase) || "lobby";
-          if (ph !== lastPh && (ph === "intro" || ph === "play") && lastPh) {
-            // phase değişimi — kullanıcıya tıkla hatırlatması için cursor
-            Ce.style.cursor = "crosshair";
-          }
-          lastPh = ph;
-          if (gamePaused && document.pointerLockElement) {
-            try { document.exitPointerLock && document.exitPointerLock(); } catch (_) {}
-          }
-        } catch (_) {}
-      }, 200);
-    })();
     function _n() {
       Ie = Math.min(2, window.devicePixelRatio || 1), D = innerWidth, E = innerHeight, Ce.width = Math.round(D * Ie), Ce.height = Math.round(E * Ie), Ce.style.width = D + "px", Ce.style.height = E + "px", s.setTransform(Ie, 0, 0, Ie, 0, 0), ke = Math.max(E * 0.92, D * 0.5), P.cy = E * P.cyf, oe = P.cy - ke * Math.tan(P.pitch);
     }
     addEventListener("resize", _n), _n();
     function Dn(n, a, i) {
-      // Dünya → kamera: yaw bakış yönü (sin,cos), sonra pitch
-      // right=(cy,-sy), forward=(sy,cy)
       let t = n - P.x, l = a - P.y, r = i - P.z;
-      let cy = P.cyaw, sy = P.syaw;
-      let tx = t * cy - r * sy;
-      let tz = t * sy + r * cy;
       return {
-        x: tx,
-        y: l * P.cp + tz * P.sp,
-        z: tz * P.cp - l * P.sp
+        x: t,
+        y: l * P.cp + r * P.sp,
+        z: r * P.cp - l * P.sp
       };
     }
     function Y(n, a, i) {
@@ -4151,17 +4036,14 @@ function pt(n, a) {
         if (!h || h === "spec")
           continue;
         let b = me.get(d.id);
-        if (!b || b.y < -13) continue;
-        let _d = Dn(b.x, b.y, b.z);
-        c.push({
-          z: _d ? _d.z : b.z,
+        !b || b.y < -13 || c.push({
+          z: b.z,
           p: d,
           r: b,
           st: h
         });
       }
-      // Kamera derinliğine göre sırala (dünya Z değil — yan/arka bakışta senkron)
-      c.sort((d, h) => (h.z || 0) - (d.z || 0));
+      c.sort((d, h) => h.z - d.z);
       let f = a === "gameEnd" ? n.winner : null;
       for (let d of c) {
         if (d.fn) {
@@ -4225,55 +4107,9 @@ function pt(n, a) {
       }
       let c = me.get(r) || {
           x: o.x,
-          y: o.y,
           z: o.z
-        };
-      let base = a.camera(c, i, t, l);
-      let u;
-      if (freeLookActive()) {
-        // Küresel orbit: kamera her zaman karakter gövdesine bakıyor (konum ↔ pitch senkron)
-        let mapDist = Math.hypot((base.x - (c.x || 0)), (base.z - (c.z || 0)));
-        // Standart üçüncü şahıs mesafe (çok yakın değil)
-        let dist = 9.5;
-        if (mapDist > 14) dist = 11;
-        if (mapDist > 20) dist = 12.5;
-        let yaw = lookYaw, pitch = lookPitch;
-        let cpitch = Math.cos(pitch), spitch = Math.sin(pitch);
-        let px = c.x || 0, pz = c.z || 0;
-        let py = typeof c.y === "number" ? c.y : 0;
-        let lookY = py + 1.15; // gövde/göğüs hizası
-        // Kamera = bakış noktası − forward*dist (forward yatay bileşen cpitch)
-        u = {
-          x: px - Math.sin(yaw) * dist * cpitch,
-          z: pz - Math.cos(yaw) * dist * cpitch,
-          y: lookY + dist * spitch,
-          pitch: pitch,
-          cyf: 0.5, // bakış noktası ekran merkezine yakın
-          yaw: yaw
-        };
-        P.x = u.x;
-        P.z = u.z;
-        P.y = u.y;
-        P.pitch = u.pitch;
-        P.yaw = u.yaw;
-        P.cyf = u.cyf;
-      } else {
-        u = base;
-        let f = ve ? 1 : 1 - Math.exp(-n * 9), d = ve ? 1 : 1 - Math.exp(-n * 11), h = ve ? 1 : 1 - Math.exp(-n * 6);
-        P.x += (u.x - P.x) * f;
-        P.z += (u.z - P.z) * d;
-        P.y += (u.y - P.y) * h;
-        P.pitch += (u.pitch - P.pitch) * h;
-        P.yaw = 0;
-        P.cyf += (u.cyf - P.cyf) * h;
-      }
-      ve = !1;
-      P.cy = E * P.cyf;
-      P.cp = Math.cos(P.pitch);
-      P.sp = Math.sin(P.pitch);
-      P.cyaw = Math.cos(P.yaw);
-      P.syaw = Math.sin(P.yaw);
-      oe = P.cy - ke * Math.tan(P.pitch);
+        }, u = a.camera(c, i, t, l), f = ve ? 1 : 1 - Math.exp(-n * 9), d = ve ? 1 : 1 - Math.exp(-n * 11), h = ve ? 1 : 1 - Math.exp(-n * 6);
+      P.x += (u.x - P.x) * f, P.z += (u.z - P.z) * d, P.y += (u.y - P.y) * h, P.pitch += (u.pitch - P.pitch) * h, P.cyf += (u.cyf - P.cyf) * h, ve = !1, P.cy = E * P.cyf, P.cp = Math.cos(P.pitch), P.sp = Math.sin(P.pitch), oe = P.cy - ke * Math.tan(P.pitch);
     }
     let Le = [];
     function Ht(n, a) {
@@ -4408,11 +4244,6 @@ function pt(n, a) {
       } else if (l.dash) {
         let m = Math.max(0, (te - t) / 1000);
         b = l.hint + " (" + (m > 0 ? m.toFixed(1) + " sn" : "hazır") + ")";
-        if (freeLookActive() && document.pointerLockElement !== Ce)
-          b = "Tıkla veya sağ tut+sürükle: bakış · " + b;
-      } else if (freeLookActive() && document.pointerLockElement !== Ce) {
-        b = "Tıkla veya sağ tut+sürükle: 360° bakış · " + (l.hint || b);
-      }
       X(ae.hint, W(b)), X(ae.ping, T ? "çevrimdışı test modu" : "ping " + Math.round(y.ping || 0) + " ms"), a === "lobby" && Dt(n), a === "gameEnd" && Gt(n, i);
     }
     // URL'de room = bir odaya bağlanıldı (invite veya kod)
