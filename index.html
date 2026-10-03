@@ -2534,7 +2534,7 @@ function et() {
         let roster = n.roster || [];
         let inRoster = roster.length ? roster.includes(p.id) : false;
         if (inRoster) {
-          it(Se(n.mg)), o.hp = 0, o._hpAcc = 0, appliedHitSeq.clear(), lastLocalHitFrom.clear(), hitImp.clear(), hitSeq = 0, lastHitOutAt = 0, ee({
+          it(Se(n.mg)), o.hp = 0, o._hpAcc = 0, appliedHitSeq.clear(), lastLocalHitFrom.clear(), hitImp.clear(), outHits = [], lastHitOutAt = 0, ee({
             st: "run",
             rd: n.rid,
             fa: null,
@@ -3207,59 +3207,52 @@ function et() {
     let hitSeq = 0;
     let appliedHitSeq = new Map(); // attackerId -> son uygulanan seq
     let lastHitOutAt = 0;
-    let lastLocalHitFrom = new Map(); // attackerId -> performance.now (yerel tahmin çift uygulamasını engelle)
+    let outHits = []; // gönderdiğim son vuruşlar (tek slot yerine kuyruk; hiçbir vuruş ezilmez)
     function publishHitOut(victimId, kx, kz, vy) {
-      hitSeq += 1;
+      // seq sayfa yenilense bile geriye düşmesin diye sunucu zamanından türetilir
+      hitSeq = Math.max(hitSeq + 1, Math.round(y.now()));
       lastHitOutAt = performance.now();
-      try {
-        p.setState({
-          hitOut: {
-            id: victimId,
-            kx: ie(kx),
-            kz: ie(kz),
-            vy: ie(vy || 0),
-            seq: hitSeq,
-            t: Math.round(y.now())
-          }
-        });
-      } catch (_) {}
+      outHits.push({ id: victimId, kx: ie(kx), kz: ie(kz), vy: ie(vy || 0), seq: hitSeq, t: Math.round(y.now()) });
+      if (outHits.length > 8) outHits.shift();
+      try { p.setState({ hitOut: outHits.slice() }); } catch (_) {}
     }
     function consumeRemoteHits() {
       if (o.st !== "run") return;
       let now = performance.now();
-      // Eski hitOut yayınını temizle (stale paket)
-      if (lastHitOutAt && now - lastHitOutAt > 450) {
+      // Eski hitOut yayınını temizle
+      if (lastHitOutAt && now - lastHitOutAt > 900) {
         lastHitOutAt = 0;
+        outHits = [];
         try { p.setState({ hitOut: null }); } catch (_) {}
       }
+      let sNow = y.now();
       for (let pl of y.players) {
         if (pl.id === p.id) continue;
-        let ho = pl.state && pl.state.hitOut;
-        if (!ho || typeof ho !== "object") continue;
-        if (ho.id !== p.id) continue;
-        let seq = ho.seq | 0;
-        let prev = appliedHitSeq.get(pl.id) || 0;
-        if (seq <= prev) continue;
-        appliedHitSeq.set(pl.id, seq);
-        // Yakın zamanda aynı saldırgandan yerel tahmin uygulandıysa sadece eksik kısmı tamamla
-        let localAt = lastLocalHitFrom.get(pl.id) || 0;
-        let kx = +ho.kx || 0, kz = +ho.kz || 0, vy = +ho.vy || 0;
-        if (now - localAt < 160) {
-          // Yerel zaten uyguladı; ağı doğrulama olarak kabul et, ekleme
-          continue;
+        let list = pl.state && pl.state.hitOut;
+        if (!list) continue;
+        if (!Array.isArray(list)) list = [list];
+        list = list.filter(h => h && typeof h === "object" && h.id === p.id).sort((m, q) => (m.seq | 0) - (q.seq | 0));
+        for (let ho of list) {
+          let seq = ho.seq | 0;
+          if (seq <= (appliedHitSeq.get(pl.id) || 0)) continue;
+          appliedHitSeq.set(pl.id, seq);
+          // Bayat paket (ör. turdan önce kalmış / geç gelmiş) asla uygulanmaz
+          if (typeof ho.t === "number" && Math.abs(sNow - ho.t) > 1500) continue;
+          let kx = +ho.kx || 0, kz = +ho.kz || 0, vy = +ho.vy || 0;
+          // TEK authoritative sonuç: itilen oyuncunun kendi client'ı impulse'u TAM BİR KEZ uygular
+          o.kx += kx;
+          o.kz += kz;
+          if (vy > 0) {
+            o.vy = Math.max(o.vy, vy);
+            o.gr = !1;
+          }
+          let ik = Math.hypot(o.kx, o.kz);
+          if (ik > 32) { o.kx *= 32 / ik; o.kz *= 32 / ik; }
+          O("hit");
+          re = Math.max(re, Math.min(0.55, Math.hypot(kx, kz) / 16));
+          fe(o.x, 1.1, o.z, Math.hypot(kx, kz) > 8 ? "#ffd23f" : "#ff6bd6", 14, 5);
+          He(!0);
         }
-        o.kx += kx;
-        o.kz += kz;
-        if (vy > 0) {
-          o.vy = Math.max(o.vy, vy);
-          o.gr = !1;
-        }
-        let ik = Math.hypot(o.kx, o.kz);
-        if (ik > 32) { o.kx *= 32 / ik; o.kz *= 32 / ik; }
-        O("hit");
-        re = Math.max(re, Math.min(0.55, Math.hypot(kx, kz) / 16));
-        fe(o.x, 1.1, o.z, Math.hypot(kx, kz) > 8 ? "#ffd23f" : "#ff6bd6", 14, 5);
-        He(!0);
       }
     }
     function kt(n) {
@@ -3285,8 +3278,6 @@ function et() {
         let overlap = (hitRad - u) * (isArena ? 1.35 : 1.15);
         o.x -= d * overlap * 0.55;
         o.z -= h * overlap * 0.55;
-        l.x += d * overlap * 0.45;
-        l.z += h * overlap * 0.45;
         let myVx = o.vx + o.kx, myVz = o.vz + o.kz;
         let theirVx = (t.vx || 0), theirVz = (t.vz || 0);
         // Benim rakibe doğru hız bileşenim
@@ -3312,51 +3303,14 @@ function et() {
             let knockMe = Math.min(isArena ? 3.2 : 4, knockThem * 0.28 + Math.max(0, theirInto) * 1.2);
             o.kx -= d * knockMe;
             o.kz -= h * knockMe;
-            let imp = hitImp.get(i.id) || { kx: 0, kz: 0, vy: 0, ox: 0, oz: 0, oy: 0 };
-            imp.kx += d * knockThem;
-            imp.kz += h * knockThem;
-            imp.ox = (imp.ox || 0) + d * Math.min(1.4, knockThem * 0.08);
-            imp.oz = (imp.oz || 0) + h * Math.min(1.4, knockThem * 0.08);
-            if (knockThem > 6) {
-              imp.vy = Math.max(imp.vy || 0, isDash ? 4.5 : 2.8);
-              imp.oy = Math.max(imp.oy || 0, isDash ? 0.35 : 0.18);
-              l.y = Math.max(l.y, 0.08);
-            }
-            let ik = Math.hypot(imp.kx, imp.kz);
-            if (ik > 22) { imp.kx *= 22 / ik; imp.kz *= 22 / ik; }
-            hitImp.set(i.id, imp);
-            l.x += d * Math.min(0.7, knockThem * 0.03);
-            l.z += h * Math.min(0.7, knockThem * 0.03);
-            l.vx = (l.vx || 0) + d * knockThem * 0.25;
-            l.vz = (l.vz || 0) + h * knockThem * 0.25;
             O("hit");
             re = Math.max(re, Math.min(0.55, knockThem / 16));
-            fe(l.x, 1.1, l.z, isDash ? "#ffd23f" : "#ff6bd6", isDash ? 16 : 12, isDash ? 5 : 4);
+            fe(l.x, 1.1, l.z, isDash ? "#ffd23f" : "#ff6bd6", isDash ? 16 : 12, isDash ? 5 : 4); // sadece efekt; rakibin pozisyonuna DOKUNMA
             fe(o.x, 0.9, o.z, "#ffffff", 6, 3);
             // İtilen oyuncunun kendi client'ına authoritative impulse gönder
             publishHitOut(i.id, d * knockThem, h * knockThem, knockThem > 6 ? (isDash ? 4.5 : 2.8) : 0);
           }
-          // Ben itiliyorsam: yerel tahmin (ağ impulse gelene kadar); consumeRemoteHits asıl kaynağıdır
-          if (beingPushed && !pushing) {
-            let fromTheir = Math.max(0, theirInto) * (isArena ? 1.8 : 1.4) + (theirSpd > 3 ? (theirSpd - 3) * (isArena ? 0.45 : 0.3) : 0);
-            let theirDashBonus = theirDash ? (isArena ? 5.5 : 4) : 0;
-            let knockOnMe = Math.min(base + fromTheir + theirDashBonus, isArena ? 12 : 9);
-            // d = benden rakibe; itilince -d yönünde savrul
-            o.kx -= d * knockOnMe;
-            o.kz -= h * knockOnMe;
-            if (knockOnMe > 6) {
-              o.vy = Math.max(o.vy, theirDash ? 4.5 : 2.8);
-              o.gr = !1;
-            }
-            // Çakışmayı ayır
-            o.x -= d * Math.min(0.7, knockOnMe * 0.03);
-            o.z -= h * Math.min(0.7, knockOnMe * 0.03);
-            lastLocalHitFrom.set(i.id, a);
-            O("hit");
-            re = Math.max(re, Math.min(0.55, knockOnMe / 16));
-            fe(o.x, 1.1, o.z, theirDash ? "#ffd23f" : "#ff6bd6", theirDash ? 16 : 12, theirDash ? 5 : 4);
-            He(!0);
-          }
+          // Ben itiliyorsam: knockback SADECE consumeRemoteHits (saldırganın hitOut'u) ile uygulanır; yerel tahmin yok.
         } else if (myInto > 0) {
           o.kx -= d * myInto * 0.35;
           o.kz -= h * myInto * 0.35;
