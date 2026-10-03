@@ -2477,6 +2477,192 @@ function et() {
         },
         dt
       ], Se = n => Ue.find(a => a.id === n) || Ue[0], Ye = (n, a) => a === "lobby" ? yn : Se(n.mg), gn = "", Mn = null;
+    // ===== YENİ MİNİ OYUNLAR: Araba, Futbol, Backrooms, Ebelemeç =====
+    const xDie = (c, m) => { if (o.st !== "run") return; o.vx = o.vz = o.kx = o.kz = 0; ee({ st: "out", oc: c, ot: Math.round(y.now()), vx: 0, vz: 0 }); z = performance.now(); re = 1; ye = 1; fe(o.x, 1.2, o.z, "#ff3d6e", 22, 6); O("boom"); We('<div class="bad">' + m + '</div><div class="small">Elendin, izleyici oldun</div>', 2600); };
+    const xRun = (n) => Ae(n).filter(id => { let s = C(id).state; return s.rd === n.rid && s.st === "run"; });
+    const xRect = (x0, x1, z0, z1) => [[x0, z0], [x1, z0], [x1, z1], [x0, z1]];
+    // --- 1) ARABA YARIŞI ---
+    let xc = { rid: 0, h: 0, v: 0, cp: 1, lap: 0, off: 0, sent: -1, hd: new Map() };
+    const xCar = {
+      id: "cars", name: "Araba Yarışı", kind: "race", duration: 75000, finishZ: () => 1e9,
+      rules: ["W gaz, S fren, A/D direksiyon. 3 tur at!", "Checkpoint'leri sırayla geç, bitişi 3 tur sonra geç.", "Pistten çıkarsan yavaşlarsın; uzun kalırsan son checkpoint'e dönersin."],
+      spawn(t) { return { x: 22 + (t % 2 ? -2.2 : 2.2), z: -2 - Math.floor(t / 2) * 3.2 }; },
+      camera(c) { return Ne(c.x * 0.7, c.z * 0.7, 22, 0.95, 0.5); },
+      bounds: () => ({ x0: -30, x1: 30, z0: -30, z1: 30 }),
+      drive(dt, a) {
+        if (xc.rid !== a.rid) xc = { rid: a.rid, h: 0, v: 0, cp: 1, lap: 0, off: 0, sent: -1, hd: xc.hd };
+        let c = xc, go = y.now() - (a.playAt || 1e15) >= 3000, k = q => U.has(q);
+        let st = (k("KeyD") || k("ArrowRight") ? 1 : 0) - (k("KeyA") || k("ArrowLeft") ? 1 : 0), th = (k("KeyW") || k("ArrowUp") ? 1 : 0) - (k("KeyS") || k("ArrowDown") ? 1 : 0);
+        if (!go) { th = 0; st = 0; }
+        let r = Math.hypot(o.x, o.z), on = r > 16.5 && r < 27.5;
+        c.v += (th > 0 ? 13 : th < 0 ? -9 : 0) * dt; c.v *= Math.exp(-(th ? 0.35 : 1.3) * dt); c.v = K(c.v, -6, on ? 17 : 5);
+        c.h += st * 2.3 * K(c.v / 5, -1, 1) * dt;
+        let ang = (Math.atan2(o.z, o.x) + 6.2832) % 6.2832, tg = c.cp === 4 ? 0 : c.cp * 1.5708, df = Math.abs(((ang - tg + 9.4248) % 6.2832) - 3.1416);
+        if (on && df < 0.15) { if (c.cp === 4) { c.lap++; c.cp = 1; if (c.lap >= 3) ct(); } else c.cp++; if (c.cp === 4 && false) c.cp = 4; }
+        c.off = on ? 0 : c.off + dt;
+        if (c.off > 2.5) { let th2 = ((c.cp + 3) % 4) * 1.5708; o.x = Math.cos(th2) * 22; o.z = Math.sin(th2) * 22; c.h = -th2; c.v = 0; c.off = 0; He(!0); }
+        o.vx = Math.sin(c.h) * c.v; o.vz = Math.cos(c.h) * c.v; o.kx = o.kz = 0; o.fx = Math.sin(c.h); o.fz = Math.cos(c.h);
+        if (c.sent !== c.lap) { c.sent = c.lap; p.setState({ lap: c.lap }); }
+      },
+      world(n, a, i, t) {
+        Fe(Re.candy, i); s.fillStyle = "#1c5a2a"; s.fillRect(0, 0, D, E);
+        Ee(qe(29, 56), -0.6, 0, "#2f8a3a", "#1d5a28");
+        pe(qe(27, 56).map(f => [f[0], 0.01, f[1]]), "#454550", null); pe(qe(16.5, 56).map(f => [f[0], 0.02, f[1]]), "#2f8a3a", null);
+        for (let ci = 0; ci < 11; ci++) for (let cj = 0; cj < 2; cj++) Pe(16.5 + ci, 17.5 + ci, -1 + cj, cj, 0.03, (ci + cj) % 2 ? "#111" : "#fff");
+        for (let q = 1; q < 4; q++) { let th = q * 1.5708; Pe(Math.cos(th) * 22 - 5, Math.cos(th) * 22 + 5, Math.sin(th) * 22 - 0.25, Math.sin(th) * 22 + 0.25, 0.03, "#ffd23f"); }
+        let out = [];
+        for (let d of y.players) { let b = me.get(d.id), st = d.id === p.id ? o.st : d.state.st; if (!b || (st !== "run" && st !== "fin")) continue;
+          let h = xc.hd.get(d.id) || 0; if (d.id === p.id) h = xc.h; else if (Math.hypot(b.vx, b.vz) > 0.6) h = Math.atan2(b.vx, b.vz); xc.hd.set(d.id, h);
+          let sx = Math.sin(h), cz = Math.cos(h), pt = (u, v) => [b.x + sx * u + cz * v, b.z + cz * u - sx * v];
+          out.push({ z: b.z - 0.5, fn: () => Ee([pt(1, 0.6), pt(1, -0.6), pt(-1, -0.6), pt(-1, 0.6)], 0, 0.55, x(d), "#222") }); }
+        return out;
+      },
+      hud() { return "🏎️ Tur " + Math.min(3, xc.lap + 1) + "/3 · Checkpoint " + Math.min(3, xc.cp) + "/3"; },
+      banner(n, a) { return a < 3 ? String(Math.max(1, Math.ceil(3 - a))) : "Sür!"; },
+      hint: "W: gaz · S: fren · A/D: direksiyon · 3 tur"
+    };
+    // --- 2) FUTBOL (top fiziği host'ta, state room_state ile herkese) ---
+    let xf = { rid: 0 }, xb = { x: 0, z: 0, t: 0 }, xrs = "";
+    const xTeam = (n, id) => Math.max(0, (n.roster || []).indexOf(id)) % 2;
+    const xFt = {
+      id: "soccer", name: "Futbol", kind: "race", duration: 90000, finishZ: () => 1e9,
+      rules: ["Topa çarparak kaleye sok. İki takım: 🔴 / 🔵", "Gol olunca top ve oyuncular başlangıca döner.", "Süre bitince çok gol atan takım kazanır."],
+      hostStart: () => ({ sa: 0, sb: 0, rs: 0, bx: 0, bz: 0, bvx: 0, bvz: 0, bt: 0, fz: 0 }),
+      spawn() { let n = w(), t = xTeam(n, p.id), i = Math.max(0, (n.roster || []).indexOf(p.id)) >> 1; return { x: t ? 7 : -7, z: (i % 3 - 1) * 3 }; },
+      camera(c) { return Ne(c.x * 0.5, c.z * 0.5, 20, 0.95, 0.5); },
+      bounds: () => ({ x0: -14.6, x1: 14.6, z0: -9.6, z1: 9.6 }),
+      hostTick(n, a) {
+        if (!n.playAt) return null;
+        if (xf.rid !== n.rid) xf = { rid: n.rid, x: n.bx || 0, z: n.bz || 0, vx: n.bvx || 0, vz: n.bvz || 0, sa: n.sa || 0, sb: n.sb || 0, rs: n.rs || 0, fz: n.fz || 0, t: a };
+        let S = xf, dt = K((a - S.t) / 1000, 0, 0.1); S.t = a;
+        let pub = () => ({ bx: ie(S.x), bz: ie(S.z), bvx: ie(S.vx), bvz: ie(S.vz), bt: a, sa: S.sa, sb: S.sb, rs: S.rs, fz: S.fz });
+        if (a >= n.endsAt - 1000 || a < S.fz) return pub();
+        for (let id of xRun(n)) { let s = C(id).state, dx = S.x - (s.x || 0), dz = S.z - (s.z || 0), d = Math.hypot(dx, dz);
+          if (d < 0.95) { let nx = d > 0.001 ? dx / d : 1, nz = d > 0.001 ? dz / d : 0, imp = 4 + Math.hypot(s.vx || 0, s.vz || 0) * 1.1; S.vx = nx * imp + S.vx * 0.2; S.vz = nz * imp + S.vz * 0.2; S.x = (s.x || 0) + nx * 0.96; S.z = (s.z || 0) + nz * 0.96; } }
+        let sp = Math.hypot(S.vx, S.vz); if (sp > 17) { S.vx *= 17 / sp; S.vz *= 17 / sp; }
+        S.x += S.vx * dt; S.z += S.vz * dt; let f = Math.exp(-1.1 * dt); S.vx *= f; S.vz *= f;
+        if (Math.abs(S.z) > 9.6) { S.z = Math.sign(S.z) * 9.6; S.vz *= -0.8; }
+        if (Math.abs(S.x) > 14.2) {
+          if (Math.abs(S.z) < 2.6) { if (S.x > 0) S.sa++; else S.sb++; S.x = S.z = S.vx = S.vz = 0; S.rs = a; S.fz = a + 1800; }
+          else { S.x = Math.sign(S.x) * 14.2; S.vx *= -0.8; }
+        }
+        return pub();
+      },
+      localRule(n, now) {
+        let k = n.rid + ":" + (n.rs || 0); if (n.rs && k !== xrs) { xrs = k; let sp = xFt.spawn(); o.x = sp.x; o.z = sp.z; o.vx = o.vz = o.kx = o.kz = 0; He(!0); }
+        if (now >= n.endsAt - 700 && o.st === "run") { let t = xTeam(n, p.id), my = t ? (n.sb || 0) : (n.sa || 0), ot = t ? (n.sa || 0) : (n.sb || 0); if (my >= ot) ct(); }
+      },
+      world(n, now) {
+        Fe(Re.candy, 0); s.fillStyle = "#14502a"; s.fillRect(0, 0, D, E);
+        Ee(xRect(-15.5, 15.5, -10.5, 10.5), -0.5, 0, "#2f8a3a", "#1d5a28");
+        for (let q = -14; q < 14; q += 4) Pe(q, q + 2, -10, 10, 0.01, "#38993f");
+        Pe(-14, 14, -9.6, -9.5, 0.02, "#fff"); Pe(-14, 14, 9.5, 9.6, 0.02, "#fff"); Pe(-0.05, 0.05, -9.6, 9.6, 0.02, "#fff");
+        pe(qe(2.5, 24).map(f => [f[0], 0.02, f[1]]), null, "#fff", 2);
+        Pe(14, 15.4, -2.6, 2.6, 0.03, "#9dc4ff"); Pe(-15.4, -14, -2.6, 2.6, 0.03, "#ff9db0");
+        let dtm = Math.min(0.1, (performance.now() - xb.t) / 1000); xb.t = performance.now();
+        let pr = K((now - (n.bt || now)) / 1000, 0, 0.2), tx = (n.bx || 0) + (n.bvx || 0) * pr, tz = (n.bz || 0) + (n.bvz || 0) * pr, m = 1 - Math.exp(-dtm * 18);
+        if (Math.hypot(tx - xb.x, tz - xb.z) > 4) { xb.x = tx; xb.z = tz; } else { xb.x += (tx - xb.x) * m; xb.z += (tz - xb.z) * m; }
+        let out = [{ z: xb.z, fn: () => { let g = Y(xb.x, 0, xb.z), b = Y(xb.x, 0.5, xb.z); if (!g || !b) return; s.fillStyle = "rgba(0,0,0,.25)"; s.beginPath(); s.ellipse(g.x, g.y, 0.5 * g.k, 0.18 * g.k, 0, 0, 7); s.fill(); s.fillStyle = "#fff"; s.strokeStyle = "#222"; s.lineWidth = 2; s.beginPath(); s.arc(b.x, b.y, 0.5 * b.k, 0, 7); s.fill(); s.stroke(); } }];
+        for (let d of y.players) { let b = me.get(d.id); if (!b) continue; let col = xTeam(n, d.id) ? "#4a90ff" : "#ff4d6d"; out.push({ z: b.z + 0.3, fn: () => { let g = Y(b.x, 0, b.z); if (!g) return; s.strokeStyle = col; s.lineWidth = 3; s.beginPath(); s.ellipse(g.x, g.y, 0.75 * g.k, 0.27 * g.k, 0, 0, 7); s.stroke(); } }); }
+        return out;
+      },
+      hud(n, a) { let l = Math.max(0, Math.ceil((n.endsAt - y.now()) / 1000)); return "🔴 " + (n.sa || 0) + " - " + (n.sb || 0) + " 🔵 · " + l + " sn · Takımın: " + (xTeam(n, p.id) ? "🔵" : "🔴"); },
+      banner(n, a) { return (n.fz && y.now() < n.fz ? "GOOOL! " : "") + "🔴 " + (n.sa || 0) + " - " + (n.sb || 0) + " 🔵"; },
+      hint: "WASD: hareket · Topa çarp, rakip kaleye sok"
+    };
+    // --- 3) BACKROOMS ---
+    let xcr = { rid: 0 }, xv = { x: 0, z: 0, rid: 0 };
+    const xBfs = (b, sx, sz, tx, tz) => { let W = b.W, H = b.H, pv = new Int16Array(W * H).fill(-2), q = [sz * W + sx]; pv[q[0]] = -1;
+      for (let i = 0; i < q.length; i++) { let c = q[i], x = c % W, zz = c / W | 0; if (x === tx && zz === tz) break; let nb = [];
+        if (x < W - 1 && !b.vw[zz][x + 1]) nb.push(c + 1); if (x > 0 && !b.vw[zz][x]) nb.push(c - 1); if (zz < H - 1 && !b.hw[zz + 1][x]) nb.push(c + W); if (zz > 0 && !b.hw[zz][x]) nb.push(c - W);
+        for (let m of nb) if (pv[m] === -2) { pv[m] = c; q.push(m); } }
+      let c = tz * W + tx; if (pv[c] === -2) return null; while (pv[c] >= 0 && pv[c] !== sz * W + sx) c = pv[c]; return c; };
+    const xCell = (b, px, pz) => [K(Math.floor((px - b.ox) / b.cs), 0, b.W - 1), K(Math.floor((pz - b.oz) / b.cs), 0, b.H - 1)];
+    const xBack = {
+      id: "backrooms", name: "Backrooms: Yaratıktan Kaç", kind: "survival", duration: 70000, void: !1, fall: "out", target: () => 1,
+      rules: ["Sarı labirentte yaratıktan kaç!", "Yaratık dokunduğu oyuncuyu eler.", "Son hayatta kalan veya süre bitince hayatta olanlar kazanır."],
+      build(seed) { let a = sn(seed), W = 12, H = 12, cs = 4, vw = [], hw = []; for (let q = 0; q < H; q++) vw.push(Array(W + 1).fill(1)); for (let q = 0; q <= H; q++) hw.push(Array(W).fill(1));
+        let vis = Array(W * H).fill(0), st = [0]; vis[0] = 1;
+        while (st.length) { let c = st[st.length - 1], x = c % W, zz = c / W | 0, nb = [];
+          if (x < W - 1 && !vis[c + 1]) nb.push([c + 1, () => vw[zz][x + 1] = 0]); if (x > 0 && !vis[c - 1]) nb.push([c - 1, () => vw[zz][x] = 0]); if (zz < H - 1 && !vis[c + W]) nb.push([c + W, () => hw[zz + 1][x] = 0]); if (zz > 0 && !vis[c - W]) nb.push([c - W, () => hw[zz][x] = 0]);
+          if (!nb.length) { st.pop(); continue; } let [m, f] = nb[a() * nb.length | 0]; f(); vis[m] = 1; st.push(m); }
+        for (let i = 0; i < W * H * 0.35; i++) { let x = 1 + (a() * (W - 2) | 0), zz = 1 + (a() * (H - 2) | 0); if (a() < 0.5) vw[zz][x] = 0; else hw[zz][x] = 0; }
+        let ox = -W * cs / 2, oz = -H * cs / 2, walls = [];
+        for (let zz = 0; zz < H; zz++) for (let x = 0; x <= W; x++) if (vw[zz][x]) walls.push({ x0: ox + x * cs - 0.25, x1: ox + x * cs + 0.25, z0: oz + zz * cs - 0.25, z1: oz + (zz + 1) * cs + 0.25 });
+        for (let zz = 0; zz <= H; zz++) for (let x = 0; x < W; x++) if (hw[zz][x]) walls.push({ x0: ox + x * cs - 0.25, x1: ox + (x + 1) * cs + 0.25, z0: oz + zz * cs - 0.25, z1: oz + zz * cs + 0.25 });
+        return { W, H, cs, ox, oz, vw, hw, walls }; },
+      spawn(t, l, d) { return { x: d.ox + (0.5 + t % 3) * d.cs, z: d.oz + (0.5 + Math.floor(t / 3)) * d.cs }; },
+      camera(c) { return Ne(c.x, c.z, 13, 0.95, 0.5); },
+      bounds: (i, b) => b ? { x0: b.ox + 0.4, x1: b.ox + b.W * b.cs - 0.4, z0: b.oz + 0.4, z1: b.oz + b.H * b.cs - 0.4 } : { x0: -24, x1: 24, z0: -24, z1: 24 },
+      hostStart: () => ({ crx: 22, crz: 22, crt: 0, crg: null }),
+      hostTick(n, a) {
+        let b = Ze(xBack, n); if (!n.playAt || !b) return null;
+        if (xcr.rid !== n.rid) xcr = { rid: n.rid, x: n.crt ? n.crx : b.ox + (b.W - 0.5) * b.cs, z: n.crt ? n.crz : b.oz + (b.H - 0.5) * b.cs, t: a };
+        let dt = K((a - xcr.t) / 1000, 0, 0.1); xcr.t = a; let ids = xRun(n), tg = null, bd = 1e9;
+        for (let id of ids) { let s = C(id).state, d = Math.hypot((s.x || 0) - xcr.x, (s.z || 0) - xcr.z); if (d < bd) { bd = d; tg = id; } }
+        let el = (a - n.playAt) / 1000;
+        if (tg && el > 6) { let s = C(tg).state, [cx, cz] = xCell(b, xcr.x, xcr.z), [tx, tz] = xCell(b, s.x || 0, s.z || 0), nc = xBfs(b, cx, cz, tx, tz), gx = s.x || 0, gz = s.z || 0;
+          if (nc !== null && !(cx === tx && cz === tz)) { gx = b.ox + (nc % b.W + 0.5) * b.cs; gz = b.oz + ((nc / b.W | 0) + 0.5) * b.cs; }
+          let dx = gx - xcr.x, dz = gz - xcr.z, d = Math.hypot(dx, dz) || 1, sp = (3.4 + Math.min(2.2, el * 0.03)) * dt; xcr.x += dx / d * Math.min(sp, d); xcr.z += dz / d * Math.min(sp, d); }
+        return { crx: ie(xcr.x), crz: ie(xcr.z), crt: a, crg: tg };
+      },
+      localRule(n, now, jmp) {
+        let b = Ze(xBack, n); if (!b) return;
+        for (let it = 0; it < 2; it++) for (let w of b.walls) { if (Math.abs((w.x0 + w.x1) / 2 - o.x) > 3.2 + (w.x1 - w.x0) / 2 || Math.abs((w.z0 + w.z1) / 2 - o.z) > 3.2 + (w.z1 - w.z0) / 2) continue;
+          let cx = K(o.x, w.x0, w.x1), cz = K(o.z, w.z0, w.z1), dx = o.x - cx, dz = o.z - cz, d = Math.hypot(dx, dz);
+          if (d < 0.38) { if (d > 0.0001) { o.x = cx + dx / d * 0.38; o.z = cz + dz / d * 0.38; } else o.x += 0.4; } }
+        if (xv.rid !== n.rid) xv = { x: n.crx || 0, z: n.crz || 0, rid: n.rid };
+        if (o.st === "run" && n.crt && Math.hypot(xv.x - o.x, xv.z - o.z) < 1.0) xDie("c", "Yaratık seni yakaladı!");
+      },
+      world(n, now, i, t, b) {
+        s.fillStyle = "#1a1608"; s.fillRect(0, 0, D, E); if (!b) return [];
+        xv.x += ((n.crx || 0) - xv.x) * 0.25; xv.z += ((n.crz || 0) - xv.z) * 0.25;
+        Ee(xRect(b.ox, b.ox + b.W * b.cs, b.oz, b.oz + b.H * b.cs), -0.3, 0, "#8a7a2e", "#5a4e1a");
+        let out = [];
+        for (let w of b.walls) { let cx = (w.x0 + w.x1) / 2, cz = (w.z0 + w.z1) / 2; if (Math.abs(cx - P.x) > 20 || Math.abs(cz - P.z) > 24) continue; out.push({ z: cz, fn: () => Ee(xRect(w.x0, w.x1, w.z0, w.z1), 0, 2.2, "#d8c870", "#a89640") }); }
+        out.push({ z: xv.z, fn: () => { Ee(qe(0.55, 10).map(u => [xv.x + u[0], xv.z + u[1]]), 0, 2.4, "#1a1212", "#080505"); let e = Y(xv.x, 2.0, xv.z); if (e) { s.fillStyle = "#ff2a2a"; s.beginPath(); s.arc(e.x - 0.18 * e.k, e.y, 0.1 * e.k, 0, 7); s.arc(e.x + 0.18 * e.k, e.y, 0.1 * e.k, 0, 7); s.fill(); } } });
+        out.push({ z: -1e9, fn: () => { let g = s.createRadialGradient(D / 2, E / 2, Math.min(D, E) * 0.25, D / 2, E / 2, Math.max(D, E) * 0.7); g.addColorStop(0, "rgba(255,235,130,0.10)"); g.addColorStop(1, "rgba(20,14,0,0.55)"); s.fillStyle = g; s.fillRect(0, 0, D, E); } });
+        return out;
+      },
+      hud(n) { return "👹 Hayatta: " + xRun(n).length; },
+      banner(n, a) { return a < 6 ? "Yaratık uyanıyor..." : n.crg === p.id ? "Yaratık seni kovalıyor!" : "KAÇ!"; },
+      hint: "WASD: hareket · Yaratık seni kovalıyor!"
+    };
+    // --- 4) EBELEMEÇ BOMBA ---
+    let xbl = 0, xbh = null, xbSeen = 0;
+    const xBomb = {
+      id: "bomb", name: "Ebelemeç: Bomba", kind: "survival", duration: 60000, void: !1, fall: "out", target: () => 1,
+      rules: ["Bomba sende ise birine dokunup ona geçir!", "Süre sıfırlanmaz; bitince bombayı taşıyan patlar.", "Son kalan kazanır."],
+      hostStart: () => ({ bb: null, bat: 0, btr: 0 }),
+      spawn(t, l) { let r = t / Math.max(1, l) * 6.2832; return { x: Math.cos(r) * 6, z: Math.sin(r) * 6 }; },
+      camera(c) { return Ne(c.x * 0.3, c.z * 0.3, 18, 0.95, 0.5); },
+      bounds: () => ({ x0: -11, x1: 11, z0: -11, z1: 11 }),
+      hostTick(n, a) {
+        if (!n.playAt) return null; let ids = xRun(n); if (!ids.length) return null; let h = n.bb;
+        if (!h || !ids.includes(h)) return { bb: ids[Math.random() * ids.length | 0], bat: (!h || a >= (n.bat || 0)) ? a + 12000 : n.bat, btr: a };
+        let hs = C(h).state; if (hs.bto && hs.bts !== xbSeen && a - (n.btr || 0) > 900 && hs.bto !== h && ids.includes(hs.bto)) { xbSeen = hs.bts; return { bb: hs.bto, btr: a }; }
+        return null;
+      },
+      localRule(n, now) {
+        if (o.st !== "run" || n.bb !== p.id) { xbh = n.bb; return; }
+        if (xbh !== p.id) { xbh = p.id; xbl = performance.now() + 300; }
+        if (n.bat && now >= n.bat) { xDie("b", "Bomba patladı!"); return; }
+        if (performance.now() - xbl < 900) return;
+        for (let id of xRun(n)) { if (id === p.id) continue; let b = me.get(id); if (b && Math.hypot(b.x - o.x, b.z - o.z) < 1.5) { xbl = performance.now(); p.setState({ bto: id, bts: Math.round(y.now()) }); break; } }
+      },
+      world(n, now, i) {
+        Fe(Re.candy, i); Ee(qe(12.5, 48), -1.2, 0, "#3b2560", "#1d1035"); pe(qe(12, 48).map(f => [f[0], 0.02, f[1]]), null, "#ff3d6e", 3);
+        let out = [], hb = n.bb && me.get(n.bb); if (!hb) return out;
+        out.push({ z: hb.z - 0.2, fn: () => { let q = Y(hb.x + 0.6, hb.y + 1.2, hb.z); if (!q) return; let left = Math.max(0, (n.bat - y.now()) / 1000), fl = Math.sin(y.now() / (left < 3 ? 60 : 180)) > 0;
+          s.fillStyle = fl ? "#ff3d3d" : "#111"; s.strokeStyle = "#fff"; s.lineWidth = 2; s.beginPath(); s.arc(q.x, q.y, 0.45 * q.k, 0, 7); s.fill(); s.stroke();
+          s.fillStyle = "#fff"; s.font = "900 " + Math.max(12, 0.5 * q.k) + "px sans-serif"; s.textAlign = "center"; s.textBaseline = "middle"; s.fillText(Math.ceil(left), q.x, q.y); } });
+        return out;
+      },
+      hud(n) { let l = Math.max(0, Math.ceil(((n.bat || 0) - y.now()) / 1000)); return "💣 " + (n.bb ? L(n.bb) : "-") + " · " + l + " sn"; },
+      banner(n) { return n.bb === p.id ? "BOMBA SENDE! Birine dokun!" : "Bombadan kaç!"; },
+      hint: "WASD: hareket · Bombayı taşıyorsan birine dokun"
+    };
+    Ue.splice(Ue.length - 1, 0, xCar, xFt, xBack, xBomb);
     function Ze(n, a) {
       let i = a.rid + "|" + n.id + "|" + a.seed;
       return i !== gn && (gn = i, Mn = n.build ? n.build(a.seed >>> 0) : null), Mn;
@@ -3197,7 +3383,7 @@ function et() {
         if (t === l || (En.set(a.id, t), l !== "run"))
           continue;
         let r = me.get(a.id);
-        t === "out" && a.id !== p.id ? (i.oc === "f" ? _e(a.name + " düştü ve elendi!", "bad") : (_e(a.name + " hareket etti ve elendi!", "bad"), r && fe(r.x, 1.2, r.z, "#ff3d6e", 16, 5)), O("pop")) : t === "fin" && a.id !== p.id && (_e(a.name + " bitiş çizgisine ulaştı!", "good"), r && fe(r.x, 1.5, r.z, "#ffd23f", 16, 6));
+        t === "out" && a.id !== p.id ? (i.oc === "f" ? _e(a.name + " düştü ve elendi!", "bad") : (_e(a.name + (i.oc === "c" ? " yaratığa yakalandı!" : i.oc === "b" ? " bombayla patladı!" : " hareket etti ve elendi!"), "bad"), r && fe(r.x, 1.2, r.z, "#ff3d6e", 16, 5)), O("pop")) : t === "fin" && a.id !== p.id && (_e(a.name + " bitiş çizgisine ulaştı!", "good"), r && fe(r.x, 1.5, r.z, "#ffd23f", 16, 6));
       }
     }
     let Ln = new Map();
@@ -3381,6 +3567,7 @@ function et() {
         let dashPow = (l.id === "final" || l.id === "brawl") ? 26 : 24;
         o.kx += Z * dashPow, o.kz += G * dashPow, te = performance.now() + 1100, O("jump"), fe(o.x, 0.4, o.z, "#ffffff", 6, 3);
       }
+      u && o.st === "run" && l.drive && l.drive(n, a);
       if (u && o.st === "run") consumeRemoteHits();
       l.push && u && o.st === "run" && kt(a);
       let g = Math.exp(-n * 2);
