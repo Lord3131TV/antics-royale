@@ -484,8 +484,8 @@ body.ph-lobby #uiTopBtns{display:none}
       <button id="startBtn" class="go" style="display:none" data-i18n="startGame">Oyunu başlat</button>
     </div>
     <div class="row2">
-      <button id="lobbyHelpBtn" class="alt" type="button"> data-i18n="howToPlay">❓ Nasıl oynanır</button>
-      <button id="lobbySettingsBtn" class="alt" type="button"> data-i18n="settings">⚙ Ayarlar</button>
+      <button id="lobbyHelpBtn" class="alt" type="button" data-i18n="howToPlay">❓ Nasıl oynanır</button>
+      <button id="lobbySettingsBtn" class="alt" type="button" data-i18n="settings">⚙ Ayarlar</button>
     </div>
     <div id="lobbyNote"></div>
   </div>
@@ -503,8 +503,8 @@ body.ph-lobby #uiTopBtns{display:none}
 
   <!-- Oyun içi hızlı butonlar -->
   <div id="uiTopBtns">
-    <button id="btnPause" class="alt" type="button"> data-i18n="pause">⏸ Duraklat</button>
-    <button id="btnHelpInGame" class="alt" type="button"> data-i18n="help">❓ Yardım</button>
+    <button id="btnPause" class="alt" type="button" data-i18n="pause">⏸ Duraklat</button>
+    <button id="btnHelpInGame" class="alt" type="button" data-i18n="help">❓ Yardım</button>
   </div>
 </div>
 
@@ -4816,11 +4816,19 @@ function et() {
       let d = "", h = Qe();
       if (ze && t < ze.until ? d = ze.html : ze = null, a === "intro" && !d) {
         let m = (n.endsAt - i) / 1000;
-        if (m > 3.2)
+        // Rules for ~1s (m>3), then clean 3→2→1 once each; when m<=0 clear UI (no second "1")
+        if (m > 3)
           d = "<div class=\"k\">" + __t("miniGame") + " " + (n.round || 1) + "/" + ((n.order || []).length || Ue.length) + "</div><div class=\"t\">" + W(localizeMgName(l)) + "</div><div class=\"d\">" + mgRules(l).map(W).join("<br>") + "</div>" + (o.st === "spec" ? "<div class=\"small\">" + __t("spectatingMobile") + "</div>" : "");
-        else {
-          let g = Math.max(1, Math.ceil(m));
-          d = "<div class=\"cnt\" data-c=\"" + g + "\">" + g + "</div>", g !== nn && (nn = g, O("tick"));
+        else if (m > 0) {
+          let g = Math.ceil(m); // 3, 2, or 1 — never clamp to 1 after zero
+          if (g >= 1) {
+            d = "<div class=\"cnt\" data-c=\"" + g + "\">" + g + "</div>";
+            if (g !== nn) { nn = g; O("tick"); }
+          }
+        } else {
+          // Countdown finished; hostTick will switch phase to play — do not re-show "1"
+          nn = -1;
+          d = "";
         }
       } else
         nn = -1;
