@@ -34,7 +34,7 @@ canvas#cv{position:fixed;inset:0;display:block;z-index:1}
 #tr .row,#endRows .row{display:flex;align-items:center;gap:8px;padding:3px 0}
 #tr .row i,#endRows .row i,.pl i{width:12px;height:12px;border-radius:50%;flex:none;border:2px solid rgba(255,255,255,.75)}
 #tr .row .n,#endRows .row .n{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:700}
-#tr .row .sc,#endRows .row .sc{font-weight:900;color:var(--sun);min-width:52px;text-align:right;font-size:11px}
+#tr .row .sc,#endRows .row .sc{font-weight:900;color:var(--sun);min-width:34px;text-align:right}
 #tr .row.me .n,#endRows .row.me .n{color:var(--mint)}
 #tr .row.out,#endRows .row.out{opacity:.45}
 #tr .ttl{font-weight:900;margin-bottom:4px}
@@ -376,7 +376,7 @@ body.ph-lobby #uiTopBtns{display:none}
         <div class="settings-row" style="margin-top:12px;text-align:left">
           <span style="font-size:12px;opacity:.85">Sunucu</span>
         </div>
-        <input id="menuServerUrl" placeholder="ws sunucu (varsayılan: https://antics-royale.onrender.com)" style="width:100%;margin-top:4px;font-size:12px">
+        <input id="menuServerUrl" placeholder="ws sunucu (örn. http://localhost:3001)" style="width:100%;margin-top:4px;font-size:12px">
         <button id="menuServerSave" class="alt" style="margin-top:6px;width:100%">Sunucuyu kaydet</button>
       </div>
     </div>
@@ -982,7 +982,7 @@ function et() {
     };
     try {
       let inp = e("menuServerUrl");
-      if (inp) inp.value = localStorage.getItem("antics_mp_server") || "https://antics-royale.onrender.com";
+      if (inp) inp.value = localStorage.getItem("antics_mp_server") || "http://localhost:3001";
     } catch (_) {}
   })();
   // mint_failed dinle
@@ -1058,7 +1058,7 @@ function et() {
         let su = localStorage.getItem("antics_mp_server");
         if (su && p.setServerUrl) p.setServerUrl(su);
         let inp = e("menuServerUrl");
-        if (inp) inp.value = (p.getServerUrl && p.getServerUrl()) || su || "https://antics-royale.onrender.com";
+        if (inp) inp.value = (p.getServerUrl && p.getServerUrl()) || su || "http://localhost:3001";
       } catch (_) {}
     }).catch(() => { T = !0; });
     e("nameBtn") && (e("nameBtn").onclick = n => {
@@ -1159,10 +1159,10 @@ function et() {
     let Ae = (n = w()) => (n.roster || []).filter(a => !(n.elim || []).includes(a) && C(a)), lt = (n, a = w()) => (a.roster || []).includes(n) && !(a.elim || []).includes(n);
     function it(n) {
       let a = w(), i = Ae(a), t = i.length, l = Math.max(0, i.indexOf(p.id)), d = n.build ? Ze(n, a) : null, r = n.spawn(l, t, d);
-      o.x = r.x, o.z = r.z, o.y = 0, o.vx = o.vy = o.vz = o.kx = o.kz = 0, o.gr = !0, o.cp = null, o._offT = 0, o._pushedAt = 0, o._pushedBy = null, o._arenaOut = !1, He(!0);
+      o.x = r.x, o.z = r.z, o.y = 0, o.vx = o.vy = o.vz = o.kx = o.kz = 0, o.gr = !0, o.cp = null, He(!0);
     }
     function dn() {
-      o.x = J(-9, 9), o.z = J(-6, 4), o.y = 0, o.vx = o.vy = o.vz = o.kx = o.kz = 0, o.gr = !0, o.cp = null, o._offT = 0, o._pushedAt = 0, o._pushedBy = null, o._arenaOut = !1, He(!0);
+      o.x = J(-9, 9), o.z = J(-6, 4), o.y = 0, o.vx = o.vy = o.vz = o.kx = o.kz = 0, o.gr = !0, o.cp = null, He(!0);
     }
     let Te = [], re = 0, ye = 0, Me = 0, ve = !0;
     function fe(n, a, i, t, l = 16, r = 5) {
@@ -1845,7 +1845,7 @@ function et() {
       rules: [
         "Sarı zirvenin üstünde durarak puan kazan!",
         "Rakiplerini iterek düşür. SHIFT/E ile atıl.",
-        "Süre bitince en düşük puanlı 2 oyuncu elenir."
+        "Süre bitince en çok puanı olan kazanır."
       ],
       target: cn,
       spawn(n, a) {
@@ -2377,45 +2377,14 @@ function et() {
       let i = (n.phase === "roundEnd" || n.phase === "gameEnd") && n.endedAt ? n.endedAt : a;
       return Math.max(0, (i - n.playAt) / 1000);
     }
-    function vn(n, arenaDbg) {
-      if (o.st !== "run") return;
-      n = n || "z";
-      // Aynı round içinde kesin elenme — hareket/knockback sıfır, st kilitli, arena dışı bayrağı
-      o.vx = o.vz = o.kx = o.kz = 0;
-      o.vy = Math.min(o.vy, -2);
-      o.gr = !1;
-      o._offT = 0;
-      o._arenaOut = !0;
-      ee({
+    function vn(n) {
+      o.st === "run" && (n = n || "z", o.vx = o.vz = 0, ee({
         st: "out",
         oc: n,
         ot: Math.round(y.now()),
-        rd: (w() || {}).rid || o.rd,
         vx: 0,
-        vz: 0,
-        y: Math.min(o.y, -1)
-      });
-      z = performance.now();
-      // oc: "f" düşme, "p" itilerek düşme, "z" kırmızı ışık vb.
-      if (n === "f" || n === "p") {
-        re = 0.5;
-        ye = 0.5;
-        O("fall");
-        // DEBUG: arena / düşme nedeni (sonradan kaldırılabilir)
-        if (arenaDbg) {
-          We("<div class=\"bad\">ARENA DIŞINA ÇIKTIN - ELENDİN</div><div class=\"small\">Elendin, izleyici oldun</div>", 2800);
-        } else if (n === "p") {
-          We("<div class=\"bad\">İTİLEREK ELENDİN</div><div class=\"small\">Elendin, izleyici oldun</div>", 2800);
-        } else {
-          We("<div class=\"bad\">DÜŞTÜN</div><div class=\"small\">Elendin, izleyici oldun</div>", 2800);
-        }
-      } else {
-        re = 1;
-        ye = 1;
-        fe(o.x, 1.2, o.z, "#ff3d6e", 22, 6);
-        O("boom");
-        We("<div class=\"bad\">Elendin!</div><div class=\"small\">Kırmızı ışıkta hareket ettin</div>", 2600);
-      }
+        vz: 0
+      }), z = performance.now(), n === "f" ? (re = 0.5, ye = 0.5, O("fall"), We("<div class=\"bad\">Düştün!</div><div class=\"small\">Elendin, izleyici oldun</div>", 2600)) : (re = 1, ye = 1, fe(o.x, 1.2, o.z, "#ff3d6e", 22, 6), O("boom"), We("<div class=\"bad\">Elendin!</div><div class=\"small\">Kırmızı ışıkta hareket ettin</div>", 2600)));
     }
     function ct() {
       o.st === "run" && (ee({
@@ -2449,29 +2418,25 @@ function et() {
           ot: null
         }), F = null, ve = !0, Me = 1;
       else if (a === "intro") {
-        // Sadece roster'da VE elim listesinde OLMAYAN oyuncular turda oynar
+        // Sadece roster'daki oyuncular turda; diğerleri izler
+        // Roster yoksa (eski state) kimse run olmasın — lobiye zorla
         let roster = n.roster || [];
-        let elim = n.elim || [];
         let inRoster = roster.length ? roster.includes(p.id) : false;
-        let isElim = elim.includes(p.id);
-        if (inRoster && !isElim) {
-          it(Se(n.mg)), o.hp = 0, o._hpAcc = 0, o._offT = 0, o._pushedAt = 0, o._pushedBy = null, o._arenaOut = !1, o._phSeen = 0, ee({
+        if (inRoster) {
+          it(Se(n.mg)), o.hp = 0, o._hpAcc = 0, ee({
             st: "run",
             rd: n.rid,
             fa: null,
             oc: null,
             ot: null,
-            hp: 0,
-            ph: null
+            hp: 0
           });
         } else {
-          // Elenen veya roster dışı → bu tur boyunca seyirci (asla run olmaz)
           ee({
             st: "spec",
             rd: n.rid,
             fa: null,
-            oc: isElim ? (o.oc || "f") : null,
-            ot: isElim ? (o.ot || Math.round(y.now())) : null
+            oc: null
           });
         }
         F = null, ye = 0, ze = null, ve = !0, Me = 1, O("tick");
@@ -2479,15 +2444,17 @@ function et() {
         n.results && n.results.q.includes(p.id) && O("fin");
       else if (a === "gameEnd") {
         n.winner === p.id && O("fin");
-      } else if (a === "play") {
-        // Ortadan katılanlar + bu maçta elenenler sadece izler
-        let roster = n.roster || [];
-        let elim = n.elim || [];
-        if (elim.includes(p.id)) {
-          if (o.st === "run" || o.st === "fin" || o.st === "lobby") {
-            ee({ st: "spec", rd: n.rid, fa: null, oc: o.oc || "f" });
+        let t = (n.scores || {})[p.id];
+        if (y.game && t > 0)
+          try {
+            Promise.resolve(y.submitScore(t)).catch(() => {
+            });
+          } catch {
           }
-        } else if (roster.length && !roster.includes(p.id) && o.st !== "spec" && o.st !== "out") {
+      } else if (a === "play") {
+        // Ortadan katılanlar sadece izler (roster dışı)
+        let roster = n.roster || [];
+        if (roster.length && !roster.includes(p.id) && o.st !== "spec" && o.st !== "out") {
           ee({ st: "spec", rd: n.rid, fa: null, oc: null });
         }
       }
@@ -2507,8 +2474,7 @@ function et() {
         nextAt: null,
         results: null,
         playAt: null,
-        endedAt: null,
-        forceOut: []
+        endedAt: null
       }, l || {}));
     }
     function isRealHost() {
@@ -2543,9 +2509,9 @@ function et() {
         return;
       let n = y.players.slice(0, ln);
       if (!n.length) n = [p];
-      let a = n.map(f => f.id), i = {};
+      let a = n.map(f => f.id), i = {}, t = {};
       n.forEach(f => {
-        i[f.id] = f.name;
+        i[f.id] = f.name, t[f.id] = 0;
       });
       let allIds = Ue.map(f => f.id), nonFinal = Ue.filter(f => !f.final).map(f => f.id);
       let r = Ke(nonFinal.slice());
@@ -2559,7 +2525,7 @@ function et() {
         roster: a,
         names: i,
         elim: [],
-        scores: {},
+        scores: t,
         startCount: a.length,
         autoAt: null,
         winner: null,
@@ -2592,151 +2558,44 @@ function et() {
       });
     }
     function mt(n, a, i, t, l) {
-      // Round başında / state yüklenmeden asla sonuç hesaplama
-      let playAt = a.playAt || 0;
-      if (!playAt || (i - playAt) < 2000)
-        return null;
-      if (!t || !t.length)
-        return null;
       let r = a.n0 || t.length, c = r > 1, u = i >= a.endsAt;
-      // Kazanan adaylarından ölü/elenmişleri çıkar
-      function onlyAlive(ids) {
-        return (ids || []).filter(id => {
-          let s = l(id) || {};
-          return s.st === "run" || s.st === "fin";
-        });
-      }
       if (n.kind === "race") {
-        // KESİN: Konum/Z ile kazanan YOK. Önde olmak kazanma değildir.
-        let runners = t.filter(R => (l(R) || {}).st === "run");
-        let finishers = t.filter(R => (l(R) || {}).st === "fin").sort((R, B) => (l(R).fa || 0) - (l(B).fa || 0));
-        let outs = t.filter(R => {
-          let s = l(R) || {};
-          return s.st === "out" || s.st === "spec";
-        });
-        if (!u) {
-          // Süre dolmadan: sadece HERKES fin veya out ise bit (kimse hâlâ run değil)
-          // Tek kişi bitiş çizgisine vardı diye tur bitmez
-          if (runners.length > 0)
-            return null;
-          if (finishers.length + outs.length < t.length)
-            return null; // state henüz gelmemiş oyuncular var
-          if (finishers.length === 0 && outs.length === 0)
-            return null;
-        }
-        // Süre doldu VEYA herkes çözüldü
-        // Kazananlar = bitişe varanlar; süre dolduysa hâlâ koşanlar da hayatta
-        // ASLA z/x konumuna göre sıralama veya seçim yok
-        let k = finishers.slice();
-        let A = "";
-        if (u) {
-          // Süre doldu: fin + hâlâ run olanlar hayatta; out olanlar elendi
-          for (let id of runners) {
-            if (!k.includes(id)) k.push(id);
-          }
-          A = k.length ? "Süre doldu" : "Kimse hayatta kalmadı";
-        } else {
-          A = finishers.length ? "Bitiş çizgisine ulaşıldı" : "";
-        }
-        // Ölü / out asla kazanan listesinde olmasın
-        k = onlyAlive(k);
-        return { q: k, note: A };
-      }
-      // —— Sarı Tepe (hill): süre bitince veya 1 kişi kalınca; en düşük 2 puan elenir ——
-      if (n.id === "hill") {
-        let running = t.filter(m => (l(m) || {}).st === "run");
-        if (running.length > 1 && !u)
+        let m = t.filter(R => l(R).st === "fin").sort((R, B) => l(R).fa - l(B).fa);
+        if (t.filter(R => l(R).st === "run").length > 0 && !u)
           return null;
-        // Desync: hiç run yok ve süre dolmadı → bekle
-        if (running.length === 0 && !u)
-          return null;
-        let needElim = Math.min(2, Math.max(0, t.length - 1));
-        let scored = t.map(id => {
-          let s = l(id) || {};
-          let isOut = s.st === "out" || s.st === "spec";
-          let hpVal = typeof s.hp === "number" ? s.hp : 0;
-          return {
-            id: id,
-            hp: isOut ? -1 : hpVal,
-            realHp: hpVal,
-            out: isOut,
-            ot: s.ot || 0
-          };
-        });
-        scored.sort((A, B) => {
-          if (A.hp !== B.hp) return A.hp - B.hp;
-          if (A.out !== B.out) return A.out ? -1 : 1;
-          if (A.ot !== B.ot) return (A.ot || 0) - (B.ot || 0);
-          return String(A.id).localeCompare(String(B.id));
-        });
-        let elimSet = new Set(scored.slice(0, needElim).map(x => x.id));
-        // Kazananlar: elenmeyenler — ama out olanlar kazanan olamaz
-        let winners = scored.filter(x => !elimSet.has(x.id) && !x.out)
-          .sort((A, B) => (B.realHp - A.realHp) || String(A.id).localeCompare(String(B.id)));
-        let elimList = scored.filter(x => elimSet.has(x.id));
-        let scoreLine = scored.slice().sort((A, B) => B.realHp - A.realHp).map(x => (L(x.id) || "?") + ":" + Math.max(0, x.realHp)).join(" · ");
-        try {
-          console.log("[HILL END] needElim=" + needElim + " scores=" + scoreLine + " elim=" + elimList.map(x => L(x.id)).join(","));
-        } catch (_) {}
-        let note = scoreLine + (elimList.length ? (" → elenen: " + elimList.map(x => L(x.id) || "?").join(", ")) : "");
-        return { q: winners.map(x => x.id), note: note };
+        let k = m, A = "";
+        return !k.length && t.length && c && (k = [t.slice().sort((B, le) => (C(le).state.z || 0) - (C(B).state.z || 0))[0]], A = "Kimse bitiremedi! En ileri giden kurtuldu."), {
+          q: k,
+          note: A
+        };
       }
-      // —— Diğer survival (arena vb.) ——
-      // Host authoritative: arena haritalarında cfg.radius dışı konum = elenmiş say
-      let arenaR = null;
-      if ((n.id === "final" || n.id === "brawl") && n.cfg && typeof n.cfg.radius === "function") {
-        try { arenaR = n.cfg.radius(typeof Ve === "function" ? Ve(a, i) : 0); } catch (_) { arenaR = null; }
-      }
-      function isArenaOutPos(s) {
-        if (arenaR == null || !s) return false;
-        let px = typeof s.x === "number" ? s.x : 0, pz = typeof s.z === "number" ? s.z : 0;
-        return Math.hypot(px, pz) > arenaR + 0.12;
-      }
-      let f = t.filter(m => {
-        let s = l(m) || {};
-        if (s.st !== "run") return false;
-        if (isArenaOutPos(s)) return false;
-        return true;
-      });
-      let outs = t.filter(m => {
-        let s = l(m) || {};
-        return s.st === "out" || s.st === "spec" || isArenaOutPos(s);
-      });
-      let d = c ? n.target(r) : 0;
-      // Desync koruması: henüz kimse run değil ve süre dolmadı → bekle
-      if (f.length === 0 && !u)
+      let f = t.filter(m => l(m).st === "run"), d = c ? n.target(r) : 0;
+      if (!(f.length <= d || u))
         return null;
-      // Erken bitiş: yeterince elenmiş olmalı (sadece sayı düşük diye bitirme)
-      if (!u) {
-        if (f.length > d)
-          return null;
-        // Hedefe ulaşıldı ama hiç kimse elenmemişse (state gecikmesi) bekle
-        if (outs.length === 0 && f.length >= Math.max(1, t.length - 1))
-          return null;
-      }
-      let h = f.slice(), b = "";
-      // Tümü düştü + süre doldu: ölü oyuncuyu kazanan yapma
-      if (!h.length && u) {
-        h = [];
-        b = "Kimse ayakta kalmadı";
-      }
-      // Final: SADECE süre dolduysa ve birden fazla AYAKTA (run) varsa — önde olmak değil, merkeze yakınlık (final kuralı)
-      if (n.final && h.length > 1 && u) {
+      let h = f, b = "";
+      if (!h.length && t.length && c && (h = [t.slice().sort((g, k) => (l(k).ot || 0) - (l(g).ot || 0))[0]], b = "Hepsi aynı anda düştü! En son düşen kurtuldu."), n.final && h.length > 1) {
         let m = g => {
-          let k = l(g) || {};
-          if (k.st && k.st !== "run") return 1e9;
+          let k = C(g).state;
           return Math.hypot(k.x || 0, k.z || 0);
         };
-        h = [h.filter(id => (l(id) || {}).st === "run").slice().sort((g, k) => m(g) - m(k))[0]].filter(Boolean);
-        b = "Süre doldu! Merkeze en yakın ayakta kalan şampiyon.";
+        h = [h.slice().sort((g, k) => m(g) - m(k))[0]], b = "Süre doldu! Merkeze en yakın oyuncu şampiyon.";
       }
-      h = onlyAlive(h);
-      return { q: h, note: b };
+      // Kral Tepesi: en çok tepe puanı olanlar kazanır
+      if (n.id === "hill" && h.length > 1) {
+        h = h.slice().sort((g, k) => (l(k).hp || 0) - (l(g).hp || 0));
+        let top = l(h[0]).hp || 0;
+        b = "En çok tepe puanı: " + top + " · " + (L(h[0]) || "");
+      }
+      return {
+        q: h,
+        note: b
+      };
     }
-function pt(n, a) {
-      let i = y.now(), l = a.q, c = (n.roster || []).filter(f => !(n.elim || []).includes(f)).filter(f => !l.includes(f)), u = (n.elim || []).concat(c);
-      // Puan yok — sadece kazananlar (q) ve elenenler (e)
-      y.setState({
+    function pt(n, a) {
+      let i = y.now(), t = Object.assign({}, n.scores || {}), l = a.q, c = (n.roster || []).filter(f => !(n.elim || []).includes(f)).filter(f => !l.includes(f)), u = (n.elim || []).concat(c);
+      l.forEach((f, d) => {
+        t[f] = (t[f] || 0) + 100 + (l.length - d) * 10;
+      }), y.setState({
         phase: "roundEnd",
         endsAt: i + Jn,
         endedAt: i,
@@ -2746,20 +2605,19 @@ function pt(n, a) {
           note: a.note || ""
         },
         elim: u,
-        scores: {},
+        scores: t,
         light: "green",
         lightAt: i
       });
     }
     function gt(n, a) {
-      let i = y.now(), l = a[0] || null;
-      // Puan yok — yalnızca genel kazanan
-      y.setState({
+      let i = y.now(), t = Object.assign({}, n.scores || {}), l = a[0] || null;
+      l && (t[l] = (t[l] || 0) + 250), y.setState({
         phase: "gameEnd",
         endsAt: i + Qn,
         winner: l,
         wname: l ? L(l) : null,
-        scores: {}
+        scores: t
       });
     }
     function Mt() {
@@ -2801,59 +2659,9 @@ function pt(n, a) {
           } else if (i === "play") {
             let t = Se(n.mg), l = t.hostTick ? t.hostTick(n, a) : null;
             l && y.setState(l);
-            // Arena host authority: ağ konumu yarıçap dışındaysa forceOut yayınla
-            if ((t.id === "final" || t.id === "brawl") && t.cfg && typeof t.cfg.radius === "function") {
-              try {
-                let el = typeof Ve === "function" ? Ve(n, a) : 0;
-                let rr = t.cfg.radius(el);
-                let foMap = {};
-                for (let pl of y.players) {
-                  let s = pl.id === p.id
-                    ? { st: o.st, x: o.x, z: o.z }
-                    : (pl.state || {});
-                  if (s.st === "run") {
-                    let px = typeof s.x === "number" ? s.x : null;
-                    let pz = typeof s.z === "number" ? s.z : null;
-                    if (px != null && pz != null && Math.hypot(px, pz) > rr + 0.12) {
-                      foMap[pl.id] = { id: pl.id, oc: "p", t: a };
-                    }
-                  }
-                  // Diğer oyuncuların "bunu dışarı ittim" claim'leri
-                  let cl = s.ocClaim;
-                  if (cl && cl.i && typeof cl.t === "number" && a - cl.t < 800) {
-                    let target = y.players.find(q => q.id === cl.i);
-                    let ts = target && (target.id === p.id ? o.st : (target.state && target.state.st));
-                    if (ts === "run") foMap[cl.i] = { id: cl.i, oc: "p", t: a };
-                  }
-                }
-                let fo = Object.values(foMap);
-                let prev = n.forceOut || [];
-                let same = prev.length === fo.length && fo.every((x, idx) => prev[idx] && prev[idx].id === x.id);
-                if (!same) y.setState({ forceOut: fo });
-              } catch (_) {}
-            }
             let r = Ae(n), u = mt(t, n, a, r, f => {
-                // Yerel oyuncu: o state (hp senkron gecikmesin)
-                if (f === p.id) {
-                  return {
-                    st: o.st,
-                    hp: o.hp || 0,
-                    rd: o.rd,
-                    ot: o.ot,
-                    oc: o.oc,
-                    fa: o.fa,
-                    x: o.x,
-                    z: o.z,
-                    y: o.y
-                  };
-                }
-                let d = (C(f) && C(f).state) || {};
-                if (d.rd === n.rid) return d;
-                if (d.st === "out" || d.st === "spec") {
-                  return { st: d.st, oc: d.oc, ot: d.ot, hp: typeof d.hp === "number" ? d.hp : 0 };
-                }
-                // rid eşleşmese bile hp koru (Sarı Tepe)
-                return { st: d.st || "run", hp: typeof d.hp === "number" ? d.hp : 0, x: d.x, z: d.z, y: d.y };
+                let d = C(f).state;
+                return d.rd === n.rid ? d : { st: "run" };
               });
             u && pt(n, u);
           } else if (i === "roundEnd") {
@@ -3223,7 +3031,7 @@ function pt(n, a) {
         if (t === l || (En.set(a.id, t), l !== "run"))
           continue;
         let r = me.get(a.id);
-        t === "out" && a.id !== p.id ? (i.oc === "f" || i.oc === "p" ? _e(a.name + (i.oc === "p" ? " itilerek elendi!" : " düştü ve elendi!"), "bad") : (_e(a.name + " hareket etti ve elendi!", "bad"), r && fe(r.x, 1.2, r.z, "#ff3d6e", 16, 5)), O("pop")) : t === "fin" && a.id !== p.id && (_e(a.name + " bitiş çizgisine ulaştı!", "good"), r && fe(r.x, 1.5, r.z, "#ffd23f", 16, 6));
+        t === "out" && a.id !== p.id ? (i.oc === "f" ? _e(a.name + " düştü ve elendi!", "bad") : (_e(a.name + " hareket etti ve elendi!", "bad"), r && fe(r.x, 1.2, r.z, "#ff3d6e", 16, 5)), O("pop")) : t === "fin" && a.id !== p.id && (_e(a.name + " bitiş çizgisine ulaştı!", "good"), r && fe(r.x, 1.5, r.z, "#ffd23f", 16, 6));
       }
     }
     let Ln = new Map();
@@ -3243,62 +3051,49 @@ function pt(n, a) {
         let l = me.get(i.id);
         if (!l || l.y < -0.6 || o.y < -0.6)
           continue;
-        // d,h = benden rakibe doğru birim vektör
+        // d,h = benden rakibe doğru birim vektör (rakibi savuracağımız yön)
         let rx = l.x - o.x, rz = l.z - o.z, u = Math.hypot(rx, rz);
         if (u >= hitRad)
           continue;
         let d = u > 0.0001 ? rx / u : 1, h = u > 0.0001 ? rz / u : 0;
-        // Çakışmayı ayır
+        // Çakışmayı ayır (ben geri, rakip ileri — yerel tahmin)
         let overlap = (hitRad - u) * (isArena ? 1.35 : 1.15);
         o.x -= d * overlap * 0.55;
         o.z -= h * overlap * 0.55;
         l.x += d * overlap * 0.45;
         l.z += h * overlap * 0.45;
         let myVx = o.vx + o.kx, myVz = o.vz + o.kz;
-        // Ağ state + yerel interpolasyon (hitImp sonrası me.vx) — itilme algısı için
-        let theirVx = (typeof l.vx === "number" ? l.vx : (t.vx || 0));
-        let theirVz = (typeof l.vz === "number" ? l.vz : (t.vz || 0));
+        let theirVx = (t.vx || 0), theirVz = (t.vz || 0);
         // Benim rakibe doğru hız bileşenim
         let myInto = myVx * d + myVz * h;
-        // Rakibin bana doğru hız bileşeni (pozitif = beni itiyor)
+        // Rakibin bana doğru hız bileşeni
         let theirInto = -(theirVx * d + theirVz * h);
         let mySpd = Math.hypot(myVx, myVz);
         let theirSpd = Math.hypot(theirVx, theirVz);
         let isDash = Math.hypot(o.kx, o.kz) > 5;
-        // Onlar dash atmış gibi görünüyor mu (yüksek hız)
-        let theyDash = theirSpd > 14;
-        let cooldown = isArena ? 70 : 90;
-        let lastHit = Ln.get(i.id) || 0;
-        if (a - lastHit < cooldown)
-          continue;
-        // 1) Ben onları itiyorum
+        // Karşılıklı itme — saldıran daha az savrulur, vurulan daha çok
+        // Rakibe doğru hareket ediyorsan veya temas varsa savrulma (dash şart değil)
         let pushing = myInto > 0.15 || mySpd > 2.5;
-        // 2) Onlar beni itiyor (önceden eksikti — kurban kendi istemcisinde savrulmuyordu)
-        let beingPushed = isArena
-          ? (theirInto > 0.12 || (theirSpd > 1.6 && theirInto > 0.02) || theirSpd > 8)
-          : (theirInto > 0.35 || (theirSpd > 2.8 && theirInto > 0.05));
-        if (!pushing && !beingPushed) {
-          if (myInto > 0) {
-            o.kx -= d * myInto * 0.35;
-            o.kz -= h * myInto * 0.35;
-          }
-          continue;
-        }
-        Ln.set(i.id, a);
-        // --- Ben itiyorsam: rakibe (görsel) + hafif geri tepme ---
-        if (pushing) {
+        if (pushing && a - (Ln.get(i.id) || 0) > (isArena ? 70 : 90)) {
+          Ln.set(i.id, a);
+          // Orta seviye itme — dash olmadan da savrulur, dash biraz ekstra verir
           let base = isArena ? 5.2 : 3.2;
           let fromSpeed = Math.max(0, myInto) * (isArena ? 1.8 : 1.4) + (mySpd > 3 ? (mySpd - 3) * (isArena ? 0.45 : 0.3) : 0);
           let dashBonus = isDash ? (isArena ? 5.5 : 4) : 0;
-          let knockThem = Math.min(base + fromSpeed + dashBonus, isArena ? 12 : 9);
+          let knockThem = base + fromSpeed + dashBonus;
+          // Üst sınır: çok uzağa fırlatmasın
+          knockThem = Math.min(knockThem, isArena ? 12 : 9);
+          // Sen az geriye git
           let knockMe = Math.min(isArena ? 3.2 : 4, knockThem * 0.28 + Math.max(0, theirInto) * 1.2);
           o.kx -= d * knockMe;
           o.kz -= h * knockMe;
+          // Rakibi savur
           let imp = hitImp.get(i.id) || { kx: 0, kz: 0, vy: 0, ox: 0, oz: 0, oy: 0 };
           imp.kx += d * knockThem;
           imp.kz += h * knockThem;
           imp.ox = (imp.ox || 0) + d * Math.min(1.4, knockThem * 0.08);
           imp.oz = (imp.oz || 0) + h * Math.min(1.4, knockThem * 0.08);
+          // Hafif yukarı — sadece biraz
           if (knockThem > 6) {
             imp.vy = Math.max(imp.vy || 0, isDash ? 4.5 : 2.8);
             imp.oy = Math.max(imp.oy || 0, isDash ? 0.35 : 0.18);
@@ -3311,103 +3106,13 @@ function pt(n, a) {
           l.z += h * Math.min(0.7, knockThem * 0.03);
           l.vx = (l.vx || 0) + d * knockThem * 0.25;
           l.vz = (l.vz || 0) + h * knockThem * 0.25;
-          // Arena: itmeyi ağa yaz — kurban client kendi savrulmasını uygular (hitImp sadece görsel)
-          if (isArena && knockThem > 2.5) {
-            try {
-              let pkt = {
-                ph: {
-                  i: i.id,
-                  dx: +d.toFixed(3),
-                  dz: +h.toFixed(3),
-                  k: +Math.min(knockThem, 14).toFixed(2),
-                  t: Math.round(y.now())
-                }
-              };
-              // Görsel konum dışarıdaysa host'a claim — kurban lag ile içeride kalsa bile elensin
-              try {
-                let _mg = Ye(n, n.phase || "play");
-                if (_mg && _mg.cfg && typeof _mg.cfg.radius === "function") {
-                  let _rr = _mg.cfg.radius(typeof Ve === "function" ? Ve(n, y.now()) : 0);
-                  if (Math.hypot(l.x, l.z) > _rr + 0.05) {
-                    pkt.ocClaim = { i: i.id, t: Math.round(y.now()) };
-                  }
-                }
-              } catch (_) {}
-              p.setState(pkt);
-            } catch (_) {}
-          }
           O("hit");
           re = Math.max(re, Math.min(0.55, knockThem / 16));
           fe(l.x, 1.1, l.z, isDash ? "#ffd23f" : "#ff6bd6", isDash ? 16 : 12, isDash ? 5 : 4);
           fe(o.x, 0.9, o.z, "#ffffff", 6, 3);
-        }
-        // --- Onlar beni itiyorsa: yerel knockback (asıl multiplayer savrulma) ---
-        if (beingPushed) {
-          let baseP = isArena ? 7.2 : 3.6;
-          let fromTheir = Math.max(0, theirInto) * (isArena ? 2.4 : 1.55) + (theirSpd > 3 ? (theirSpd - 3) * (isArena ? 0.65 : 0.35) : 0);
-          let dashP = theyDash ? (isArena ? 6.5 : 4) : 0;
-          let knockMeP = Math.min(baseP + fromTheir + dashP, isArena ? 16 : 10);
-          // d,h rakibe doğru; beni ters yöne savur
-          o.kx -= d * knockMeP;
-          o.kz -= h * knockMeP;
-          if (knockMeP > 5) {
-            o.vy = Math.max(o.vy, theyDash ? 3.2 : 1.6);
-            o.gr = !1;
-          }
-          o._pushedAt = a;
-          o._pushedBy = i.id;
-          if (isArena) {
-            try {
-              let _st = n, _mg = Ye(_st, _st.phase || "play");
-              if (_mg && _mg.cfg && typeof _mg.cfg.radius === "function") {
-                let _el = typeof Ve === "function" ? Ve(_st, y.now()) : 0;
-                let _rr = _mg.cfg.radius(_el);
-                // İtme sonrası tahmini konum dışarıdaysa hemen bayrak
-                let predX = o.x - d * 0.35, predZ = o.z - h * 0.35;
-                if (Math.hypot(o.x, o.z) > _rr + 0.08 || Math.hypot(predX, predZ) > _rr + 0.08) {
-                  o._arenaOut = !0;
-                  o.gr = !1;
-                  o.vy = Math.min(o.vy, -4);
-                }
-              }
-            } catch (_) {}
-          }
-          O("hit");
-          re = Math.max(re, Math.min(0.55, knockMeP / 16));
-          fe(o.x, 1.1, o.z, theyDash ? "#ffd23f" : "#ff6bd6", theyDash ? 16 : 12, theyDash ? 5 : 4);
-        }
-      }
-      // Uzaktan gelen itme paketleri (ph) — iten client yayınlar, kurban uygular
-      if (isArena && o.st === "run") {
-        let nowT = y.now();
-        for (let i of y.players) {
-          if (i.id === p.id) continue;
-          let ph = i.state && i.state.ph;
-          if (!ph || ph.i !== p.id || typeof ph.t !== "number") continue;
-          if (nowT - ph.t > 400) continue;
-          if (o._phSeen && o._phSeen >= ph.t) continue;
-          o._phSeen = ph.t;
-          let k = Math.min(16, Math.max(0, +ph.k || 0));
-          let dx = +ph.dx || 0, dz = +ph.dz || 0;
-          let len = Math.hypot(dx, dz) || 1;
-          dx /= len; dz /= len;
-          o.kx += dx * k;
-          o.kz += dz * k;
-          o._pushedAt = performance.now();
-          o._pushedBy = i.id;
-          if (k > 5) { o.vy = Math.max(o.vy, 2.2); o.gr = !1; }
-          try {
-            let _mg = Ye(n, n.phase || "play");
-            if (_mg && _mg.cfg && typeof _mg.cfg.radius === "function") {
-              let _rr = _mg.cfg.radius(typeof Ve === "function" ? Ve(n, nowT) : 0);
-              if (Math.hypot(o.x, o.z) > _rr + 0.08) {
-                o._arenaOut = !0;
-                o.gr = !1;
-                o.vy = Math.min(o.vy, -4);
-              }
-            }
-          } catch (_) {}
-          O("hit");
+        } else if (myInto > 0) {
+          o.kx -= d * myInto * 0.35;
+          o.kz -= h * myInto * 0.35;
         }
       }
     }
@@ -3446,25 +3151,7 @@ function pt(n, a) {
     let Bn = "";
     function Pt(n) {
       bt(), un();
-      let a = w(), i = a.phase || "lobby", t = y.now(), l = Ye(a, i), r = Ze(l, a), c = Ve(a, t), u = i === "play";
-      // Elenen / seyirci: aynı round'da kontrol yok, platforma dönüş yok
-      if (u && (o.st === "out" || o.st === "spec")) {
-        o.vx = o.vz = o.kx = o.kz = 0;
-        o.vy -= Yn * n;
-        o.y += o.vy * n;
-        if (o.y < -40) { o.y = -40; o.vy = 0; }
-        o.gr = !1;
-        He();
-        zt(n), applyHitImpulses(n), St();
-        for (let Z = Te.length - 1; Z >= 0; Z--) {
-          let G = Te[Z];
-          if ((G.life -= n) <= 0) { Te.splice(Z, 1); continue; }
-          G.vy -= 14 * n; G.x += G.vx * n; G.y += G.vy * n; G.z += G.vz * n;
-        }
-        re = Math.max(0, re - n * 2.2); ye = Math.max(0, ye - n * 1.6); Me = Math.max(0, Me - n * 1.7);
-        return;
-      }
-      let f = i === "lobby" ? o.st === "lobby" : u && (o.st === "run" || o.st === "fin"), d = 0, h = 0;
+      let a = w(), i = a.phase || "lobby", t = y.now(), l = Ye(a, i), r = Ze(l, a), c = Ve(a, t), u = i === "play", f = i === "lobby" ? o.st === "lobby" : u && (o.st === "run" || o.st === "fin"), d = 0, h = 0;
       f && ((U.has("KeyD") || U.has("ArrowRight")) && (d += 1), (U.has("KeyA") || U.has("ArrowLeft")) && (d -= 1), (U.has("KeyW") || U.has("ArrowUp")) && (h += 1), (U.has("KeyS") || U.has("ArrowDown")) && (h -= 1)), (d || h) && (o.fx = d, o.fz = h);
       let b = Math.hypot(d, h) || 1, m = 1 - Math.exp(-n * 16);
       if (o.vx += (d / b * rn - o.vx) * m, o.vz += (h / b * rn - o.vz) * m, !d && Math.abs(o.vx) < 0.35 && (o.vx = 0), !h && Math.abs(o.vz) < 0.35 && (o.vz = 0), ne && (ne = !1, f && l.dash && u && o.st === "run" && performance.now() >= te)) {
@@ -3481,100 +3168,18 @@ function pt(n, a) {
       let A = l.bounds(i, r);
       o.x = K(o.x, A.x0, A.x1), o.z = K(o.z, A.z0, A.z1);
       let R = l.void && i !== "lobby" && typeof l.support == "function" ? l.support(o.x, o.z, c, a, r) : je, B = !1;
-      // Arena (brawl/final): gerçek oyun sınırı = cfg.radius(süre) dairesi (merkez 0,0).
-      // X/Z yarıçap dışına çıkan oyuncu ANINDA elenir (itilme / kendi çıkışı / küçülen alan aynı).
-      let _isArena = (l.id === "final" || l.id === "brawl") && l.cfg && typeof l.cfg.radius === "function";
-      if (_isArena && o.st === "run" && u) {
-        let _rr = l.cfg.radius(c), _hd = Math.hypot(o.x, o.z);
-        const ARENA_EDGE = 0.12;
-        // Host forceOut: host seni dışarıda gördüyse kesin elen
-        let _fo = (a.forceOut || []).find(x => x && x.id === p.id);
-        if (_fo) o._arenaOut = !0;
-        if (_hd > _rr + ARENA_EDGE || o._arenaOut) {
-          o._arenaOut = !0;
-          R = null;
-          o.gr = !1;
-          let recentPush = o._pushedAt && (performance.now() - o._pushedAt) < 2000;
-          vn(recentPush || _fo ? "p" : "f", !0);
-        } else {
-          R = l.support ? l.support(o.x, o.z, c, a, r) : je;
-        }
-      } else if (!R && l.cfg && l.cfg.radius && o.st === "run") {
+      if (!R && l.cfg && l.cfg.radius && o.st === "run") {
         let _rr = l.cfg.radius(c), _hd = Math.hypot(o.x, o.z);
         if (_hd > _rr) {
           let _nx = o.x / (_hd || 1), _nz = o.z / (_hd || 1), _out = _hd - _rr;
-          o.kx += _nx * (10 + _out * 4) * n * 60;
-          o.kz += _nz * (10 + _out * 4) * n * 60;
-          o.vy = Math.min(o.vy, -6);
-          if (_out > 0.4) o.vy = Math.min(o.vy, -10);
-          if (_out > 1.2) o.vy = Math.min(o.vy, -14);
-          o.gr = !1;
+          o.kx += _nx * (8 + _out * 3) * n * 60, o.kz += _nz * (8 + _out * 3) * n * 60;
+          if (o.y > -0.05)
+            o.vy = Math.min(o.vy, -4);
+          if (_out > 1.5 && o.y < 0.2)
+            o.vy = Math.min(o.vy, -8);
         }
       }
-      f && o.gr && performance.now() - he < 120 && (o.vy = Zn, B = !0, he = -1000000000, o.gr = !1, O("jump")), o.vy -= Yn * n, o.y += o.vy * n, o.gr = !1, R && o.vy <= 0 && o.y <= 0.02 && o.y > -0.7 && (o.y = 0, o.vy = 0, o.gr = !0, u && (R.vx || R.vz) && (o.x += R.vx * n, o.z += R.vz * n), R.plat && R.plat.cp && !R.plat.amp && o.st === "run" && (o.cp = R.plat));
-      if (o.y < -40) { o.y = -40; o.vy = 0; }
-      if (u) {
-        // Düşme / platform dışı elenme (void haritalar)
-        // Arena ölüm yukarıda anında işlendi; burada sadece non-arena + y düşüşü
-        if (o.st === "run" || (o.st === "fin" && l.fall === "respawn")) {
-          if (l.fall === "respawn") {
-            if (o.y < -8) yt();
-          } else if (!(l.id === "final" || l.id === "brawl")) {
-            // fall:"out" — non-arena void haritalar
-            let deathY = -3.5;
-            let outside = !R;
-            if (outside || !R) o._offT = (o._offT || 0) + n;
-            else o._offT = 0;
-            let recentPush = o._pushedAt && (performance.now() - o._pushedAt) < 2000;
-            let shouldDie = false;
-            if (o.y < deathY) shouldDie = true;
-            if (outside && o.y < -0.15 && o.vy < -0.5) shouldDie = true;
-            if ((outside || !R) && (o._offT || 0) > 0.45 && o.y < 0.05 && o.vy <= 0) shouldDie = true;
-            if (recentPush && (outside || !R) && (o.y < 0.2 || o.vy < 0 || !o.gr || (o._offT || 0) > 0.08))
-              shouldDie = true;
-            if (shouldDie) {
-              vn(recentPush ? "p" : "f");
-            }
-          } else if (o.st === "run" && o.y < -0.5) {
-            // Arena: y çok düştüyse de elen (güvenlik ağı)
-            let recentPush = o._pushedAt && (performance.now() - o._pushedAt) < 2000;
-            vn(recentPush ? "p" : "f", !0);
-          }
-        }
-        if (o.st === "run" && l.id === "hill") {
-          // Sarı zirve: merkez yarıçap 3.2 (world'deki sarı daire)
-          if (o.gr && Math.hypot(o.x, o.z) <= 3.2) {
-            o._hpAcc = (o._hpAcc || 0) + n;
-            if (o._hpAcc >= 0.2) {
-              let gained = Math.floor(o._hpAcc / 0.2);
-              o.hp = (o.hp || 0) + gained;
-              o._hpAcc %= 0.2;
-              o._hpSync = o._hpSync || 0;
-              // Her puan artışında senkron (max 80ms) — host diğer oyuncunun puanını görsün
-              if (performance.now() - o._hpSync > 80) {
-                o._hpSync = performance.now();
-                ee({ hp: o.hp });
-              }
-            }
-          }
-          // Periyodik heartbeat: host skor tablosunu güncel tutsun
-          o._hpBeat = o._hpBeat || 0;
-          if (performance.now() - o._hpBeat > 250) {
-            o._hpBeat = performance.now();
-            ee({ hp: o.hp || 0 });
-          }
-        }
-        if (o.st === "run") {
-          if (l.localRule) l.localRule(a, t, B);
-          if (o.st === "run" && l.hazards) l.hazards(n, c, a, r);
-          // Bitiş çizgisi: sadece kendini fin yapar; turu/tek başına kazanan ilan etmez
-          if (o.st === "run" && l.kind === "race" && typeof l.finishZ === "function") {
-            let _fz = l.finishZ(r);
-            if (typeof _fz === "number" && _fz > 5 && o.z >= _fz) ct();
-          }
-        }
-      }
-      He();
+      f && o.gr && performance.now() - he < 120 && (o.vy = Zn, B = !0, he = -1000000000, o.gr = !1, O("jump")), o.vy -= Yn * n, o.y += o.vy * n, o.gr = !1, R && o.vy <= 0 && o.y <= 0.02 && o.y > -0.7 && (o.y = 0, o.vy = 0, o.gr = !0, u && (R.vx || R.vz) && (o.x += R.vx * n, o.z += R.vz * n), R.plat && R.plat.cp && !R.plat.amp && o.st === "run" && (o.cp = R.plat)), o.y < -40 && (o.y = -40, o.vy = 0), u && (o.y < (l.id === "final" || l.id === "brawl" ? -1.2 : l.fall === "respawn" ? -8 : -3.5) && (o.st === "run" || o.st === "fin" && l.fall === "respawn") && (l.fall === "respawn" ? yt() : vn("f")), o.st === "run" && l.id === "hill" && o.gr && Math.hypot(o.x, o.z) <= 3.2 && (o._hpAcc = (o._hpAcc || 0) + n, o._hpAcc >= 0.2 && (o.hp = (o.hp || 0) + Math.floor(o._hpAcc / 0.2), o._hpAcc %= 0.2, (o._hpSync = o._hpSync || 0), performance.now() - o._hpSync > 300 && (o._hpSync = performance.now(), ee({ hp: o.hp })))), o.st === "run" && (l.localRule && l.localRule(a, t, B), o.st === "run" && l.hazards && l.hazards(n, c, a, r), o.st === "run" && l.kind === "race" && o.z >= l.finishZ(r) && ct())), He();
       let le = u && l.id === "redlight" ? a.rid + ":" + a.light + ":" + a.lightAt : (u && l.id === "colors" ? a.rid + ":col:" + (a.colMode || "all") + ":" + a.safeCol + ":" + a.lightAt : "");
       le !== Bn && (Bn = le, le && a.playAt && t - (a.lightAt || 0) < 1500 && (a.lightAt || 0) > a.playAt + 50 && O(l.id === "colors" ? ((a.colMode === "pick") ? "go" : "tick") : (a.light === "red" ? "red" : "green"))), zt(n), applyHitImpulses(n), St();
       for (let Z = Te.length - 1; Z >= 0; Z--) {
@@ -4068,9 +3673,9 @@ function pt(n, a) {
           walk: b.walk,
           moving: B,
           fall: b.fall,
-          out: m === "out" && le !== "f" && le !== "p",
+          out: m === "out" && le !== "f",
           fin: m === "fin" || h.id === f,
-          alpha: m === "out" && le !== "f" && le !== "p" ? 0.9 : 1,
+          alpha: m === "out" && le !== "f" ? 0.9 : 1,
           charType: Z
         }), b.fall < 0.6 && b.y > -6 && u.push({
           p: h,
@@ -4148,41 +3753,16 @@ function pt(n, a) {
         note: e("lobbyNote")
       }, Kn = "", nn = -1, tn = !1;
     function On(n, a) {
-      let i = n.roster || [];
-      // Puan yok — hayatta kalanlar üstte, elenenler altta
-      return i.slice().sort((l, r) => {
-        let el = (n.elim || []).includes(l) ? 1 : 0;
-        let er = (n.elim || []).includes(r) ? 1 : 0;
-        if (el !== er) return el - er;
-        if (a && n.winner === l) return -1;
-        if (a && n.winner === r) return 1;
-        return 0;
-      }).map(l => {
-        let r = (n.elim || []).includes(l);
-        let status = "";
-        if (a && n.winner === l) status = "KAZANDI";
-        else if (r) status = "ELENDİ";
-        else if (!a && n.phase === "play") {
+      let i = n.roster || [], t = n.scores || {};
+      return i.slice().sort((l, r) => (t[r] || 0) - (t[l] || 0)).map(l => {
+        let r = (n.elim || []).includes(l), c = r ? "\uD83D\uDC80" : "";
+        if (!r && !a && n.phase === "play") {
           let u = C(l);
-          if (u && u.state.rd === n.rid) {
-            if (u.state.st === "fin") status = "BİTTİ";
-            else if (u.state.st === "out") status = "ELENDİ";
-            else status = "OYUNDA";
-          } else status = "OYUNDA";
-        } else if (!r) status = "HAYATTA";
-        let c = "";
-        if (a && n.winner === l) c = "👑";
-        else if (r) c = "💀";
-        else if (!a && n.phase === "play") {
-          let u = C(l);
-          if (u && u.state.rd === n.rid) {
-            c = u.state.st === "fin" ? "✅" : u.state.st === "out" ? "❌" : "🏃";
-          }
+          u && u.state.rd === n.rid && (c = u.state.st === "fin" ? "\u2705" : u.state.st === "out" ? "\u274C" : "\uD83C\uDFC3");
         }
-        return "<div class=\"row" + (l === p.id ? " me" : "") + (r ? " out" : "") + "\"><i style=\"background:" + Q(l) + "\"></i><span class=\"n\">" + W(L(l)) + "</span><span class=\"sc\">" + status + "</span><span>" + c + "</span></div>";
+        return a && n.winner === l && (c = "\uD83D\uDC51"), "<div class=\"row" + (l === p.id ? " me" : "") + (r ? " out" : "") + "\"><i style=\"background:" + Q(l) + "\"></i><span class=\"n\">" + W(L(l)) + "</span><span class=\"sc\">" + (t[l] || 0) + "</span><span>" + c + "</span></div>";
       }).join("");
     }
-
     function X(n, a) {
       n._h !== a && (n._h = a, n.innerHTML = a);
     }
@@ -4198,7 +3778,7 @@ function pt(n, a) {
       updateMobileUI(a);
       if (a !== "lobby") {
         let m = Ae(n).length, g = (n.roster || []).length, k = (n.order || []).length || 8, A = (a === "play" || a === "intro") && l.hud ? l.hud(n, c, r) : "";
-        X(ae.tl, "<div class=\"h\">Mini oyun " + (n.round || 1) + "/" + k + "</div><div class=\"m\">" + W(l.name) + "</div><div class=\"big\">Kalan oyuncu <b>" + m + "</b>/" + g + "</div>" + (A ? "<div class=\"sub\">" + W(A) + "</div>" : "")), X(ae.tr, "<div class=\"ttl\">Oyuncular</div>" + On(n, !1));
+        X(ae.tl, "<div class=\"h\">Mini oyun " + (n.round || 1) + "/" + k + "</div><div class=\"m\">" + W(l.name) + "</div><div class=\"big\">Kalan oyuncu <b>" + m + "</b>/" + g + "</div>" + (A ? "<div class=\"sub\">" + W(A) + "</div>" : "")), X(ae.tr, "<div class=\"ttl\">Skor</div>" + On(n, !1));
       }
       if (a === "play") {
         let m = Math.max(0, Math.ceil((n.endsAt - i) / 1000)), g;
