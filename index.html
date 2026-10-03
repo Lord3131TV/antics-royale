@@ -86,6 +86,7 @@ body.red #vig{box-shadow:inset 0 0 150px 36px rgba(255,20,70,.6)}
 .char-card .badge{align-self:flex-start;font-size:10px;font-weight:900;border-radius:6px;padding:1px 6px;margin-top:2px}
 .char-card.selected .badge{background:var(--mint);color:var(--plum)}
 .char-card:not(.selected) .badge{background:rgba(255,255,255,.2);color:#fff}
+.char-card.wide{grid-column:1/-1}
 
 .pl{display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:10px;background:rgba(255,255,255,.07);margin-bottom:5px;font-weight:700;font-size:14px}
 .pl.me{background:rgba(46,229,157,.18)}
@@ -433,6 +434,18 @@ body.ph-lobby #uiTopBtns{display:none}
           <div class="subtext">Gri fötr şapka, bıyık, siyah ceket & gri gömlek</div>
           <div class="badge">Seç</div>
         </div>
+
+        <div id="charBtn3" class="char-card wide">
+          <div class="card-head">
+            <span class="avatar-icon">🎧</span>
+            <div>
+              <div class="name">Karakter 3</div>
+              <div style="font-size:11px;opacity:.8">Yayıncı</div>
+            </div>
+          </div>
+          <div class="subtext">Kulaklıklı, çerçeveli gözlüklü, kısa sakallı, siyah kapüşonlu</div>
+          <div class="badge">Seç</div>
+        </div>
       </div>
     </div>
 
@@ -575,7 +588,7 @@ function an(e, S) {
     bob: C,
     sw: x,
     armSw: Q
-  }) : Kt(e, {
+  }) : (L === "char3" ? Yt : Kt)(e, {
     color: N,
     walk: H,
     moving: I,
@@ -671,6 +684,103 @@ function Kt(e, S) {
   } else
     T ? (e.strokeStyle = "#231c20", e.lineWidth = 0.04, e.beginPath(), e.arc(-0.15, v + 0.01, 0.07, Math.PI * 1.1, Math.PI * 1.9), e.stroke(), e.beginPath(), e.arc(0.15, v + 0.01, 0.07, Math.PI * 1.1, Math.PI * 1.9), e.stroke()) : (e.fillStyle = "#ffffff", e.beginPath(), e.ellipse(-0.15, v - 0.03, 0.08, 0.06, 0, 0, Math.PI * 2), e.ellipse(0.15, v - 0.03, 0.08, 0.06, 0, 0, Math.PI * 2), e.fill(), e.fillStyle = "#3a271c", e.beginPath(), e.arc(-0.15, v - 0.03, 0.045, 0, Math.PI * 2), e.arc(0.15, v - 0.03, 0.045, 0, Math.PI * 2), e.fill(), e.fillStyle = "#110f13", e.beginPath(), e.arc(-0.15, v - 0.03, 0.025, 0, Math.PI * 2), e.arc(0.15, v - 0.03, 0.025, 0, Math.PI * 2), e.fill(), e.fillStyle = "#ffffff", e.beginPath(), e.arc(-0.17, v - 0.05, 0.015, 0, Math.PI * 2), e.arc(0.13, v - 0.05, 0.015, 0, Math.PI * 2), e.fill());
   e.fillStyle = q, e.beginPath(), e.ellipse(0, v + 0.04, 0.07, 0.09, 0, 0, Math.PI * 2), e.fill(), e.fillStyle = _, e.beginPath(), e.moveTo(-0.18, v + 0.16), e.quadraticCurveTo(-0.09, v + 0.11, 0, v + 0.13), e.quadraticCurveTo(0.09, v + 0.11, 0.18, v + 0.16), e.quadraticCurveTo(0.1, v + 0.22, 0, v + 0.2), e.quadraticCurveTo(-0.1, v + 0.22, -0.18, v + 0.16), e.fill(), e.fillStyle = "rgba(0,0,0,0.08)", e.beginPath(), e.arc(0, v + 0.28, 0.06, 0, Math.PI), e.fill(), e.fillStyle = "rgba(0,0,0,0.18)", e.beginPath(), e.ellipse(0, v - 0.17, 0.38, 0.08, 0, 0, Math.PI), e.fill(), e.fillStyle = se, e.beginPath(), e.moveTo(-0.34, v - 0.26), e.lineTo(-0.28, v - 0.58), e.quadraticCurveTo(-0.14, v - 0.52, 0, v - 0.57), e.quadraticCurveTo(0.14, v - 0.52, 0.28, v - 0.58), e.lineTo(0.34, v - 0.26), e.closePath(), e.fill(), e.fillStyle = o, e.beginPath(), e.ellipse(0, v - 0.55, 0.15, 0.05, 0, 0, Math.PI * 2), e.fill(), e.fillStyle = he, e.beginPath(), e.roundRect(-0.35, v - 0.35, 0.7, 0.11, 0.03), e.fill(), e.fillStyle = se, e.beginPath(), e.ellipse(0, v - 0.24, 0.49, 0.14, 0, 0, Math.PI * 2), e.fill(), e.fillStyle = o, e.beginPath(), e.ellipse(0, v - 0.22, 0.48, 0.08, 0, 0, Math.PI), e.fill();
+}
+function Yt(e, S) {
+  let { color: M, out: y, fin: T, bob: N, sw: H, armSw: I, fall: p } = S,
+    G = y && p > 0.4,
+    sk = G ? "#9e9aa8" : "#e9bb98", skD = G ? "#7c7886" : "#cf9a78",
+    hd = G ? "#38373e" : "#1a1a1f", hdD = G ? "#27262c" : "#0f0f13", hdL = G ? "#4a4950" : "#2b2b33",
+    jn = G ? "#2f3036" : "#262b38", jnD = G ? "#25242a" : "#1c202b",
+    hr = G ? "#2c2a30" : "#1b1410", bd = G ? "#3a383f" : "#2b1c15", bdL = G ? "#4a484f" : "#3d2a20",
+    fr = G ? "#222127" : "#111116",
+    hp = G ? "#8c8a94" : "#ececf1", hpD = G ? "#5f5d66" : "#b9bac6", gd = G ? "#8a8470" : "#e0ad3c",
+    lq = Math.max(0, H) * 0.14, rq = Math.max(0, -H) * 0.14;
+  // bacaklar
+  e.fillStyle = jnD, e.beginPath(), e.roundRect(-0.38, -0.62 - lq, 0.28, 0.62 + lq, 0.09), e.fill(),
+  e.fillStyle = jn, e.beginPath(), e.roundRect(0.1, -0.62 - rq, 0.28, 0.62 + rq, 0.09), e.fill();
+  // ayakkabılar
+  e.fillStyle = "#1c1b22", e.beginPath(), e.roundRect(-0.41, -0.16 - lq, 0.32, 0.16, 0.06), e.fill(),
+  e.fillStyle = "#ffffff", e.fillRect(-0.41, -0.04 - lq, 0.32, 0.04), e.fillStyle = M, e.fillRect(-0.35, -0.12 - lq, 0.18, 0.03),
+  e.fillStyle = "#1c1b22", e.beginPath(), e.roundRect(0.08, -0.16 - rq, 0.32, 0.16, 0.06), e.fill(),
+  e.fillStyle = "#ffffff", e.fillRect(0.08, -0.04 - rq, 0.32, 0.04), e.fillStyle = M, e.fillRect(0.14, -0.12 - rq, 0.18, 0.03);
+  e.translate(0, -N);
+  // kollar (kapüşonlu kazak kolu)
+  let a1 = T ? -1.65 - Math.abs(Math.sin(S.walk * 0.6)) * 0.2 : -1.1 + I,
+    a2 = T ? -1.65 - Math.abs(Math.sin(S.walk * 0.6 + 1)) * 0.2 : -1.1 - I,
+    r1 = T ? -0.4 : 0.15 + I * 0.3, r2 = T ? 0.4 : -0.15 - I * 0.3;
+  for (let [ax, ay, ar] of [[-0.52, a1, r1], [0.52, a2, r2]]) {
+    e.save(), e.translate(ax, ay), e.rotate(ar),
+    e.fillStyle = hd, e.beginPath(), e.roundRect(-0.13, -0.16, 0.26, 0.54, 0.1), e.fill(),
+    e.fillStyle = hdD, e.fillRect(-0.13, 0.34, 0.26, 0.05),
+    e.fillStyle = sk, e.beginPath(), e.arc(0, 0.47, 0.085, 0, Math.PI * 2), e.fill(), e.restore();
+  }
+  // gövde
+  e.fillStyle = hd, e.beginPath(), e.roundRect(-0.46, -1.34, 0.92, 0.8, [0.24, 0.24, 0.08, 0.08]), e.fill(),
+  e.fillStyle = hdL, e.beginPath(), e.ellipse(-0.2, -1.2, 0.14, 0.06, -0.3, 0, Math.PI * 2), e.fill(),
+  e.fillStyle = hdD, e.beginPath(), e.roundRect(-0.3, -0.86, 0.6, 0.24, 0.07), e.fill(),
+  e.strokeStyle = "rgba(255,255,255,0.08)", e.lineWidth = 0.02, e.beginPath(), e.moveTo(0, -0.86), e.lineTo(0, -0.62), e.stroke();
+  let z = -1.68;
+  // kapüşon (başın arkasında)
+  e.fillStyle = hdD, e.beginPath(), e.ellipse(0, z - 0.02, 0.43, 0.47, 0, 0, Math.PI * 2), e.fill(),
+  e.beginPath(), e.ellipse(0, -1.36, 0.36, 0.12, 0, 0, Math.PI * 2), e.fill(),
+  e.fillStyle = hdL, e.beginPath(), e.ellipse(0, -1.34, 0.26, 0.07, 0, 0, Math.PI), e.fill();
+  // boyun
+  e.fillStyle = skD, e.fillRect(-0.14, z + 0.15, 0.28, 0.22);
+  // ip uçları
+  e.strokeStyle = G ? "#8c8a94" : "#e8e8ee", e.lineWidth = 0.025, e.beginPath(),
+  e.moveTo(-0.1, -1.3), e.lineTo(-0.11, -1.06), e.moveTo(0.1, -1.3), e.lineTo(0.11, -1.06), e.stroke();
+  // kafa
+  e.fillStyle = sk, e.beginPath(), e.roundRect(-0.36, z - 0.44, 0.72, 0.78, [0.36, 0.36, 0.28, 0.28]), e.fill(),
+  e.fillStyle = "rgba(255,255,255,0.18)", e.beginPath(), e.ellipse(-0.08, z - 0.3, 0.16, 0.06, -0.2, 0, Math.PI * 2), e.fill(),
+  e.fillStyle = sk, e.beginPath(), e.arc(-0.37, z - 0.04, 0.07, 0, Math.PI * 2), e.arc(0.37, z - 0.04, 0.07, 0, Math.PI * 2), e.fill();
+  // kısa sakal (kafa şekline kırpılmış)
+  e.save(), e.beginPath(), e.roundRect(-0.36, z - 0.44, 0.72, 0.78, [0.36, 0.36, 0.28, 0.28]), e.clip(),
+  e.fillStyle = bd, e.beginPath(), e.moveTo(-0.4, z - 0.05), e.lineTo(-0.4, z + 0.5), e.lineTo(0.4, z + 0.5), e.lineTo(0.4, z - 0.05),
+  e.quadraticCurveTo(0.28, z + 0.05, 0.14, z + 0.1), e.quadraticCurveTo(0, z + 0.04, -0.14, z + 0.1), e.quadraticCurveTo(-0.28, z + 0.05, -0.4, z - 0.05), e.closePath(), e.fill(),
+  e.fillStyle = bdL, e.globalAlpha = 0.5, e.beginPath(), e.ellipse(-0.2, z + 0.2, 0.09, 0.07, 0.4, 0, Math.PI * 2), e.ellipse(0.2, z + 0.2, 0.09, 0.07, -0.4, 0, Math.PI * 2), e.fill(), e.globalAlpha = 1,
+  e.restore();
+  // saç
+  e.fillStyle = hr, e.beginPath(), e.moveTo(-0.36, z - 0.04), e.bezierCurveTo(-0.42, z - 0.58, 0.42, z - 0.58, 0.36, z - 0.04),
+  e.quadraticCurveTo(0.3, z - 0.2, 0.16, z - 0.27), e.quadraticCurveTo(0, z - 0.33, -0.16, z - 0.27), e.quadraticCurveTo(-0.3, z - 0.2, -0.36, z - 0.04), e.closePath(), e.fill();
+  // kulaklık: bant + kulak pedleri
+  e.strokeStyle = hp, e.lineWidth = 0.075, e.beginPath(), e.arc(0, z - 0.02, 0.45, Math.PI * 1.02, Math.PI * 1.98), e.stroke(),
+  e.strokeStyle = hpD, e.lineWidth = 0.02, e.beginPath(), e.arc(0, z - 0.02, 0.41, Math.PI * 1.06, Math.PI * 1.94), e.stroke();
+  for (let sx of [-1, 1]) {
+    e.fillStyle = hp, e.beginPath(), e.roundRect(sx < 0 ? -0.52 : 0.34, z - 0.22, 0.18, 0.32, 0.08), e.fill(),
+    e.fillStyle = hpD, e.beginPath(), e.roundRect(sx < 0 ? -0.35 : 0.33, z - 0.17, 0.04, 0.22, 0.02), e.fill(),
+    e.fillStyle = gd, e.beginPath(), e.roundRect(sx < 0 ? -0.49 : 0.4, z - 0.14, 0.06, 0.16, 0.03), e.fill();
+  }
+  // kaşlar
+  e.strokeStyle = hr, e.lineWidth = 0.05, e.beginPath(), e.moveTo(-0.3, z - 0.2), e.lineTo(-0.06, z - 0.22), e.moveTo(0.06, z - 0.22), e.lineTo(0.3, z - 0.2), e.stroke();
+  // gözler
+  if (y && p > 0.4) {
+    e.strokeStyle = "#2d2420", e.lineWidth = 0.04;
+    for (let F of [-0.17, 0.17])
+      e.beginPath(), e.moveTo(F - 0.055, z - 0.12), e.lineTo(F + 0.055, z - 0.02), e.moveTo(F + 0.055, z - 0.12), e.lineTo(F - 0.055, z - 0.02), e.stroke();
+  } else if (T) {
+    e.strokeStyle = "#22150d", e.lineWidth = 0.04, e.beginPath(), e.arc(-0.17, z - 0.04, 0.065, Math.PI * 1.1, Math.PI * 1.9), e.stroke(), e.beginPath(), e.arc(0.17, z - 0.04, 0.065, Math.PI * 1.1, Math.PI * 1.9), e.stroke();
+  } else {
+    e.fillStyle = "#ffffff", e.beginPath(), e.ellipse(-0.17, z - 0.07, 0.075, 0.06, 0, 0, Math.PI * 2), e.ellipse(0.17, z - 0.07, 0.075, 0.06, 0, 0, Math.PI * 2), e.fill(),
+    e.fillStyle = "#4a3020", e.beginPath(), e.arc(-0.17, z - 0.07, 0.042, 0, Math.PI * 2), e.arc(0.17, z - 0.07, 0.042, 0, Math.PI * 2), e.fill(),
+    e.fillStyle = "#120d0b", e.beginPath(), e.arc(-0.17, z - 0.07, 0.022, 0, Math.PI * 2), e.arc(0.17, z - 0.07, 0.022, 0, Math.PI * 2), e.fill(),
+    e.fillStyle = "#ffffff", e.beginPath(), e.arc(-0.19, z - 0.09, 0.013, 0, Math.PI * 2), e.arc(0.15, z - 0.09, 0.013, 0, Math.PI * 2), e.fill();
+  }
+  // gözlük (dikdörtgen siyah çerçeve)
+  e.fillStyle = "rgba(190,225,255,0.16)", e.beginPath(), e.roundRect(-0.31, z - 0.17, 0.28, 0.2, 0.05), e.roundRect(0.03, z - 0.17, 0.28, 0.2, 0.05), e.fill(),
+  e.strokeStyle = fr, e.lineWidth = 0.04, e.beginPath(), e.roundRect(-0.31, z - 0.17, 0.28, 0.2, 0.05), e.stroke(), e.beginPath(), e.roundRect(0.03, z - 0.17, 0.28, 0.2, 0.05), e.stroke(),
+  e.beginPath(), e.moveTo(-0.03, z - 0.1), e.lineTo(0.03, z - 0.1), e.moveTo(-0.31, z - 0.11), e.lineTo(-0.36, z - 0.1), e.moveTo(0.31, z - 0.11), e.lineTo(0.36, z - 0.1), e.stroke();
+  // burun
+  e.fillStyle = skD, e.beginPath(), e.ellipse(0, z + 0.03, 0.055, 0.07, 0, 0, Math.PI * 2), e.fill();
+  // ağız
+  if (y && p > 0.4) {
+    e.strokeStyle = "#241816", e.lineWidth = 0.035, e.beginPath(), e.moveTo(-0.07, z + 0.22), e.lineTo(0.07, z + 0.22), e.stroke();
+  } else if (T) {
+    e.fillStyle = "#6a2a2c", e.beginPath(), e.ellipse(0, z + 0.2, 0.09, 0.07, 0, 0, Math.PI), e.fill(),
+    e.fillStyle = "#ffffff", e.fillRect(-0.07, z + 0.2, 0.14, 0.025);
+  } else {
+    e.fillStyle = "#ffffff", e.beginPath(), e.ellipse(0, z + 0.2, 0.075, 0.035, 0, 0, Math.PI), e.fill(),
+    e.strokeStyle = "#4a211f", e.lineWidth = 0.032, e.beginPath(), e.arc(0, z + 0.14, 0.085, Math.PI * 0.2, Math.PI * 0.8), e.stroke();
+  }
 }
 var ln = 16, V = 16, $ = 80, Un = $ + 16, rn = 7.4, Yn = 28, Zn = 9.2, Vn = 4000, Jn = 3500, Qn = 10000, ge = [
     "#ff5a5f",
@@ -1130,10 +1240,7 @@ function et() {
     let v = 0, ce = "";
     function He(n = !1) {
       let a = performance.now(), i = o.vx + o.kx, t = o.vz + o.kz, l = ie(o.x) + "," + ie(o.y) + "," + ie(o.z) + "," + ie(i) + "," + ie(t);
-      // İtme / yüksek hız sırasında daha sık senkron (görsel tutarlılık)
-      let spd = Math.hypot(i, t);
-      let minGap = spd > 6 || Math.abs(o.kx) + Math.abs(o.kz) > 3 || o.y < -0.2 ? 80 : 400;
-      !n && l === ce && a - v < minGap || (ce = l, v = a, p.setState({
+      !n && l === ce && a - v < 400 || (ce = l, v = a, p.setState({
         x: ie(o.x),
         y: ie(Math.max(o.y, -30)),
         z: ie(o.z),
@@ -2989,14 +3096,21 @@ function et() {
     }, e("nameIn").addEventListener("keydown", n => {
       n.key === "Enter" && wn();
     }), e("nameIn").value = /^Guest \d+$/.test(p.name) ? "" : p.name;
-    let An = e("charBtn1"), Tn = e("charBtn2");
+    let An = e("charBtn1"), Tn = e("charBtn2"), c3Btn = e("charBtn3");
     An && Tn && (An.onclick = () => Rn("char1"), Tn.onclick = () => Rn("char2"));
+    c3Btn && (c3Btn.onclick = () => Rn("char3"));
     function Rn(n) {
-      de(), O("pop"), o.char = n, localStorage.setItem("antics_royale_char", n), ee({ char: n }), Cn(), fe(o.x, 1, o.z, n === "char1" ? "#ffb020" : "#4a90ff", 12, 3);
+      de(), O("pop"), o.char = n, localStorage.setItem("antics_royale_char", n), ee({ char: n }), Cn(), fe(o.x, 1, o.z, n === "char1" ? "#ffb020" : n === "char3" ? "#2ee59d" : "#4a90ff", 12, 3);
     }
     function Cn() {
-      let n = e("charBtn1"), a = e("charBtn2");
-      !n || !a || (o.char === "char1" ? (n.classList.add("selected"), a.classList.remove("selected")) : (a.classList.add("selected"), n.classList.remove("selected")));
+      [["charBtn1", "char1"], ["charBtn2", "char2"], ["charBtn3", "char3"]].forEach(([id, k]) => {
+        let b = e(id);
+        if (!b) return;
+        let on = o.char === k || (k === "char2" && o.char !== "char1" && o.char !== "char3");
+        b.classList.toggle("selected", on);
+        let bg = b.querySelector(".badge");
+        if (bg) bg.textContent = on ? "Seçildi ✓" : "Seç";
+      });
     }
     Cn();
 
@@ -3033,24 +3147,20 @@ function et() {
           }, me.set(a.id, t)), a.id === p.id)
           t.x = o.x, t.y = o.y, t.z = o.z, t.vx = o.vx + o.kx, t.vz = o.vz + o.kz;
         else {
-          let u = K((y.now() - (i.at || y.now())) / 1000, 0, 0.28), f = (i.x || 0) + (i.vx || 0) * u, d = (i.z || 0) + (i.vz || 0) * u;
+          let u = K((y.now() - (i.at || y.now())) / 1000, 0, 0.25), f = (i.x || 0) + (i.vx || 0) * u, d = (i.z || 0) + (i.vz || 0) * u;
           let imp = hitImp.get(a.id);
           if (imp) {
             f += imp.ox || 0;
             d += imp.oz || 0;
           }
-          let distJump = Math.hypot(f - t.x, d - t.z);
-          let netSpd = Math.hypot(i.vx || 0, i.vz || 0);
-          // Büyük sıçrama veya hızlı ağ hızı: hemen yakala (itilme sonrası kurban He gönderir)
-          if (distJump > 8 || Math.abs((i.y || 0) - t.y) > 5 || (netSpd > 6 && distJump > 2.5))
-            t.x = f, t.z = d, t.y = (i.y || 0) + (imp && imp.oy || 0) * 0.5;
+          if (Math.hypot(f - t.x, d - t.z) > 10 || Math.abs((i.y || 0) - t.y) > 6)
+            t.x = f, t.z = d, t.y = i.y || 0;
           else {
-            // hitImp varken ağa biraz daha yavaş yaklaş; yoksa hızlı takip
-            let h = 1 - Math.exp(-n * (imp ? 10 : 18));
+            let h = 1 - Math.exp(-n * (imp ? 8 : 16));
             t.x += (f - t.x) * h, t.z += (d - t.z) * h, t.y += ((i.y || 0) + (imp && imp.oy || 0) - t.y) * h;
           }
-          t.vx = (i.vx || 0) + (imp ? imp.kx * 0.55 : 0);
-          t.vz = (i.vz || 0) + (imp ? imp.kz * 0.55 : 0);
+          t.vx = (i.vx || 0) + (imp ? imp.kx * 0.5 : 0);
+          t.vz = (i.vz || 0) + (imp ? imp.kz * 0.5 : 0);
         }
         let l = a.id === p.id ? o.st : i.st, r = a.id === p.id ? o.oc : i.oc, c = l === "out" && r !== "f";
         t.fall = K(t.fall + (c ? n * 3.2 : -n * 6), 0, 1), t.walk += Math.hypot(t.vx, t.vz) * n * 1.5;
@@ -3070,44 +3180,7 @@ function et() {
     let Ln = new Map();
     // Geçici yerel savrulma (rakip görsel tahmini) — ağ state gelene kadar
     let hitImp = new Map();
-    // Ağ üzerinden gelen itme impulsları (saldırgan state.hit yazar, kurban bir kez uygular)
-    let lastHitT = 0;
-    function applyNetworkHits() {
-      if (o.st !== "run") return;
-      let now = y.now();
-      for (let pl of y.players) {
-        if (pl.id === p.id) continue;
-        let h = pl.state && pl.state.hit;
-        if (!h || h.id !== p.id || typeof h.t !== "number") continue;
-        if (h.t <= lastHitT) continue;
-        // Eski paketleri yoksay (lag / tekrar)
-        if (now - h.t > 900) continue;
-        lastHitT = h.t;
-        let kx = +h.kx || 0, kz = +h.kz || 0, vy = +h.vy || 0;
-        let mag = Math.hypot(kx, kz);
-        if (mag < 0.2 && vy < 0.5) continue;
-        // Kendi yetkili fizik durumumuza uygula — düşme/elenme buradan tetiklenir
-        o.kx += kx;
-        o.kz += kz;
-        if (vy > 0) {
-          o.vy = Math.max(o.vy, vy);
-          o.gr = !1;
-        }
-        if (mag > 0.001) {
-          let nx = kx / mag, nz = kz / mag;
-          o.x += nx * Math.min(0.85, mag * 0.04);
-          o.z += nz * Math.min(0.85, mag * 0.04);
-        }
-        O("hit");
-        re = Math.max(re, Math.min(0.55, mag / 16));
-        fe(o.x, 1.1, o.z, mag > 8 ? "#ffd23f" : "#ff6bd6", mag > 8 ? 16 : 12, mag > 8 ? 5 : 4);
-        // Hemen diğer istemcilere yeni konum/hız yayınla
-        He(!0);
-      }
-    }
     function kt(n) {
-      // Önce ağdan gelen itmeleri uygula (kurban tarafı)
-      applyNetworkHits();
       let a = performance.now();
       let mapId = (Ye(n, n.phase || "play") || {}).id || "";
       let isArena = mapId === "final" || mapId === "brawl";
@@ -3133,10 +3206,7 @@ function et() {
         l.x += d * overlap * 0.45;
         l.z += h * overlap * 0.45;
         let myVx = o.vx + o.kx, myVz = o.vz + o.kz;
-        // Ağ hızı + yerel hitImp tahmini (rakibin görsel momentumu)
-        let impR = hitImp.get(i.id);
-        let theirVx = (t.vx || 0) + (impR ? impR.kx * 0.35 : 0);
-        let theirVz = (t.vz || 0) + (impR ? impR.kz * 0.35 : 0);
+        let theirVx = (t.vx || 0), theirVz = (t.vz || 0);
         // Benim rakibe doğru hız bileşenim
         let myInto = myVx * d + myVz * h;
         // Rakibin bana doğru hız bileşeni
@@ -3145,13 +3215,14 @@ function et() {
         let theirSpd = Math.hypot(theirVx, theirVz);
         let isDash = Math.hypot(o.kx, o.kz) > 5;
         // Karşılıklı itme — saldıran ve itilen her iki tarafta da uygulanır
-        let pushing = myInto > 0.12 || mySpd > 2.2;
-        let beingPushed = theirInto > 0.12 || theirSpd > 2.2;
-        let theirDash = Math.hypot(theirVx, theirVz) > 5 && theirInto > 0.45;
-        if ((pushing || beingPushed) && a - (Ln.get(i.id) || 0) > (isArena ? 55 : 80)) {
+        // (İtilen oyuncunun kendi istemcisinde de knockback alınmalı ki platform dışına çıkınca düşsün)
+        let pushing = myInto > 0.15 || mySpd > 2.5;
+        let beingPushed = theirInto > 0.15 || theirSpd > 2.5;
+        let theirDash = Math.hypot(theirVx, theirVz) > 5 && theirInto > 0.5;
+        if ((pushing || beingPushed) && a - (Ln.get(i.id) || 0) > (isArena ? 70 : 90)) {
           Ln.set(i.id, a);
           let base = isArena ? 5.2 : 3.2;
-          // Ben itiyorsam: rakibi savur + ağ paketi gönder + hafif geri git
+          // Ben itiyorsam: rakibi savur + hafif geri git
           if (pushing) {
             let fromSpeed = Math.max(0, myInto) * (isArena ? 1.8 : 1.4) + (mySpd > 3 ? (mySpd - 3) * (isArena ? 0.45 : 0.3) : 0);
             let dashBonus = isDash ? (isArena ? 5.5 : 4) : 0;
@@ -3162,8 +3233,8 @@ function et() {
             let imp = hitImp.get(i.id) || { kx: 0, kz: 0, vy: 0, ox: 0, oz: 0, oy: 0 };
             imp.kx += d * knockThem;
             imp.kz += h * knockThem;
-            imp.ox = (imp.ox || 0) + d * Math.min(1.6, knockThem * 0.1);
-            imp.oz = (imp.oz || 0) + h * Math.min(1.6, knockThem * 0.1);
+            imp.ox = (imp.ox || 0) + d * Math.min(1.4, knockThem * 0.08);
+            imp.oz = (imp.oz || 0) + h * Math.min(1.4, knockThem * 0.08);
             if (knockThem > 6) {
               imp.vy = Math.max(imp.vy || 0, isDash ? 4.5 : 2.8);
               imp.oy = Math.max(imp.oy || 0, isDash ? 0.35 : 0.18);
@@ -3172,27 +3243,14 @@ function et() {
             let ik = Math.hypot(imp.kx, imp.kz);
             if (ik > 22) { imp.kx *= 22 / ik; imp.kz *= 22 / ik; }
             hitImp.set(i.id, imp);
-            l.x += d * Math.min(0.85, knockThem * 0.04);
-            l.z += h * Math.min(0.85, knockThem * 0.04);
-            l.vx = (l.vx || 0) + d * knockThem * 0.3;
-            l.vz = (l.vz || 0) + h * knockThem * 0.3;
-            // Kritik: kurban istemcisine impulse ilet (player.state.hit)
-            try {
-              p.setState({
-                hit: {
-                  id: i.id,
-                  kx: +(d * knockThem).toFixed(3),
-                  kz: +(h * knockThem).toFixed(3),
-                  vy: +(knockThem > 6 ? (isDash ? 4.5 : 2.8) : 0).toFixed(2),
-                  t: Math.round(y.now())
-                }
-              });
-            } catch (_) {}
+            l.x += d * Math.min(0.7, knockThem * 0.03);
+            l.z += h * Math.min(0.7, knockThem * 0.03);
+            l.vx = (l.vx || 0) + d * knockThem * 0.25;
+            l.vz = (l.vz || 0) + h * knockThem * 0.25;
             O("hit");
             re = Math.max(re, Math.min(0.55, knockThem / 16));
             fe(l.x, 1.1, l.z, isDash ? "#ffd23f" : "#ff6bd6", isDash ? 16 : 12, isDash ? 5 : 4);
             fe(o.x, 0.9, o.z, "#ffffff", 6, 3);
-            He(!0);
           }
           // Ben itiliyorsam: kendi konumuma knockback uygula (platform dışına çıkınca mevcut ölüm sistemi çalışır)
           if (beingPushed && !pushing) {
@@ -3207,12 +3265,11 @@ function et() {
               o.gr = !1;
             }
             // Çakışmayı ayır
-            o.x -= d * Math.min(0.85, knockOnMe * 0.04);
-            o.z -= h * Math.min(0.85, knockOnMe * 0.04);
+            o.x -= d * Math.min(0.7, knockOnMe * 0.03);
+            o.z -= h * Math.min(0.7, knockOnMe * 0.03);
             O("hit");
             re = Math.max(re, Math.min(0.55, knockOnMe / 16));
             fe(o.x, 1.1, o.z, theirDash ? "#ffd23f" : "#ff6bd6", theirDash ? 16 : 12, theirDash ? 5 : 4);
-            He(!0);
           }
         } else if (myInto > 0) {
           o.kx -= d * myInto * 0.35;
@@ -3232,21 +3289,6 @@ function et() {
           hitImp.delete(id);
           continue;
         }
-        // Ağ state'i kurbanın gerçek konumunu güncellediyse yerel tahmini zayıflat
-        let netX = pl.state.x, netZ = pl.state.z;
-        if (typeof netX === "number" && typeof netZ === "number") {
-          let netAge = (y.now() - (pl.state.at || y.now())) / 1000;
-          // Kurban kendi konumunu güncellediyse (itilme sonrası He), offset'i ağa yaklaştır
-          if (netAge < 0.35) {
-            let predX = (imp.ox || 0), predZ = (imp.oz || 0);
-            let err = Math.hypot((l.x - predX) - netX, (l.z - predZ) - netZ);
-            // Ağ konumu tahminden belirgin şekilde farklıysa ve kurban hareketliysek, ağı daha çok dinle
-            if (err < 4) {
-              imp.ox = (imp.ox || 0) * 0.85;
-              imp.oz = (imp.oz || 0) * 0.85;
-            }
-          }
-        }
         imp.ox = (imp.ox || 0) + imp.kx * n;
         imp.oz = (imp.oz || 0) + imp.kz * n;
         if (imp.vy) {
@@ -3261,7 +3303,7 @@ function et() {
         imp.kx *= damp;
         imp.kz *= damp;
         // offset da yavaşça sönsün (ağ state yakalasın)
-        let od = Math.exp(-n * 0.75);
+        let od = Math.exp(-n * 0.9);
         imp.ox *= od;
         imp.oz *= od;
         imp.oy = (imp.oy || 0) * Math.exp(-n * 1.8);
@@ -3271,7 +3313,6 @@ function et() {
           hitImp.set(id, imp);
       }
     }
-
     let Bn = "";
     function Pt(n) {
       bt(), un();
@@ -4030,7 +4071,7 @@ function et() {
       let a = y.host;
       updateRoomBox();
       X(ae.plist, y.players.map(l => {
-        let c = ((l.id === p.id ? o.char : l.state && l.state.char) || "char1") === "char1" ? "\uD83E\uDDD4 Sakallı" : "\uD83C\uDFA9 Fötr Şapkalı";
+        let cz = (l.id === p.id ? o.char : l.state && l.state.char) || "char1", c = cz === "char1" ? "\uD83E\uDDD4 Sakallı" : cz === "char3" ? "\uD83C\uDFA7 Kulaklıklı" : "\uD83C\uDFA9 Fötr Şapkalı";
         return "<div class=\"pl" + (l.id === p.id ? " me" : "") + "\"><i style=\"background:" + x(l) + "\"></i><span class=\"n\">" + W(l.name) + (l.id === p.id ? " (sen)" : "") + "</span><span class=\"cbadge\">" + c + "</span>" + (a && l.id === a.id ? "<em>host</em>" : "") + (n.creatorId && l.id === n.creatorId ? "<em style=\"background:var(--mint)\">kurucu</em>" : "") + "</div>";
       }).join(""));
       let st = n || w();
