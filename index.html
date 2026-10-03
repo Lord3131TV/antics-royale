@@ -1245,11 +1245,9 @@ function et() {
     function He(n = !1) {
       let a = performance.now(), i = o.vx + o.kx, t = o.vz + o.kz;
       let highKnock = Math.hypot(o.kx, o.kz) > 1.5;
-      let airborne = !o.gr || Math.abs(o.vy) > 0.15 || o.y > 0.08;
-      // vy dahil — eski negatif vy'nin remote'ta kalıp düşme illüzyonu yaratmasını engelle
-      let l = ie(o.x) + "," + ie(o.y) + "," + ie(o.z) + "," + ie(i) + "," + ie(t) + "," + ie(o.vy);
-      // Knockback / havada iken sık gönder; yerde daha seyrek
-      let throttle = highKnock || pendingPk || airborne ? 45 : 400;
+      let l = ie(o.x) + "," + ie(o.y) + "," + ie(o.z) + "," + ie(i) + "," + ie(t);
+      // Knockback sırasında daha sık gönder; aksi halde 400ms throttle
+      let throttle = highKnock || pendingPk ? 45 : 400;
       if (!n && l === ce && a - v < throttle && !pendingPk) return;
       ce = l; v = a;
       let payload = {
@@ -1258,10 +1256,9 @@ function et() {
         z: ie(o.z),
         vx: ie(i),
         vz: ie(t),
-        vy: ie(o.vy),
-        gr: o.gr ? 1 : 0,
         at: Math.round(y.now())
       };
+      if (Math.abs(o.vy) > 0.4) payload.vy = ie(o.vy);
       if (pendingPk) {
         payload.pk = pendingPk;
         pendingPk = null;
@@ -3166,62 +3163,43 @@ function et() {
           }, me.set(a.id, t)), a.id === p.id)
           t.x = o.x, t.y = o.y, t.z = o.z, t.vx = o.vx + o.kx, t.vz = o.vz + o.kz;
         else {
-          // Stale paketleri reddet (eski at yeni pozisyonu ezmesin)
-          let pktAt = typeof i.at === "number" ? i.at : 0;
-          if (pktAt && t._at && pktAt < t._at - 80) {
-            // çok eski paket — mevcut local görsel devam eder
-          } else {
-            if (pktAt) t._at = Math.max(t._at || 0, pktAt);
-            let imp = hitImp.get(a.id);
-            // Ağ pozisyonunu hızla ekstrapolasyonla tahmin et; yüksek hızda daha uzun pencere
-            let netSpd = Math.hypot(i.vx || 0, i.vz || 0);
-            let netVy = typeof i.vy === "number" ? i.vy : 0;
-            // Yerdesin: gr bayrağı veya y≈0 ve |vy| küçük (eski stale vy yok)
-            let grounded = i.gr === 1 || i.gr === true ||
-              ((i.y || 0) <= 0.12 && Math.abs(netVy) < 0.55 && !(imp && (imp.oy || 0) > 0.05));
-            let maxEx = grounded ? 0.05 : (netSpd > 8 ? 0.35 : 0.22);
-            let age = (y.now() - (i.at || y.now())) / 1000;
-            let u = K(age, 0, maxEx);
-            let f = (i.x || 0) + (i.vx || 0) * u, d = (i.z || 0) + (i.vz || 0) * u;
-            // Yerel hitImp sadece anlık görsel; ağ state yakalayınca hızlı sön
-            if (imp) {
-              f += (imp.ox || 0) * 0.85;
-              d += (imp.oz || 0) * 0.85;
-              let nx = (i.x || 0) - (t.x - (imp.ox || 0));
-              let nz = (i.z || 0) - (t.z - (imp.oz || 0));
-              let along = (imp.kx || 0) * nx + (imp.kz || 0) * nz;
-              if (along > 0.5 || netSpd > 6) {
-                imp.ox = (imp.ox || 0) * 0.55;
-                imp.oz = (imp.oz || 0) * 0.55;
-                imp.kx = (imp.kx || 0) * 0.7;
-                imp.kz = (imp.kz || 0) * 0.7;
-                if (imp.oy) imp.oy *= 0.55;
-                if (imp.vy) imp.vy *= 0.7;
-              }
+          // Ağ pozisyonunu hızla ekstrapolasyonla tahmin et; yüksek hızda daha uzun pencere
+          let netSpd = Math.hypot(i.vx || 0, i.vz || 0);
+          let maxEx = netSpd > 8 ? 0.35 : 0.22;
+          let u = K((y.now() - (i.at || y.now())) / 1000, 0, maxEx);
+          let f = (i.x || 0) + (i.vx || 0) * u, d = (i.z || 0) + (i.vz || 0) * u;
+          let imp = hitImp.get(a.id);
+          // Yerel hitImp sadece anlık görsel; ağ state yakalayınca hızlı sön
+          if (imp) {
+            f += (imp.ox || 0) * 0.85;
+            d += (imp.oz || 0) * 0.85;
+            // Ağ pozisyonu itme yönünde ilerlediyse offset'i agresif azalt
+            let nx = (i.x || 0) - (t.x - (imp.ox || 0));
+            let nz = (i.z || 0) - (t.z - (imp.oz || 0));
+            let along = (imp.kx || 0) * nx + (imp.kz || 0) * nz;
+            if (along > 0.5 || netSpd > 6) {
+              imp.ox = (imp.ox || 0) * 0.55;
+              imp.oz = (imp.oz || 0) * 0.55;
+              imp.kx = (imp.kx || 0) * 0.7;
+              imp.kz = (imp.kz || 0) * 0.7;
             }
-            let err = Math.hypot(f - t.x, d - t.z);
-            let yNet = (i.y || 0);
-            let yErr = Math.abs(yNet - t.y);
-            if (err > 8 || yErr > 5) {
-              t.x = f; t.z = d; t.y = yNet;
-            } else {
-              let rate = imp ? 12 : (netSpd > 6 ? 22 : 16);
-              let h = 1 - Math.exp(-n * rate);
-              t.x += (f - t.x) * h; t.z += (d - t.z) * h;
-              // Y: yerdeyken gravity/extrapolate uygulama — sabit tut
-              let ty = yNet + (imp && imp.oy || 0);
-              if (!grounded && Math.abs(netVy) > 0.35) {
-                ty += netVy * Math.min(u, 0.1);
-              }
-              if (grounded && yNet <= 0.12) ty = Math.max(0, Math.min(ty, 0.12));
-              let yRate = grounded ? Math.max(rate, 20) : rate;
-              let hy = 1 - Math.exp(-n * yRate);
-              t.y += (ty - t.y) * hy;
-              if (grounded && t.y < 0.15) t.y = Math.max(0, t.y);
-            }
-            t.vx = (i.vx || 0) + (imp ? imp.kx * 0.35 : 0);
-            t.vz = (i.vz || 0) + (imp ? imp.kz * 0.35 : 0);
           }
+          let err = Math.hypot(f - t.x, d - t.z);
+          let yErr = Math.abs((i.y || 0) - t.y);
+          if (err > 8 || yErr > 5)
+            t.x = f, t.z = d, t.y = i.y || 0;
+          else {
+            // Yüksek hız / aktif impulse: daha hızlı yakala (smoothing lag'ı azalt)
+            let rate = imp ? 12 : (netSpd > 6 ? 22 : 16);
+            let h = 1 - Math.exp(-n * rate);
+            t.x += (f - t.x) * h, t.z += (d - t.z) * h;
+            let ty = (i.y || 0) + (imp && imp.oy || 0);
+            if (typeof i.vy === "number" && Math.abs(i.vy) > 0.5)
+              ty += i.vy * Math.min(u, 0.12);
+            t.y += (ty - t.y) * h;
+          }
+          t.vx = (i.vx || 0) + (imp ? imp.kx * 0.35 : 0);
+          t.vz = (i.vz || 0) + (imp ? imp.kz * 0.35 : 0);
         }
         let l = a.id === p.id ? o.st : i.st, r = a.id === p.id ? o.oc : i.oc, c = l === "out" && r !== "f";
         t.fall = K(t.fall + (c ? n * 3.2 : -n * 6), 0, 1), t.walk += Math.hypot(t.vx, t.vz) * n * 1.5;
