@@ -2534,7 +2534,7 @@ function et() {
         let roster = n.roster || [];
         let inRoster = roster.length ? roster.includes(p.id) : false;
         if (inRoster) {
-          it(Se(n.mg)), o.hp = 0, o._hpAcc = 0, appliedHitSeq.clear(), hitImp.clear(), outHits = [], lastHitOutAt = 0, ee({
+          it(Se(n.mg)), o.hp = 0, o._hpAcc = 0, appliedHitSeq.clear(), hitImp.clear(), lastHitOutAt = 0, ee({
             st: "run",
             rd: n.rid,
             fa: null,
@@ -3207,53 +3207,69 @@ function et() {
     let hitSeq = 0;
     let appliedHitSeq = new Map(); // attackerId -> son uygulanan seq
     let lastHitOutAt = 0;
-    let outHits = []; // gönderdiğim son vuruşlar (tek slot yerine kuyruk; hiçbir vuruş ezilmez)
+    let outHits = [];
+    const HIT_MIN = 6.5; // en az ~3 m savrulma (decay 2/sn => mesafe ≈ kuvvet/2)
+    // Vuruş paketi: DÜZ ve ilkel alanlar (hv/hx/hz/hy/hs/ht) — iç içe nesne/dizi sunucuda kaybolabiliyor
     function publishHitOut(victimId, kx, kz, vy) {
-      // seq sayfa yenilense bile geriye düşmesin diye sunucu zamanından türetilir
+      kx = +kx; kz = +kz;
+      if (!isFinite(kx) || !isFinite(kz)) { kx = 0; kz = 0; }
+      let mag = Math.hypot(kx, kz);
+      if (mag < 0.0001) {
+        // yön hesaplanamadıysa saldırgandan rakibe olan konum farkından türet
+        let vv = me.get(victimId);
+        let ddx = vv ? vv.x - o.x : 0, ddz = vv ? vv.z - o.z : 1, dm = Math.hypot(ddx, ddz) || 1;
+        kx = ddx / dm; kz = ddz / dm; mag = 1;
+      }
+      if (mag < HIT_MIN) { kx *= HIT_MIN / mag; kz *= HIT_MIN / mag; }
       hitSeq = Math.max(hitSeq + 1, Math.round(y.now()));
       lastHitOutAt = performance.now();
-      outHits.push({ id: victimId, kx: ie(kx), kz: ie(kz), vy: ie(vy || 0), seq: hitSeq, t: Math.round(y.now()) });
-      if (outHits.length > 8) outHits.shift();
-      try { p.setState({ hitOut: outHits.slice() }); } catch (_) {}
+      try {
+        p.setState({
+          hv: victimId,
+          hx: ie(kx),
+          hz: ie(kz),
+          hy: ie(vy || 0),
+          hs: hitSeq,
+          ht: Math.round(y.now())
+        });
+      } catch (_) {}
     }
+    // Tek hit'i itilen oyuncunun GERÇEK state'ine uygular (tam bir kez, seq ile tekrar engellenir)
+    function applyIncomingHit(pl) {
+      if (!pl || pl.id === p.id || o.st !== "run") return;
+      let st = pl.state;
+      if (!st || st.hv !== p.id) return;
+      let seq = +st.hs || 0;
+      if (!seq || seq <= (appliedHitSeq.get(pl.id) || 0)) return;
+      appliedHitSeq.set(pl.id, seq);
+      // çok eski (ör. turdan kalma) paket uygulanmaz; saat farkına karşı geniş tolerans
+      if (typeof st.ht === "number" && Math.abs(y.now() - st.ht) > 5000) return;
+      let kx = +st.hx || 0, kz = +st.hz || 0, vy = +st.hy || 0;
+      if (!isFinite(kx) || !isFinite(kz)) return;
+      o.kx += kx;
+      o.kz += kz;
+      if (vy > 0) {
+        o.vy = Math.max(o.vy, vy);
+        o.gr = !1;
+      }
+      let ik = Math.hypot(o.kx, o.kz);
+      if (ik > 32) { o.kx *= 32 / ik; o.kz *= 32 / ik; }
+      O("hit");
+      re = Math.max(re, Math.min(0.55, Math.hypot(kx, kz) / 16));
+      fe(o.x, 1.1, o.z, Math.hypot(kx, kz) > 8 ? "#ffd23f" : "#ff6bd6", 14, 5);
+      He(!0);
+    }
+    // Paket gelir gelmez uygula (kare döngüsünü bekleyen tek-slot ezilmesi olmasın)
+    try { y.onPlayerState(applyIncomingHit); } catch (_) {}
     function consumeRemoteHits() {
-      if (o.st !== "run") return;
       let now = performance.now();
-      // Eski hitOut yayınını temizle
+      // Eski vuruş yayınını temizle
       if (lastHitOutAt && now - lastHitOutAt > 900) {
         lastHitOutAt = 0;
-        outHits = [];
-        try { p.setState({ hitOut: null }); } catch (_) {}
+        try { p.setState({ hv: null, hx: null, hz: null, hy: null, hs: null, ht: null }); } catch (_) {}
       }
-      let sNow = y.now();
-      for (let pl of y.players) {
-        if (pl.id === p.id) continue;
-        let list = pl.state && pl.state.hitOut;
-        if (!list) continue;
-        if (!Array.isArray(list)) list = [list];
-        list = list.filter(h => h && typeof h === "object" && h.id === p.id).sort((m, q) => (m.seq | 0) - (q.seq | 0));
-        for (let ho of list) {
-          let seq = ho.seq | 0;
-          if (seq <= (appliedHitSeq.get(pl.id) || 0)) continue;
-          appliedHitSeq.set(pl.id, seq);
-          // Bayat paket (ör. turdan önce kalmış / geç gelmiş) asla uygulanmaz
-          if (typeof ho.t === "number" && Math.abs(sNow - ho.t) > 1500) continue;
-          let kx = +ho.kx || 0, kz = +ho.kz || 0, vy = +ho.vy || 0;
-          // TEK authoritative sonuç: itilen oyuncunun kendi client'ı impulse'u TAM BİR KEZ uygular
-          o.kx += kx;
-          o.kz += kz;
-          if (vy > 0) {
-            o.vy = Math.max(o.vy, vy);
-            o.gr = !1;
-          }
-          let ik = Math.hypot(o.kx, o.kz);
-          if (ik > 32) { o.kx *= 32 / ik; o.kz *= 32 / ik; }
-          O("hit");
-          re = Math.max(re, Math.min(0.55, Math.hypot(kx, kz) / 16));
-          fe(o.x, 1.1, o.z, Math.hypot(kx, kz) > 8 ? "#ffd23f" : "#ff6bd6", 14, 5);
-          He(!0);
-        }
-      }
+      // Yedek: kare başına da kontrol (seq ile çift uygulama olmaz)
+      for (let pl of y.players) applyIncomingHit(pl);
     }
     function kt(n) {
       let a = performance.now();
