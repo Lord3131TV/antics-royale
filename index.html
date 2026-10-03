@@ -298,6 +298,13 @@ body.show-mobile #mobileCtrls{display:block}
 }
 
 
+
+/* ===== Language selector ===== */
+.lang-row{display:flex;gap:8px;margin:10px 0 4px;flex-wrap:wrap}
+.lang-row button{flex:1;min-width:120px;padding:10px 12px;font-size:13px;border-radius:11px}
+.lang-row button.active{background:var(--mint);color:var(--plum);box-shadow:0 4px 0 rgba(0,0,0,.3)}
+.lang-row button:not(.active){background:rgba(255,255,255,.12);color:#fff;box-shadow:0 3px 0 rgba(0,0,0,.25)}
+
 /* ===== Admin sistemi ===== */
 .adm-box{margin:10px 0 0;background:rgba(0,0,0,.28);border:1px solid rgba(255,210,63,.4);border-radius:14px;padding:10px 12px}
 .adm-h{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.7px;color:var(--sun);margin-bottom:8px}
@@ -361,98 +368,103 @@ body.ph-lobby #uiTopBtns{display:none}
       <div id="stickBase"></div>
       <div id="stickKnob"></div>
     </div>
-    <div id="btnJump">ZİPLA</div>
-    <div id="btnDash">ATIL</div>
+    <div id="btnJump" data-i18n="jumpBtn">ZİPLA</div>
+    <div id="btnDash" data-i18n="dashBtn">ATIL</div>
   </div>
 
   <div id="lobby" class="panel">
     <h1>Antics Royale</h1>
-    <p class="lead">13 kısa mini oyun: elenenler seyirci olur, son arenanın kazananı şampiyon!</p>
+    <p class="lead" data-i18n="lead">13 kısa mini oyun: elenenler seyirci olur, son arenanın kazananı şampiyon!</p>
 
     <!-- Ön menü: oda seçimi (menu=1) -->
     <div id="menuDoor">
-      <div class="door-title">Oda</div>
+      <div class="door-title" data-i18n="doorTitle">Oda</div>
+      <div class="lang-row" id="langRow">
+        <button type="button" id="langTr" class="active" data-lang="tr">Türkçe 🇹🇷</button>
+        <button type="button" id="langEn" data-lang="en">English 🇬🇧</button>
+      </div>
+
       <div class="door-btns">
         <button id="doorPrivate" class="go">
-          Oda kur
-          <div class="door-sub">Yeni oda aç · kodu arkadaşlarına ver</div>
+          <span data-i18n="createRoom">Oda kur</span>
+          <div class="door-sub" data-i18n="createRoomSub">Yeni oda aç · kodu arkadaşlarına ver</div>
         </button>
         <div class="room-join" style="margin-top:10px">
-          <input id="menuJoinCode" maxlength="8" placeholder="ODA KODU" autocomplete="off" style="text-transform:uppercase;letter-spacing:1px">
-          <button id="doorJoin" class="alt">Katıl</button>
+          <input id="menuJoinCode" maxlength="8" placeholder="ODA KODU" data-i18n-placeholder="roomCodePh" autocomplete="off" style="text-transform:uppercase;letter-spacing:1px">
+          <button id="doorJoin" class="alt" data-i18n="join">Katıl</button>
         </div>
-        <div class="room-hint" style="margin-top:8px">4–6 haneli oda kodunu girerek arkadaşının odasına katıl.</div>
+        <div class="room-hint" style="margin-top:8px"><span data-i18n="joinHint">4–6 haneli oda kodunu girerek arkadaşının odasına katıl.</span></div>
         <div class="settings-row" style="margin-top:12px;text-align:left">
-          <span style="font-size:12px;opacity:.85">Sunucu</span>
+          <span style="font-size:12px;opacity:.85" data-i18n="server">Sunucu</span>
         </div>
-        <input id="menuServerUrl" placeholder="ws sunucu (örn. https://antics-royale.onrender.com)" style="width:100%;margin-top:4px;font-size:12px">
-        <button id="menuServerSave" class="alt" style="margin-top:6px;width:100%">Sunucuyu kaydet</button>
+        <input id="menuServerUrl" placeholder="ws sunucu (örn. https://antics-royale.onrender.com)" data-i18n-placeholder="serverPh" style="width:100%;margin-top:4px;font-size:12px">
+        <button id="menuServerSave" class="alt" style="margin-top:6px;width:100%" data-i18n="serverSave">Sunucuyu kaydet</button>
       </div>
     </div>
 
     <!-- Kurucu: oda kodu (misafir görmez) -->
     <div class="room-box" id="roomBox">
       <div id="roomHostOnly">
-        <div class="rt">Senin oda kodun</div>
+        <div class="rt"><span data-i18n="yourRoomCode">Senin oda kodun</span></div>
         <div class="room-code-row">
           <div class="room-code empty" id="roomCodeEl">bağlanıyor…</div>
         </div>
         <div class="room-actions">
-          <button id="copyCodeBtn" class="alt">Kodu kopyala</button>
-          <button id="createRoomBtn" class="go">Yeni oda kur</button>
+          <button id="copyCodeBtn" class="alt" data-i18n="copyCode">Kodu kopyala</button>
+          <button id="createRoomBtn" class="go" data-i18n="newRoom">Yeni oda kur</button>
         </div>
-        <div class="room-hint" id="roomHint">Bu kodu arkadaşlarına ver. Onlar aynı odaya link veya davet ile girer.</div>
+        <div class="room-hint" id="roomHint"><span data-i18n="roomHintDefault">Bu kodu arkadaşlarına ver. Onlar aynı odaya link veya davet ile girer.</span></div>
       </div>
     </div>
 
     <!-- Misafir bekleme paneli -->
     <div id="guestWait">
-      <div class="gw-title">Odaya girdin</div>
-      <div class="gw-sub">Kurucu «Oyunu başlat»a basana kadar bekle.<br>Oyun kendiliğinden başlamaz.</div>
+      <div class="gw-title"><span data-i18n="guestTitle">Odaya girdin</span></div>
+      <div class="gw-sub"><span data-i18n="guestSub">Kurucu «Oyunu başlat»a basana kadar bekle.<br>Oyun kendiliğinden başlamaz.</span></div>
       <div class="gw-dots">···</div>
     </div>
 
     <!-- Karakter Seçimi -->
     <div class="char-selector">
       <div class="char-title">
-        <span>Karakterini Seç (Skin)</span>
-        <span style="font-size:11px;opacity:.7">Oyun boyu kalır</span>
+        <span><span data-i18n="charSelect">Karakterini Seç (Skin)</span></span>
+        <span style="font-size:11px;opacity:.7"><span data-i18n="charSelectSub">Oyun boyu kalır</span></span>
       </div>
       <div class="char-grid">
         <div id="charBtn1" class="char-card selected">
           <div class="card-head">
             <span class="avatar-icon">🧔</span>
             <div>
-              <div class="name">Karakter 1</div>
-              <div style="font-size:11px;opacity:.8">Savaşçı / Boss</div>
+              <div class="name" data-i18n="char1Name">Karakter 1</div>
+              <div style="font-size:11px;opacity:.8" data-i18n="char1Role">Savaşçı / Boss</div>
             </div>
           </div>
-          <div class="subtext">Kel, gür sakallı, piercingli, siyah WILD tişört</div>
-          <div class="badge">Seçildi ✓</div>
+          <div class="subtext" data-i18n="char1Desc">Kel, gür sakallı, piercingli, siyah WILD tişört</div>
+          <div class="badge" data-i18n="selected">Seçildi ✓</div>
         </div>
 
         <div id="charBtn2" class="char-card">
           <div class="card-head">
             <span class="avatar-icon">🎩</span>
             <div>
-              <div class="name">Karakter 2</div>
-              <div style="font-size:11px;opacity:.8">Beyefendi</div>
+              <div class="name" data-i18n="char2Name">Karakter 2</div>
+              <div style="font-size:11px;opacity:.8" data-i18n="char2Role">Beyefendi</div>
             </div>
           </div>
-          <div class="subtext">Gri fötr şapka, bıyık, siyah ceket & gri gömlek</div>
-          <div class="badge">Seç</div>
+          <div class="subtext" data-i18n="char2Desc">Gri fötr şapka, bıyık, siyah ceket & gri gömlek</div>
+          <div class="badge" data-i18n="select">Seç</div>
         </div>
 
         <div id="charBtn3" class="char-card wide">
           <div class="card-head">
             <span class="avatar-icon">🎧</span>
             <div>
-              <div class="name">Karakter 3</div>
-              <div style="font-size:11px;opacity:.8">Yayıncı</div>
+              <div class="name" data-i18n="char3Name">Karakter 3</div>
+              <div style="font-size:11px;opacity:.8" data-i18n="char3Role">Yayıncı</div>
             </div>
           </div>
-          <div class="subtext">Kulaklıklı, çerçeveli gözlüklü, kısa sakallı, siyah kapüşonlu</div>
-          <div class="badge">Seç</div>
+          <div class="subtext" data-i18n="char3Desc">Kulaklıklı, çerçeveli gözlüklü, kısa sakallı, siyah kapüşonlu</div>
+          <div class="badge" data-i18n="select">Seç</div>
         </div>
       </div>
     </div>
@@ -465,15 +477,15 @@ body.ph-lobby #uiTopBtns{display:none}
     <div id="plist"></div>
 
     <div class="row2">
-      <input id="nameIn" maxlength="16" placeholder="İsmin" autocomplete="off">
-      <button id="nameBtn" class="alt" style="flex:0 0 auto">İsmi kaydet</button>
+      <input id="nameIn" maxlength="16" placeholder="İsmin" data-i18n-placeholder="namePh" autocomplete="off">
+      <button id="nameBtn" class="alt" style="flex:0 0 auto" data-i18n="saveName">İsmi kaydet</button>
     </div>
     <div class="row2">
-      <button id="startBtn" class="go" style="display:none">Oyunu başlat</button>
+      <button id="startBtn" class="go" style="display:none" data-i18n="startGame">Oyunu başlat</button>
     </div>
     <div class="row2">
-      <button id="lobbyHelpBtn" class="alt" type="button">❓ Nasıl oynanır</button>
-      <button id="lobbySettingsBtn" class="alt" type="button">⚙ Ayarlar</button>
+      <button id="lobbyHelpBtn" class="alt" type="button"> data-i18n="howToPlay">❓ Nasıl oynanır</button>
+      <button id="lobbySettingsBtn" class="alt" type="button"> data-i18n="settings">⚙ Ayarlar</button>
     </div>
     <div id="lobbyNote"></div>
   </div>
@@ -481,30 +493,30 @@ body.ph-lobby #uiTopBtns{display:none}
   <div id="end">
     <div class="card panel">
       <div class="crown" id="endIcon">🏆</div>
-      <h2 id="endTitle">Şampiyon</h2>
+      <h2 id="endTitle" data-i18n="champion">Şampiyon</h2>
       <div class="who" id="endWho"></div>
       <div id="endRows"></div>
       <div class="back" id="endBack"></div>
-      <button id="lobbyBtn" class="go">Lobiye dön</button>
+      <button id="lobbyBtn" class="go" data-i18n="backToLobby">Lobiye dön</button>
     </div>
   </div>
 
   <!-- Oyun içi hızlı butonlar -->
   <div id="uiTopBtns">
-    <button id="btnPause" class="alt" type="button">⏸ Duraklat</button>
-    <button id="btnHelpInGame" class="alt" type="button">❓ Yardım</button>
+    <button id="btnPause" class="alt" type="button"> data-i18n="pause">⏸ Duraklat</button>
+    <button id="btnHelpInGame" class="alt" type="button"> data-i18n="help">❓ Yardım</button>
   </div>
 </div>
 
 <!-- Pause menüsü -->
 <div id="pauseOv">
   <div class="pause-card panel">
-    <h2>Duraklatıldı</h2>
+    <h2 data-i18n="paused">Duraklatıldı</h2>
     <div class="btn-col">
-      <button id="pauseResume" class="go" type="button">Devam et</button>
-      <button id="pauseSettings" class="alt" type="button">Ayarlar</button>
-      <button id="pauseHelp" class="alt" type="button">Nasıl oynanır</button>
-      <button id="pauseLobby" class="alt" type="button">Lobiye dön</button>
+      <button id="pauseResume" class="go" type="button" data-i18n="resume">Devam et</button>
+      <button id="pauseSettings" class="alt" type="button" data-i18n="settings">Ayarlar</button>
+      <button id="pauseHelp" class="alt" type="button" data-i18n="howToPlay">Nasıl oynanır</button>
+      <button id="pauseLobby" class="alt" type="button" data-i18n="backToLobby">Lobiye dön</button>
     </div>
   </div>
 </div>
@@ -512,17 +524,17 @@ body.ph-lobby #uiTopBtns{display:none}
 <!-- Ayarlar -->
 <div id="settingsOv">
   <div class="settings-card panel">
-    <h2>Ayarlar</h2>
+    <h2 data-i18n="settings">Ayarlar</h2>
     <div class="settings-row">
-      <span>Ses efektleri</span>
-      <button id="togMute" class="tog go" type="button">Açık</button>
+      <span><span data-i18n="sfx">Ses efektleri</span></span>
+      <button id="togMute" class="tog go" type="button" data-i18n="on">Açık</button>
     </div>
     <div class="settings-row">
-      <span>Tam ekran</span>
-      <button id="togFs" class="tog alt" type="button">Aç</button>
+      <span><span data-i18n="fullscreen">Tam ekran</span></span>
+      <button id="togFs" class="tog alt" type="button" data-i18n="openFs">Aç</button>
     </div>
     <div class="btn-col" style="margin-top:12px">
-      <button id="settingsClose" class="go" type="button">Kapat</button>
+      <button id="settingsClose" class="go" type="button" data-i18n="close">Kapat</button>
     </div>
   </div>
 </div>
@@ -530,18 +542,18 @@ body.ph-lobby #uiTopBtns{display:none}
 <!-- Nasıl oynanır -->
 <div id="helpOv">
   <div class="help-card panel">
-    <h2>Nasıl oynanır?</h2>
-    <ul>
-      <li><b>WASD / Ok tuşları</b> — hareket</li>
-      <li><b>SPACE</b> — zıpla</li>
-      <li><b>SHIFT veya E</b> — atıl (dash) — bazı oyunlarda</li>
-      <li><b>M</b> — sesi aç/kapa</li>
-      <li><b>ESC</b> — duraklat / menü</li>
-      <li>Mobilde sol joystick + sağdaki Zıpla / Atıl butonları</li>
-      <li>13 mini oyun: elenenler seyirci olur, son arenanın kazananı şampiyon</li>
-      <li>Lobide karakterini seç, ismini yaz, kurucu «Oyunu başlat»a basar</li>
+    <h2 data-i18n="howToPlayQ">Nasıl oynanır?</h2>
+    <ul id="helpList">
+      <li data-i18n="help1"><b>WASD / Ok tuşları</b> — hareket</li>
+      <li data-i18n="help2"><b>SPACE</b> — zıpla</li>
+      <li data-i18n="help3"><b>SHIFT veya E</b> — atıl (dash) — bazı oyunlarda</li>
+      <li data-i18n="help4"><b>M</b> — sesi aç/kapa</li>
+      <li data-i18n="help5"><b>ESC</b> — duraklat / menü</li>
+      <li data-i18n="help6">Mobilde sol joystick + sağdaki Zıpla / Atıl butonları</li>
+      <li data-i18n="help7">13 mini oyun: elenenler seyirci olur, son arenanın kazananı şampiyon</li>
+      <li data-i18n="help8">Lobide karakterini seç, ismini yaz, kurucu «Oyunu başlat»a basar</li>
     </ul>
-    <button id="helpClose" class="go" type="button">Anladım</button>
+    <button id="helpClose" class="go" type="button" data-i18n="gotIt">Anladım</button>
   </div>
 </div>
 
@@ -900,23 +912,531 @@ function admShowGone(type, code) {
   let ban = type === "ban", d = document.createElement("div");
   d.id = "admGone";
   d.innerHTML = '<div class="card panel"><div class="ic">' + (ban ? "\u26D4" : "\uD83D\uDC62") + '</div><h2>' +
-    (ban ? "Banlandın" : "Lobiden atıldın") + '</h2><p>' +
-    (ban ? "Yönetici seni bu lobiden banladı. Bu lobiye tekrar giremezsin."
-         : "Yönetici seni lobiden çıkardı. İstersen aynı lobiye tekrar girebilirsin.") +
+    (ban ? __t("bannedTitle") : __t("kickedTitle")) + '</h2><p>' +
+    (ban ? __t("bannedMsg") : __t("kickedMsg")) +
     '</p><div class="row2"></div></div>';
   let row = d.querySelector(".row2");
   if (!ban) {
     let b = document.createElement("button");
-    b.className = "go"; b.textContent = "Tekrar gir";
+    b.className = "go"; b.textContent = __t("rejoin");
     b.onclick = () => { location.href = admRoomUrl(code); };
     row.appendChild(b);
   }
   let m = document.createElement("button");
-  m.className = "alt"; m.textContent = "Ana menü";
+  m.className = "alt"; m.textContent = __t("mainMenu");
   m.onclick = () => { location.href = admMenuUrl(); };
   row.appendChild(m);
   document.body.appendChild(d);
 }
+
+
+/* ===== i18n ===== */
+const I18N = {
+  tr: {
+    doorTitle: "Oda",
+    lead: "13 kısa mini oyun: elenenler seyirci olur, son arenanın kazananı şampiyon!",
+    createRoom: "Oda kur",
+    createRoomSub: "Yeni oda aç · kodu arkadaşlarına ver",
+    roomCodePh: "ODA KODU",
+    join: "Katıl",
+    joinHint: "4–6 haneli oda kodunu girerek arkadaşının odasına katıl.",
+    server: "Sunucu",
+    serverPh: "ws sunucu (örn. https://antics-royale.onrender.com)",
+    serverSave: "Sunucuyu kaydet",
+    yourRoomCode: "Senin oda kodun",
+    connecting: "bağlanıyor…",
+    offline: "çevrimdışı",
+    copyCode: "Kodu kopyala",
+    copied: "Kopyalandı!",
+    newRoom: "Yeni oda kur",
+    roomHintDefault: "Bu kodu arkadaşlarına ver. Onlar aynı odaya link veya davet ile girer.",
+    roomHintOffline: "Çevrimdışı test modu — gerçek oda için sunucuya bağlan.",
+    roomHintCode: "Kodu sadece sen görürsün. Arkadaşlarına söyle; onlar beklemede kalır, sen başlatırsın.",
+    roomHintLoading: "Oda kodu yükleniyor…",
+    guestTitle: "Odaya girdin",
+    guestSub: "Kurucu «Oyunu başlat»a basana kadar bekle.<br>Oyun kendiliğinden başlamaz.",
+    guestSubPlayers: "Kurucu başlatana kadar bekle. Oyun otomatik başlamaz.<br>{n} oyuncu lobide.",
+    charSelect: "Karakterini Seç (Skin)",
+    charSelectSub: "Oyun boyu kalır",
+    char1Name: "Karakter 1", char1Role: "Savaşçı / Boss", char1Desc: "Kel, gür sakallı, piercingli, siyah WILD tişört",
+    char2Name: "Karakter 2", char2Role: "Beyefendi", char2Desc: "Gri fötr şapka, bıyık, siyah ceket & gri gömlek",
+    char3Name: "Karakter 3", char3Role: "Yayıncı", char3Desc: "Kulaklıklı, çerçeveli gözlüklü, kısa sakallı, siyah kapüşonlu",
+    selected: "Seçildi ✓", select: "Seç",
+    namePh: "İsmin", saveName: "İsmi kaydet",
+    startGame: "Oyunu başlat", soloStart: "Solo başlat (test)",
+    howToPlay: "❓ Nasıl oynanır", settings: "⚙ Ayarlar", settingsPlain: "Ayarlar",
+    champion: "Şampiyon", backToLobby: "Lobiye dön",
+    pause: "⏸ Duraklat", help: "❓ Yardım", paused: "Duraklatıldı", resume: "Devam et",
+    language: "Dil",
+    sfx: "Ses efektleri", on: "Açık", off: "Kapalı", fullscreen: "Tam ekran", openFs: "Aç", closeFs: "Kapat", close: "Kapat",
+    howToPlayQ: "Nasıl oynanır?", gotIt: "Anladım",
+    jumpBtn: "ZİPLA", dashBtn: "ATIL",
+    help1: "<b>WASD / Ok tuşları</b> — hareket",
+    help2: "<b>SPACE</b> — zıpla",
+    help3: "<b>SHIFT veya E</b> — atıl (dash) — bazı oyunlarda",
+    help4: "<b>M</b> — sesi aç/kapa",
+    help5: "<b>ESC</b> — duraklat / menü",
+    help6: "Mobilde sol joystick + sağdaki Zıpla / Atıl butonları",
+    help7: "13 mini oyun: elenenler seyirci olur, son arenanın kazananı şampiyon",
+    help8: "Lobide karakterini seç, ismini yaz, kurucu «Oyunu başlat»a basar",
+    player: "Oyuncu", you: "Sen", youParen: "(sen)", host: "host", creator: "kurucu",
+    mapPick: "Harita / Mini oyun", mapPickHost: "Seç ya da karışık bırak", mapPickGuest: "Kurucu seçer",
+    mixed: "🎲 Karışık (hepsi sırayla)",
+    waitHost: "Bekle — kurucu başlatmadan oyun açılmaz.",
+    waitShare: "Kodun: {code} — arkadaşlarına paylaş; onlar odaya girince sen başlat.",
+    waitCreate: "Oda kur, kodu paylaş. Arkadaşlar odaya girince lobide bekler; sen başlatırsın.",
+    waitReady: "{n} oyuncu bekliyor. Hazır olunca «Oyunu başlat»a bas (otomatik başlamaz).",
+    creatingRoom: "Oda oluşturuluyor…",
+    invalidCode: "Geçerli bir oda kodu gir (en az 4 karakter).",
+    joining: "Odaya bağlanılıyor…",
+    serverSaved: "Sunucu kaydedildi: {url}",
+    roomOpenFail: "Oda açılamadı: {err}",
+    mpClientFail: "mp-client yüklenemedi.",
+    roomNotFound: "Room not found — oda kodu hatalı veya süresi dolmuş.",
+    timeout: "Sunucuya bağlanılamadı (zaman aşımı). Sunucu adresini kontrol et.",
+    connErr: "Bağlantı hatası",
+    miniGame: "Mini oyun",
+    remaining: "Kalan oyuncu",
+    score: "Skor",
+    prepare: "Hazırlan…",
+    go: "BAŞLA!",
+    finishedWait: "Bitirdin! Diğer oyuncuların sonucu bekleniyor…",
+    spectating: "İzliyorsun · A / D ile oyuncu değiştir",
+    spectatingMobile: "İzliyorsun",
+    survived: "Hayatta kaldın!",
+    eliminated: "Elendin",
+    roundOver: "Tur bitti",
+    winners: "✅ Kazananlar: ",
+    eliminatedList: "💀 Elenenler: ",
+    noneElim: "Kimse elenmedi",
+    sec: "sn",
+    autoLobby: "Otomatik olarak lobiye dönülüyor: {n} sn",
+    champOverall: "Genel şampiyon",
+    youSurvived: "Hayatta kaldın!",
+    gameOver: "Oyun bitti",
+    noChamp: "Şampiyon yok",
+    offlineTest: "çevrimdışı test modu",
+    ping: "ping {n} ms",
+    left: "{name} ayrıldı",
+    fellOut: "{name} düştü ve elendi!",
+    elimCaught: "{name} yaratığa yakalandı!",
+    elimBomb: "{name} bombayla patladı!",
+    elimMoved: "{name} hareket etti ve elendi!",
+    elimGeneric: "{name} elendi!",
+    reachedFinish: "{name} bitiş çizgisine ulaştı!",
+    bannedTitle: "Banlandın",
+    kickedTitle: "Lobiden atıldın",
+    bannedMsg: "Yönetici seni bu lobiden banladı. Bu lobiye tekrar giremezsin.",
+    kickedMsg: "Yönetici seni lobiden çıkardı. İstersen aynı lobiye tekrar girebilirsin.",
+    rejoin: "Tekrar gir",
+    mainMenu: "Ana menü",
+    adminPanel: "🛡 Admin Paneli",
+    adminTag: "KURUCU",
+    players: "Oyuncular",
+    banned: "Banlılar",
+    noOtherPlayers: "Odada başka oyuncu yok.",
+    noBanned: "Banlı oyuncu yok.",
+    kick: "Kick",
+    ban: "Ban",
+    banConfirm: "Emin misin?",
+    unban: "Banı kaldır",
+    admin: "Admin",
+    manager: "yönetici",
+    bannedFeed: "{name} banlandı",
+    kickedFeed: "{name} kicklendi",
+    finish: "BİTİŞ",
+    charBeard: "🧔 Sakallı",
+    charHat: "🎩 Fötr Şapkalı",
+    charHead: "🎧 Kulaklıklı",
+    hintLobby: "WASD: hareket · SPACE: zıpla · M: ses · Oda kodunu paylaş",
+    hintLobbyMobile: "Sol: yön · Sağ: zıpla / atıl · Oda kodunu paylaş",
+    hintSpec: "A / D: izlenen oyuncu · M: ses",
+    hintMobileDash: "Sol joystick: hareket · Zıpla / Atıl",
+    hintMobile: "Sol joystick: hareket · Sağ: zıpla",
+    ready: "hazır",
+    elimSpec: "Elendin, izleyici oldun",
+    colorPrep: "Hazırlan · sonraki renk geliyor ({n} sn)",
+    colorSafe: "Güvenli: {col} ({n} sn)",
+    colorPrepShort: "⏳ HAZIRLAN · {n} sn",
+    colorSafeShort: "🎯 {col} · {n} sn",
+    redLight: "Kırmızı ışık — DUR!",
+    courseProg: "Parkur:",
+    runToFinish: "Bitişe koş!",
+    yourTeam: "Takımın",
+    goal: "GOOOL!",
+    greenLight: "Yeşil ışık — KOŞ!",
+    // minigame names
+    mg_redlight: "Kırmızı Işık, Yeşil Işık",
+    mg_colors: "Renk Koşusu",
+    mg_course: "Engel Parkuru",
+    mg_cars: "Araba Yarışı",
+    mg_soccer: "Futbol",
+    mg_backrooms: "Backrooms: Yaratıktan Kaç",
+    mg_bomb: "Ebelemeç: Bomba",
+    mg_tag: "Ebelemeç",
+    mg_final: "Son Arena",
+    mg_brawl: "Arena İtişi",
+    mg_hill: "Tepe Kontrolü",
+    mg_lava: "Lav Adaları",
+    mg_glass: "Cam Köprü",
+    mg_blades: "Dönen Bıçaklar",
+    // map picker labels
+    lbl_cars: "🏎️ Araba Yarışı",
+    lbl_soccer: "⚽ Futbol",
+    lbl_backrooms: "🟨 Backrooms — Yaratık Kovalamacası",
+    lbl_bomb: "💣 Ebelemeç: Bomba",
+    lbl_tag: "🏃 Ebelemeç",
+    color_red: "Kırmızı", color_orange: "Turuncu", color_green: "Yeşil", color_blue: "Mavi", color_purple: "Mor",
+    color_RED: "KIRMIZI", color_ORANGE: "TURUNCU", color_GREEN: "YEŞİL", color_BLUE: "MAVİ", color_PURPLE: "MOR",
+  },
+  en: {
+    doorTitle: "Room",
+    lead: "13 short mini-games: eliminated players spectate — last arena winner is champion!",
+    createRoom: "Create room",
+    createRoomSub: "Open a new room · share the code with friends",
+    roomCodePh: "ROOM CODE",
+    join: "Join",
+    joinHint: "Enter a 4–6 character room code to join a friend's room.",
+    server: "Server",
+    serverPh: "ws server (e.g. https://antics-royale.onrender.com)",
+    serverSave: "Save server",
+    yourRoomCode: "Your room code",
+    connecting: "connecting…",
+    offline: "offline",
+    copyCode: "Copy code",
+    copied: "Copied!",
+    newRoom: "Create new room",
+    roomHintDefault: "Share this code with friends. They join via the same room link or invite.",
+    roomHintOffline: "Offline test mode — connect to a server for a real room.",
+    roomHintCode: "Only you see the code. Tell your friends; they wait while you start.",
+    roomHintLoading: "Loading room code…",
+    guestTitle: "You joined the room",
+    guestSub: "Wait until the host presses «Start game».<br>The game does not start automatically.",
+    guestSubPlayers: "Wait for the host to start. Game does not auto-start.<br>{n} players in lobby.",
+    charSelect: "Choose your character (Skin)",
+    charSelectSub: "Stays for the whole game",
+    char1Name: "Character 1", char1Role: "Warrior / Boss", char1Desc: "Bald, thick beard, piercings, black WILD tee",
+    char2Name: "Character 2", char2Role: "Gentleman", char2Desc: "Grey fedora, mustache, black jacket & grey shirt",
+    char3Name: "Character 3", char3Role: "Streamer", char3Desc: "Headphones, framed glasses, short beard, black hoodie",
+    selected: "Selected ✓", select: "Select",
+    namePh: "Your name", saveName: "Save name",
+    startGame: "Start game", soloStart: "Solo start (test)",
+    howToPlay: "❓ How to play", settings: "⚙ Settings", settingsPlain: "Settings",
+    champion: "Champion", backToLobby: "Back to lobby",
+    pause: "⏸ Pause", help: "❓ Help", paused: "Paused", resume: "Resume",
+    language: "Language",
+    sfx: "Sound effects", on: "On", off: "Off", fullscreen: "Fullscreen", openFs: "Open", closeFs: "Close", close: "Close",
+    howToPlayQ: "How to play?", gotIt: "Got it",
+    jumpBtn: "JUMP", dashBtn: "DASH",
+    help1: "<b>WASD / Arrow keys</b> — move",
+    help2: "<b>SPACE</b> — jump",
+    help3: "<b>SHIFT or E</b> — dash — in some games",
+    help4: "<b>M</b> — mute / unmute",
+    help5: "<b>ESC</b> — pause / menu",
+    help6: "On mobile: left joystick + Jump / Dash on the right",
+    help7: "13 mini-games: eliminated players spectate; last arena winner is champion",
+    help8: "In the lobby pick a character, set your name; the host presses «Start game»",
+    player: "Player", you: "You", youParen: "(you)", host: "host", creator: "creator",
+    mapPick: "Map / Mini-game", mapPickHost: "Pick or leave mixed", mapPickGuest: "Host chooses",
+    mixed: "🎲 Mixed (all in order)",
+    waitHost: "Wait — the host must start the game.",
+    waitShare: "Your code: {code} — share it; when friends join, you start.",
+    waitCreate: "Create a room and share the code. Friends wait in the lobby; you start.",
+    waitReady: "{n} players waiting. Press «Start game» when ready (does not auto-start).",
+    creatingRoom: "Creating room…",
+    invalidCode: "Enter a valid room code (at least 4 characters).",
+    joining: "Joining room…",
+    serverSaved: "Server saved: {url}",
+    roomOpenFail: "Could not open room: {err}",
+    mpClientFail: "Failed to load mp-client.",
+    roomNotFound: "Room not found — wrong code or expired.",
+    timeout: "Could not connect (timeout). Check the server address.",
+    connErr: "Connection error",
+    miniGame: "Mini-game",
+    remaining: "Players left",
+    score: "Score",
+    prepare: "Get ready…",
+    go: "GO!",
+    finishedWait: "You finished! Waiting for other players…",
+    spectating: "Spectating · A / D to switch player",
+    spectatingMobile: "Spectating",
+    survived: "You survived!",
+    eliminated: "Eliminated",
+    roundOver: "Round over",
+    winners: "✅ Winners: ",
+    eliminatedList: "💀 Eliminated: ",
+    noneElim: "Nobody eliminated",
+    sec: "s",
+    autoLobby: "Returning to lobby in: {n} s",
+    champOverall: "Overall champion",
+    youSurvived: "You survived!",
+    gameOver: "Game over",
+    noChamp: "No champion",
+    offlineTest: "offline test mode",
+    ping: "ping {n} ms",
+    left: "{name} left",
+    fellOut: "{name} fell and was eliminated!",
+    elimCaught: "{name} was caught by the creature!",
+    elimBomb: "{name} blew up with the bomb!",
+    elimMoved: "{name} moved and was eliminated!",
+    elimGeneric: "{name} was eliminated!",
+    reachedFinish: "{name} reached the finish!",
+    bannedTitle: "You were banned",
+    kickedTitle: "You were kicked",
+    bannedMsg: "The admin banned you from this lobby. You cannot rejoin.",
+    kickedMsg: "The admin removed you from the lobby. You can rejoin if you want.",
+    rejoin: "Rejoin",
+    mainMenu: "Main menu",
+    adminPanel: "🛡 Admin Panel",
+    adminTag: "CREATOR",
+    players: "Players",
+    banned: "Banned",
+    noOtherPlayers: "No other players in the room.",
+    noBanned: "No banned players.",
+    kick: "Kick",
+    ban: "Ban",
+    banConfirm: "Are you sure?",
+    unban: "Unban",
+    admin: "Admin",
+    manager: "admin",
+    bannedFeed: "{name} was banned",
+    kickedFeed: "{name} was kicked",
+    finish: "FINISH",
+    charBeard: "🧔 Bearded",
+    charHat: "🎩 Fedora",
+    charHead: "🎧 Headphones",
+    hintLobby: "WASD: move · SPACE: jump · M: mute · Share room code",
+    hintLobbyMobile: "Left: move · Right: jump / dash · Share room code",
+    hintSpec: "A / D: spectate player · M: mute",
+    hintMobileDash: "Left stick: move · Jump / Dash",
+    hintMobile: "Left stick: move · Right: jump",
+    ready: "ready",
+    elimSpec: "Eliminated — you are now a spectator",
+    colorPrep: "Get ready · next color in ({n} s)",
+    colorSafe: "Safe: {col} ({n} s)",
+    colorPrepShort: "⏳ GET READY · {n} s",
+    colorSafeShort: "🎯 {col} · {n} s",
+    redLight: "Red light — STOP!",
+    courseProg: "Course:",
+    runToFinish: "Run to the finish!",
+    yourTeam: "Your team",
+    goal: "GOAL!",
+    greenLight: "Green light — RUN!",
+    mg_redlight: "Red Light, Green Light",
+    mg_colors: "Color Dash",
+    mg_course: "Obstacle Course",
+    mg_cars: "Car Race",
+    mg_soccer: "Soccer",
+    mg_backrooms: "Backrooms: Escape the Entity",
+    mg_bomb: "Hot Potato: Bomb",
+    mg_tag: "Tag",
+    mg_final: "Final Arena",
+    mg_brawl: "Arena Brawl",
+    mg_hill: "King of the Hill",
+    mg_lava: "Lava Islands",
+    mg_glass: "Glass Bridge",
+    mg_blades: "Spinning Blades",
+    lbl_cars: "🏎️ Car Race",
+    lbl_soccer: "⚽ Soccer",
+    lbl_backrooms: "🟨 Backrooms — Entity Chase",
+    lbl_bomb: "💣 Hot Potato: Bomb",
+    lbl_tag: "🏃 Tag",
+    color_red: "Red", color_orange: "Orange", color_green: "Green", color_blue: "Blue", color_purple: "Purple",
+    color_RED: "RED", color_ORANGE: "ORANGE", color_GREEN: "GREEN", color_BLUE: "BLUE", color_PURPLE: "PURPLE",
+  }
+};
+
+let currentLang = "tr";
+function detectLang() {
+  try {
+    const saved = localStorage.getItem("antics_lang");
+    if (saved === "tr" || saved === "en") return saved;
+  } catch (_) {}
+  try {
+    const nav = (navigator.language || navigator.userLanguage || "en").toLowerCase();
+    if (nav.startsWith("tr")) return "tr";
+  } catch (_) {}
+  return "en";
+}
+function __t(key, vars) {
+  const pack = I18N[currentLang] || I18N.en;
+  let s = (pack[key] != null ? pack[key] : (I18N.tr[key] != null ? I18N.tr[key] : key));
+  if (vars && typeof vars === "object") {
+    for (const k in vars) s = String(s).split("{" + k + "}").join(String(vars[k]));
+  }
+  return s;
+}
+function setLang(lang, persist) {
+  if (lang !== "tr" && lang !== "en") lang = "en";
+  currentLang = lang;
+  if (persist !== false) {
+    try { localStorage.setItem("antics_lang", lang); } catch (_) {}
+  }
+  applyStaticI18n();
+  try {
+    document.documentElement.lang = lang === "tr" ? "tr" : "en";
+  } catch (_) {}
+  // Refresh dynamic lobby bits if present
+  try {
+    const trBtn = document.getElementById("langTr");
+    const enBtn = document.getElementById("langEn");
+    if (trBtn) trBtn.classList.toggle("active", lang === "tr");
+    if (enBtn) enBtn.classList.toggle("active", lang === "en");
+  } catch (_) {}
+  // Re-run character badges selection text
+  try {
+    document.querySelectorAll(".char-card").forEach(card => {
+      const bg = card.querySelector(".badge");
+      if (!bg) return;
+      bg.textContent = card.classList.contains("selected") ? __t("selected") : __t("select");
+    });
+  } catch (_) {}
+}
+function applyStaticI18n() {
+  document.querySelectorAll("[data-i18n]").forEach(el => {
+    const key = el.getAttribute("data-i18n");
+    if (!key) return;
+    const val = __t(key);
+    if (el.children.length && /</.test(val)) el.innerHTML = val;
+    else if (/</.test(val)) el.innerHTML = val;
+    else el.textContent = val;
+  });
+  document.querySelectorAll("[data-i18n-placeholder]").forEach(el => {
+    const key = el.getAttribute("data-i18n-placeholder");
+    if (key) el.setAttribute("placeholder", __t(key));
+  });
+  // Pause settings buttons that share ids
+  const mute = document.getElementById("togMute");
+  if (mute) {
+    const isOff = (typeof Oe !== "undefined" ? Oe : false);
+    mute.textContent = isOff ? __t("off") : __t("on");
+  }
+  const fs = document.getElementById("togFs");
+  if (fs) fs.textContent = document.fullscreenElement ? __t("closeFs") : __t("openFs");
+  // Settings gear label without emoji conflict
+  const lobbySettings = document.getElementById("lobbySettingsBtn");
+  if (lobbySettings) lobbySettings.textContent = __t("settings");
+  const lobbyHelp = document.getElementById("lobbyHelpBtn");
+  if (lobbyHelp) lobbyHelp.textContent = __t("howToPlay");
+}
+currentLang = detectLang();
+// Wire language buttons early (DOM already parsed when module runs at end of body)
+(function wireLangButtons() {
+  function pick(lang) {
+    setLang(lang, true);
+    try { if (typeof de === "function") de(); } catch (_) {}
+    try { if (typeof O === "function") O("pop"); } catch (_) {}
+  }
+  const tr = document.getElementById("langTr");
+  const en = document.getElementById("langEn");
+  if (tr) tr.onclick = () => pick("tr");
+  if (en) en.onclick = () => pick("en");
+  const str = document.getElementById("setLangTr");
+  const sen = document.getElementById("setLangEn");
+  if (str) str.onclick = () => pick("tr");
+  if (sen) sen.onclick = () => pick("en");
+  setLang(currentLang, false);
+})();
+
+const MG_I18N = {
+  redlight: {
+    rules: {
+      tr: null, // use built-in
+      en: ["Run on green light, stop on red!", "Anyone who moves on red is eliminated.", "Reach the finish to survive. Time: 35s."]
+    },
+    hint: { en: "WASD: move · SPACE: jump · Stop on red!" }
+  },
+  colors: {
+    rules: {
+      en: ["After a short prep a color is announced — run to that color!", "Only the announced color is safe; others darken and you fall.", "Wrong color eliminates you. Round ends when half are out."]
+    },
+    hint: { en: "WASD: move · SPACE: jump · Run to the announced color!" }
+  },
+  course: {
+    rules: {
+      en: ["Jump spinning obstacles, gaps, and ride platforms.", "If you fall you continue from the last checkpoint.", "Anyone who does not reach the finish in time is eliminated."]
+    },
+    hint: { en: "WASD: move · SPACE: jump (over obstacles)" }
+  },
+  cars: {
+    rules: {
+      en: ["W gas, S brake, A/D steer. Complete 3 laps!", "Pass checkpoints in order; finish after 3 laps.", "Going off-track slows you; staying out too long returns you to the last checkpoint."]
+    },
+    hint: { en: "W: forward · S: reverse/brake · A/D: steer · 3 laps" }
+  },
+  soccer: {
+    rules: {
+      en: ["Hit the ball into the opponent's goal. Two teams: 🔴 / 🔵", "After a goal the ball and players reset.", "Highest score when time runs out wins."]
+    },
+    hint: { en: "WASD: move · Bump the ball into the enemy goal" }
+  },
+  backrooms: {
+    rules: {
+      en: ["Escape the entity in the yellow maze!", "The entity eliminates anyone it touches.", "Last survivors when time ends win."]
+    },
+    hint: { en: "WASD: move · The entity is chasing you!" }
+  },
+  bomb: {
+    rules: {
+      en: ["If you have the bomb, touch someone to pass it!", "Timer does not reset; when it hits zero the bomb carrier explodes.", "Last players standing advance."]
+    },
+    hint: { en: "WASD: move · If you have the bomb, touch someone" }
+  },
+  tag: {
+    rules: {
+      en: ["It tags another player by touch. Nobody is eliminated!", "If you are not It, run; if you are It, catch someone.", "Whoever is It when time ends places last."]
+    },
+    hint: { en: "WASD: move · If It, touch someone; if not, run" }
+  },
+  final: {
+    rules: {
+      en: ["Push rivals off the arena. SHIFT/E to dash.", "Falling off eliminates you.", "Last one standing is the overall champion."]
+    },
+    hint: { en: "WASD: move · SPACE: jump · SHIFT/E: dash" }
+  },
+  brawl: {
+    rules: {
+      en: ["Bump rivals — they get knocked back! SHIFT/E to dash.", "Dash hits send them flying. Falling eliminates.", "Arena shrinks over time. Round ends when half are out."]
+    },
+    hint: { en: "WASD: move · SPACE: jump · SHIFT/E: dash" }
+  },
+  hill: {
+    rules: {
+      en: ["Stand on the yellow peak to score points!", "Most hill points when time ends wins.", "Push rivals off the peak."]
+    },
+    hint: { en: "WASD: move · SPACE: jump · SHIFT/E: dash · Score on yellow" }
+  },
+  lava: {
+    rules: {
+      en: ["Islands sink into lava one by one.", "Falling into lava eliminates you.", "Stay alive by jumping between islands!"]
+    },
+    hint: { en: "WASD: move · SPACE: jump (between islands)" }
+  },
+  glass: {
+    rules: {
+      en: ["Pick one of each pair of platforms. One is solid, one breaks!", "Falling through broken glass eliminates you.", "Reach the finish before time runs out."]
+    },
+    hint: { en: "WASD: move · SPACE: jump · Jump to the correct platform" }
+  },
+  blades: {
+    rules: {
+      en: ["Avoid spinning blades and ride platforms.", "Touching a blade knocks you back hard.", "Falling eliminates you."]
+    },
+    hint: { en: "WASD: move · SPACE: jump · Stay away from blades" }
+  }
+};
+function mgRules(l) {
+  const pack = MG_I18N[l.id];
+  if (pack && pack.rules && pack.rules[currentLang]) return pack.rules[currentLang];
+  return l.rules || [];
+}
+function mgHint(l) {
+  const pack = MG_I18N[l.id];
+  if (pack && pack.hint && pack.hint[currentLang]) return pack.hint[currentLang];
+  return l.hint || "";
+}
+
+/* ===== /i18n ===== */
 
 function et() {
   let e = p => document.getElementById(p), S = (() => {
@@ -1032,7 +1552,7 @@ function et() {
       let nm = "";
       try { nm = (e("nameIn") && e("nameIn").value) || sessionStorage.getItem("antics_name") || ""; } catch (_) {}
       try {
-        let room = await mod.joinRoom({ name: nm || "Oyuncu" });
+        let room = await mod.joinRoom({ name: nm || __t("player") });
         let code = room && room.code;
         // Do not leave() here — keep the room occupied until page navigation
         // disconnects. Server also keeps empty rooms for EMPTY_ROOM_MS so
@@ -1045,12 +1565,12 @@ function et() {
       } catch (err) {
         console.warn(err);
         let note = e("lobbyNote");
-        if (note) note.textContent = "Oda açılamadı: " + (err && err.message ? err.message : "sunucu hatası");
+        if (note) note.textContent = __t("roomOpenFail", { err: (err && err.message ? err.message : "server error") });
       }
       // fallback: menu kal
     }).catch(() => {
       let note = e("lobbyNote");
-      if (note) note.textContent = "mp-client yüklenemedi.";
+      if (note) note.textContent = __t("mpClientFail");
     });
   }
   // Menü: Oda kur / Katıl (sayfa açılışında oda oluşturulmaz)
@@ -1062,11 +1582,11 @@ function et() {
       if (!goToRoomCode(raw)) {
         if (note) {
           note.style.display = "block";
-          note.textContent = "Geçerli bir oda kodu gir (en az 4 karakter).";
+          note.textContent = __t("invalidCode");
         }
         return;
       }
-      if (note) note.textContent = "Odaya bağlanılıyor…";
+      if (note) note.textContent = __t("joining");
     }
     let bp = e("doorPrivate");
     if (bp) bp.onclick = () => {
@@ -1074,7 +1594,7 @@ function et() {
       let note = e("lobbyNote");
       if (note) {
         note.style.display = "block";
-        note.textContent = "Oda oluşturuluyor…";
+        note.textContent = __t("creatingRoom");
       }
       createNewRoom();
     };
@@ -1099,7 +1619,7 @@ function et() {
       let note = e("lobbyNote");
       if (note) {
         note.style.display = "block";
-        note.textContent = "Sunucu kaydedildi: " + v;
+        note.textContent = __t("serverSaved", { url: v });
       }
     };
     try {
@@ -1147,9 +1667,9 @@ function et() {
         sessionStorage.setItem(
           "antics_join_err",
           isNotFound
-            ? "Room not found — oda kodu hatalı veya süresi dolmuş."
+            ? __t("roomNotFound")
             : isTimeout
-              ? "Sunucuya bağlanılamadı (zaman aşımı). Sunucu adresini kontrol et."
+              ? __t("timeout")
               : msg
         );
       } catch (_) {}
@@ -1195,14 +1715,14 @@ function et() {
     function menuOpenHelp() { let h = e("helpOv"); if (h) h.classList.add("show"); de(); }
     function menuOpenSettings() {
       let s = e("settingsOv"); if (s) s.classList.add("show");
-      let b = e("togMute"); if (b) { b.textContent = Oe ? "Kapalı" : "Açık"; b.className = "tog " + (Oe ? "alt" : "go"); }
+      let b = e("togMute"); if (b) { b.textContent = Oe ? __t("off") : __t("on"); b.className = "tog " + (Oe ? "alt" : "go"); }
       de();
     }
     e("lobbyHelpBtn") && (e("lobbyHelpBtn").onclick = menuOpenHelp);
     e("lobbySettingsBtn") && (e("lobbySettingsBtn").onclick = menuOpenSettings);
     e("helpClose") && (e("helpClose").onclick = () => { let h = e("helpOv"); if (h) h.classList.remove("show"); });
     e("settingsClose") && (e("settingsClose").onclick = () => { let s = e("settingsOv"); if (s) s.classList.remove("show"); });
-    e("togMute") && (e("togMute").onclick = () => { xn(); let b = e("togMute"); if (b) { b.textContent = Oe ? "Kapalı" : "Açık"; b.className = "tog " + (Oe ? "alt" : "go"); } });
+    e("togMute") && (e("togMute").onclick = () => { xn(); let b = e("togMute"); if (b) { b.textContent = Oe ? __t("off") : __t("on"); b.className = "tog " + (Oe ? "alt" : "go"); } });
     e("togFs") && (e("togFs").onclick = () => {
       try {
         if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(() => {});
@@ -1216,7 +1736,7 @@ function et() {
   function I() {
     let p = y.me, w = () => y.state || {}, q = new Map(), _ = n => q.set(n.id, n.name);
     y.players.forEach(_);
-    let L = n => q.get(n) || w().names && w().names[n] || "Oyuncu", C = n => y.players.find(a => a.id === n) || null, x = n => {
+    let L = n => q.get(n) || w().names && w().names[n] || __t("player"), C = n => y.players.find(a => a.id === n) || null, x = n => {
         let a = n && n.state && n.state.col;
         return ge[(typeof a == "number" ? a : on(n ? n.id : "x")) % ge.length];
       }, Q = n => {
@@ -1850,7 +2370,7 @@ function et() {
         for (let u = 0; u < 2; u++)
           for (let f = 0; f < 8; f++)
             Pe(-8 + f * 2, -8 + f * 2 + 2, r + u * 1.3, r + u * 1.3 + 1.3, 0.01, f + u & 1 ? "#ffffff" : "#24123f");
-        Fn(r, 8.5, "BİTİŞ");
+        Fn(r, 8.5, __t("finish"));
         return [];
       },
       hud(n, a, i) {
@@ -2376,34 +2896,34 @@ function et() {
       },
       hud(n, a, i) {
         let cols = [
-          "Kırmızı",
-          "Turuncu",
-          "Yeşil",
-          "Mavi",
-          "Mor"
+          __t("color_red"),
+          __t("color_orange"),
+          __t("color_green"),
+          __t("color_blue"),
+          __t("color_purple")
         ];
         let left = 0;
         if (n.nextColAt && n.playAt)
           left = Math.max(0, Math.ceil((n.nextColAt - (n.playAt + a * 1000)) / 1000));
         if ((n.colMode || "all") === "all")
-          return "Hazırlan · sonraki renk geliyor (" + left + " sn)";
-        return "Güvenli: " + (cols[n.safeCol] || "?") + " (" + left + " sn)";
+          return __t("colorPrep", { n: left });
+        return __t("colorSafe", { col: cols[n.safeCol] || "?", n: left });
       },
       banner(n, a) {
         let cols = [
-          "KIRMIZI",
-          "TURUNCU",
-          "YEŞİL",
-          "MAVİ",
-          "MOR"
+          __t("color_RED"),
+          __t("color_ORANGE"),
+          __t("color_GREEN"),
+          __t("color_BLUE"),
+          __t("color_PURPLE")
         ];
         let left = 0;
         if (n.nextColAt && n.playAt)
           left = Math.max(0, Math.ceil((n.nextColAt - (n.playAt + a * 1000)) / 1000));
         if ((n.colMode || "all") === "all")
-          return "⏳ HAZIRLAN · " + left + " sn";
+          return __t("colorPrepShort", { n: left });
         // Renk pick ile aynı anda gösterilir (gecikme yok)
-        return "🎯 " + (cols[n.safeCol] || "...") + " · " + left + " sn";
+        return __t("colorSafeShort", { col: cols[n.safeCol] || "...", n: left });
       },
       hint: "WASD: hareket \xB7 SPACE: zıpla \xB7 Duyurulan renge koş!"
     };
@@ -2480,17 +3000,23 @@ function et() {
             return Ct(n, i, t, l);
           },
           hud(n, a, i) {
-            return "Parkur: %" + (i ? K(Math.round(Math.max(0, o.z) / i.finishZ * 100), 0, 100) : 0);
+            return __t("courseProg") + " %" + (i ? K(Math.round(Math.max(0, o.z) / i.finishZ * 100), 0, 100) : 0);
           },
           banner() {
-            return "Bitişe koş!";
+            return __t("runToFinish");
           },
           hint: "WASD: hareket \xB7 SPACE: zıpla (engellerin üstünden)"
         },
         dt
       ], Se = n => Ue.find(a => a.id === n) || Ue[0], Ye = (n, a) => a === "lobby" ? yn : Se(n.mg), gn = "", Mn = null;
+    function localizeMgName(mg) {
+      if (!mg) return "";
+      let k = "mg_" + mg.id;
+      let trn = __t(k);
+      return (trn && trn !== k) ? trn : mg.name;
+    }
     // ===== YENİ MİNİ OYUNLAR: Araba, Futbol, Backrooms, Ebelemeç =====
-    const xDie = (c, m) => { if (o.st !== "run") return; o.vx = o.vz = o.kx = o.kz = 0; ee({ st: "out", oc: c, ot: Math.round(y.now()), vx: 0, vz: 0 }); z = performance.now(); re = 1; ye = 1; fe(o.x, 1.2, o.z, "#ff3d6e", 22, 6); O("boom"); We('<div class="bad">' + m + '</div><div class="small">Elendin, izleyici oldun</div>', 2600); };
+    const xDie = (c, m) => { if (o.st !== "run") return; o.vx = o.vz = o.kx = o.kz = 0; ee({ st: "out", oc: c, ot: Math.round(y.now()), vx: 0, vz: 0 }); z = performance.now(); re = 1; ye = 1; fe(o.x, 1.2, o.z, "#ff3d6e", 22, 6); O("boom"); We('<div class="bad">' + m + '</div><div class="small">' + __t("elimSpec") + '</div>', 2600); };
     const xRun = (n) => Ae(n).filter(id => { let s = C(id).state; return s.rd === n.rid && s.st === "run"; });
     const xRect = (x0, x1, z0, z1) => [[x0, z0], [x1, z0], [x1, z1], [x0, z1]];
     // --- 1) ARABA YARIŞI ---
@@ -2585,8 +3111,8 @@ function et() {
         for (let d of y.players) { let b = me.get(d.id); if (!b) continue; let col = xTeam(n, d.id) ? "#4a90ff" : "#ff4d6d"; out.push({ z: b.z + 0.3, fn: () => { let g = Y(b.x, 0, b.z); if (!g) return; s.strokeStyle = col; s.lineWidth = 3; s.beginPath(); s.ellipse(g.x, g.y, 0.75 * g.k, 0.27 * g.k, 0, 0, 7); s.stroke(); } }); }
         return out;
       },
-      hud(n, a) { let l = Math.max(0, Math.ceil((n.endsAt - y.now()) / 1000)); return "🔴 " + (n.sa || 0) + " - " + (n.sb || 0) + " 🔵 · " + l + " sn · Takımın: " + (xTeam(n, p.id) ? "🔵" : "🔴"); },
-      banner(n, a) { return (n.fz && y.now() < n.fz ? "GOOOL! " : "") + "🔴 " + (n.sa || 0) + " - " + (n.sb || 0) + " 🔵"; },
+      hud(n, a) { let l = Math.max(0, Math.ceil((n.endsAt - y.now()) / 1000)); return "🔴 " + (n.sa || 0) + " - " + (n.sb || 0) + " 🔵 · " + l + " " + __t("sec") + " · " + __t("yourTeam") + ": " + (xTeam(n, p.id) ? "🔵" : "🔴"); },
+      banner(n, a) { return (n.fz && y.now() < n.fz ? __t("goal") + " " : "") + "🔴 " + (n.sa || 0) + " - " + (n.sb || 0) + " 🔵"; },
       hint: "WASD: hareket · Topa çarp, rakip kaleye sok"
     };
     // --- 3) BACKROOMS ---
@@ -2631,7 +3157,7 @@ function et() {
           let cx = K(o.x, w.x0, w.x1), cz = K(o.z, w.z0, w.z1), dx = o.x - cx, dz = o.z - cz, d = Math.hypot(dx, dz);
           if (d < 0.38) { if (d > 0.0001) { o.x = cx + dx / d * 0.38; o.z = cz + dz / d * 0.38; } else o.x += 0.4; } }
         if (xv.rid !== n.rid) xv = { x: n.crx || 0, z: n.crz || 0, rid: n.rid };
-        if (o.st === "run" && n.crt && Math.hypot(xv.x - o.x, xv.z - o.z) < 1.0) xDie("c", "Yaratık seni yakaladı!");
+        if (o.st === "run" && n.crt && Math.hypot(xv.x - o.x, xv.z - o.z) < 1.0) xDie("c", __t("caughtByCreature"));
       },
       world(n, now, i, t, b) {
         s.fillStyle = "#1a1608"; s.fillRect(0, 0, D, E); if (!b) return [];
@@ -3140,7 +3666,7 @@ function et() {
     function syncMuteBtn() {
       let b = e("togMute");
       if (b) {
-        b.textContent = Oe ? "Kapalı" : "Açık";
+        b.textContent = Oe ? __t("off") : __t("on");
         b.className = "tog " + (Oe ? "alt" : "go");
       }
     }
@@ -3207,16 +3733,16 @@ function et() {
       try {
         if (!document.fullscreenElement) {
           document.documentElement.requestFullscreen().catch(() => {});
-          e("togFs").textContent = "Kapat";
+          e("togFs").textContent = __t("closeFs");
         } else {
           document.exitFullscreen().catch(() => {});
-          e("togFs").textContent = "Aç";
+          e("togFs").textContent = __t("openFs");
         }
       } catch (_) {}
     });
     document.addEventListener("fullscreenchange", () => {
       let b = e("togFs");
-      if (b) b.textContent = document.fullscreenElement ? "Kapat" : "Aç";
+      if (b) b.textContent = document.fullscreenElement ? __t("closeFs") : __t("openFs");
     });
     // ESC: pause aç/kapa (INPUT'ta değilken)
     addEventListener("keydown", n => {
@@ -3384,7 +3910,7 @@ function et() {
         let on = o.char === k || (k === "char2" && o.char !== "char1" && o.char !== "char3");
         b.classList.toggle("selected", on);
         let bg = b.querySelector(".badge");
-        if (bg) bg.textContent = on ? "Seçildi ✓" : "Seç";
+        if (bg) bg.textContent = on ? __t("selected") : __t("select");
       });
     }
     Cn();
@@ -3404,7 +3930,7 @@ function et() {
     }
     let me = new Map();
     y.onLeave(n => {
-      _(n), me.delete(n.id), _e(n.name + " ayrıldı");
+      _(n), me.delete(n.id), _e(__t("left", { name: n.name }));
     }), y.onJoin(n => {
       _(n);
     });
@@ -3470,7 +3996,7 @@ function et() {
         if (t === l || (En.set(a.id, t), l !== "run"))
           continue;
         let r = me.get(a.id);
-        t === "out" && a.id !== p.id ? (i.oc === "f" ? _e(a.name + " düştü ve elendi!", "bad") : (_e(a.name + (i.oc === "c" ? " yaratığa yakalandı!" : i.oc === "b" ? " bombayla patladı!" : " hareket etti ve elendi!"), "bad"), r && fe(r.x, 1.2, r.z, "#ff3d6e", 16, 5)), O("pop")) : t === "fin" && a.id !== p.id && (_e(a.name + " bitiş çizgisine ulaştı!", "good"), r && fe(r.x, 1.5, r.z, "#ffd23f", 16, 6));
+        t === "out" && a.id !== p.id ? (i.oc === "f" ? _e(__t("fellOut", { name: a.name }), "bad") : (_e(i.oc === "c" ? __t("elimCaught", { name: a.name }) : i.oc === "b" ? __t("elimBomb", { name: a.name }) : __t("elimMoved", { name: a.name }), "bad"), r && fe(r.x, 1.2, r.z, "#ff3d6e", 16, 5)), O("pop")) : t === "fin" && a.id !== p.id && (_e(__t("reachedFinish", { name: a.name }), "good"), r && fe(r.x, 1.5, r.z, "#ffd23f", 16, 6));
       }
     }
     let Ln = new Map();
@@ -3980,7 +4506,7 @@ function et() {
         let d = Math.round(f / t);
         f >= -30 && f < $ + 30 && (Gn(-V - 0.4, f, f + t, 1.4, d & 1 ? "#ff5c8a" : "#fff5f8"), Gn(V + 0.4, f, f + t, 1.4, d & 1 ? "#ff5c8a" : "#fff5f8")), d % 2 === 0 && (qn(-(V + 5 + d * 7 % 6), f + 1, Math.abs(d)), qn(V + 6 + d * 5 % 5, f + 3, Math.abs(d) + 1));
       }
-      Tt(n, a), Fn($, V, "BİTİŞ");
+      Tt(n, a), Fn($, V, __t("finish"));
     }
     function Fn(n, a, i) {
       let t = Y(-a, 0, n), l = Y(a, 0, n), r = Y(-a, 10.6, n), c = Y(a, 10.6, n);
@@ -4097,7 +4623,7 @@ function et() {
       for (let u = 0; u < 2; u++)
         for (let f = 0; f < 9; f++)
           Pe(-9 + f * 2, -9 + f * 2 + 2, r + u * 1.4, r + u * 1.4 + 1.4, 0.01, f + u & 1 ? "#ffffff" : "#24123f");
-      Fn(r, 9.5, "BİTİŞ");
+      Fn(r, 9.5, __t("finish"));
       let c = [];
       for (let u of t.bars)
         c.push({
@@ -4274,54 +4800,54 @@ function et() {
       updateMobileUI(a);
       if (a !== "lobby") {
         let m = Ae(n).length, g = (n.roster || []).length, k = (n.order || []).length || Ue.length, A = (a === "play" || a === "intro") && l.hud ? l.hud(n, c, r) : "";
-        X(ae.tl, "<div class=\"h\">Mini oyun " + (n.round || 1) + "/" + k + "</div><div class=\"m\">" + W(l.name) + "</div><div class=\"big\">Kalan oyuncu <b>" + m + "</b>/" + g + "</div>" + (A ? "<div class=\"sub\">" + W(A) + "</div>" : "")), X(ae.tr, "<div class=\"ttl\">Skor</div>" + On(n, !1));
+        X(ae.tl, "<div class=\"h\">" + __t("miniGame") + " " + (n.round || 1) + "/" + k + "</div><div class=\"m\">" + W(localizeMgName(l)) + "</div><div class=\"big\">" + __t("remaining") + " <b>" + m + "</b>/" + g + "</div>" + (A ? "<div class=\"sub\">" + W(A) + "</div>" : "")), X(ae.tr, "<div class=\"ttl\">" + __t("score") + "</div>" + On(n, !1));
       }
       if (a === "play") {
         let m = Math.max(0, Math.ceil((n.endsAt - i) / 1000)), g;
         if (l.id === "redlight")
-          g = "<div class=\"lb " + (u ? "red" : "green") + "\">" + (u ? "Kırmızı ışık \u2014 DUR!" : "Yeşil ışık \u2014 KOŞ!") + "</div>";
+          g = "<div class=\"lb " + (u ? "red" : "green") + "\">" + (u ? __t("redLight") : __t("greenLight")) + "</div>";
         else {
-          let k = l.banner ? l.banner(n, c) : l.name;
+          let k = l.banner ? l.banner(n, c) : localizeMgName(l);
           g = "<div class=\"lb " + (l.id === "final" || l.id === "brawl" && c >= 40 ? "warn" : "wait") + "\">" + W(k) + "</div>";
         }
-        X(ae.tc, g + "<div class=\"tm" + (m <= 10 ? " low" : "") + "\">" + m + " sn</div>");
+        X(ae.tc, g + "<div class=\"tm" + (m <= 10 ? " low" : "") + "\">" + m + " " + __t("sec") + "</div>");
       } else
-        a === "intro" ? X(ae.tc, "<div class=\"lb wait\">Hazırlan\u2026</div>") : X(ae.tc, "");
+        a === "intro" ? X(ae.tc, "<div class=\"lb wait\">" + __t("prepare") + "</div>") : X(ae.tc, "");
       let d = "", h = Qe();
       if (ze && t < ze.until ? d = ze.html : ze = null, a === "intro" && !d) {
         let m = (n.endsAt - i) / 1000;
         if (m > 3.2)
-          d = "<div class=\"k\">Mini oyun " + (n.round || 1) + "/" + ((n.order || []).length || Ue.length) + "</div><div class=\"t\">" + W(l.name) + "</div><div class=\"d\">" + l.rules.map(W).join("<br>") + "</div>" + (o.st === "spec" ? "<div class=\"small\">Bu turda izleyicisin.</div>" : "");
+          d = "<div class=\"k\">" + __t("miniGame") + " " + (n.round || 1) + "/" + ((n.order || []).length || Ue.length) + "</div><div class=\"t\">" + W(localizeMgName(l)) + "</div><div class=\"d\">" + mgRules(l).map(W).join("<br>") + "</div>" + (o.st === "spec" ? "<div class=\"small\">" + __t("spectatingMobile") + "</div>" : "");
         else {
           let g = Math.max(1, Math.ceil(m));
           d = "<div class=\"cnt\" data-c=\"" + g + "\">" + g + "</div>", g !== nn && (nn = g, O("tick"));
         }
       } else
         nn = -1;
-      if (a === "play" && !d && (n.playAt && i - n.playAt < 1200 ? d = "<div class=\"go\">BAŞLA!</div>" : o.st === "fin" ? d = "<div class=\"small\">Bitirdin! Diğer oyuncuların sonucu bekleniyor\u2026</div>" : h && (d = "<div class=\"small\">İzliyorsun \xB7 A / D ile oyuncu değiştir" + (F ? " \xB7 " + W(L(F)) : "") + "</div>")), a === "play" && n.playAt && i - n.playAt < 1200 && !tn && (tn = !0, O("go")), a !== "play" && (tn = !1), a === "roundEnd" && n.results) {
+      if (a === "play" && !d && (n.playAt && i - n.playAt < 1200 ? d = "<div class=\"go\">" + __t("go") + "</div>" : o.st === "fin" ? d = "<div class=\"small\">" + __t("finishedWait") + "</div>" : h && (d = "<div class=\"small\">" + __t("spectating") + (F ? " · " + W(L(F)) : "") + "</div>")), a === "play" && n.playAt && i - n.playAt < 1200 && !tn && (tn = !0, O("go")), a !== "play" && (tn = !1), a === "roundEnd" && n.results) {
         let m = n.results, g = m.q.includes(p.id) ? "good" : m.e.includes(p.id) ? "bad" : "";
-        d = (g === "good" ? "<div class=\"good\">Hayatta kaldın!</div>" : g === "bad" ? "<div class=\"bad\">Elendin</div>" : "<div class=\"k\">Tur bitti</div>") + "<div class=\"list\">" + (m.q.length ? "\u2705 Kazananlar: " + m.q.map(k => W(L(k))).join(", ") + "<br>" : "") + (m.e.length ? "\uD83D\uDC80 Elenenler: " + m.e.map(k => W(L(k))).join(", ") : "Kimse elenmedi") + (m.note ? "<br><span style=\"color:var(--sun)\">" + W(m.note) + "</span>" : "") + "</div>";
+        d = (g === "good" ? "<div class=\"good\">" + __t("survived") + "</div>" : g === "bad" ? "<div class=\"bad\">" + __t("eliminated") + "</div>" : "<div class=\"k\">" + __t("roundOver") + "</div>") + "<div class=\"list\">" + (m.q.length ? __t("winners") + m.q.map(k => W(L(k))).join(", ") + "<br>" : "") + (m.e.length ? __t("eliminatedList") + m.e.map(k => W(L(k))).join(", ") : __t("noneElim")) + (m.note ? "<br><span style=\"color:var(--sun)\">" + W(m.note) + "</span>" : "") + "</div>";
       }
       X(ae.msg, a === "gameEnd" ? "" : d);
       for (let m = be.length - 1; m >= 0; m--)
         be[m].until < t && be.splice(m, 1);
       X(ae.feed, be.map(m => "<div class=\"" + m.kind + "\">" + W(m.text) + "</div>").join(""));
-      let b = l.hint || "";
+      let b = mgHint(l) || "";
       if (a === "lobby")
-        b = isTouchDevice ? "Sol: yön \xB7 Sağ: zıpla / atıl \xB7 Oda kodunu paylaş" : "WASD: hareket \xB7 SPACE: zıpla \xB7 M: ses \xB7 Oda kodunu paylaş";
+        b = isTouchDevice ? __t("hintLobbyMobile") : __t("hintLobby");
       else if (h)
-        b = isTouchDevice ? "İzliyorsun" : "A / D: izlenen oyuncu \xB7 M: ses";
+        b = isTouchDevice ? __t("spectatingMobile") : __t("hintSpec");
       else if (isTouchDevice) {
-        b = l.dash ? "Sol joystick: hareket \xB7 Zıpla / Atıl" : "Sol joystick: hareket \xB7 Sağ: zıpla";
+        b = l.dash ? __t("hintMobileDash") : __t("hintMobile");
         if (l.dash) {
           let m = Math.max(0, (te - t) / 1000);
-          b += " (" + (m > 0 ? m.toFixed(1) + " sn" : "hazır") + ")";
+          b += " (" + (m > 0 ? m.toFixed(1) + " " + __t("sec") : __t("ready")) + ")";
         }
       } else if (l.dash) {
         let m = Math.max(0, (te - t) / 1000);
-        b = l.hint + " (" + (m > 0 ? m.toFixed(1) + " sn" : "hazır") + ")";
+        b = mgHint(l) + " (" + (m > 0 ? m.toFixed(1) + " sn" : "hazır") + ")";
       }
-      X(ae.hint, W(b)), X(ae.ping, T ? "çevrimdışı test modu" : "ping " + Math.round(y.ping || 0) + " ms"), a === "lobby" && Dt(n), a === "gameEnd" && Gt(n, i);
+      X(ae.hint, W(b)), X(ae.ping, T ? __t("offlineTest") : __t("ping", { n: Math.round(y.ping || 0) })), a === "lobby" && Dt(n), a === "gameEnd" && Gt(n, i);
     }
     // URL'de room = bir odaya bağlanıldı (invite veya kod)
     let arrivedViaInvite = !!(S.get("room"));
@@ -4388,14 +4914,14 @@ function et() {
           el.textContent = code;
           el.classList.remove("empty");
         } else {
-          el.textContent = T ? "çevrimdışı" : "bağlanıyor…";
+          el.textContent = T ? __t("offline") : __t("connecting");
           el.classList.add("empty");
         }
       }
       if (hint) {
-        if (T) hint.textContent = "Çevrimdışı test modu — gerçek oda için oyunu Antics üzerinde aç.";
-        else if (code) hint.textContent = "Kodu sadece sen görürsün. Arkadaşlarına söyle; onlar beklemede kalır, sen başlatırsın.";
-        else hint.textContent = "Oda kodu yükleniyor…";
+        if (T) hint.textContent = __t("roomHintOffline");
+        else if (code) hint.textContent = __t("roomHintCode");
+        else hint.textContent = __t("roomHintLoading");
       }
     }
     function copyText(txt, btn) {
@@ -4403,7 +4929,7 @@ function et() {
       let done = () => {
         if (!btn) return;
         let old = btn.textContent;
-        btn.textContent = "Kopyalandı!";
+        btn.textContent = __t("copied");
         setTimeout(() => { btn.textContent = old; }, 1400);
       };
       if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -4445,14 +4971,14 @@ function et() {
       let a = y.host;
       updateRoomBox();
       X(ae.plist, y.players.map(l => {
-        let cz = (l.id === p.id ? o.char : l.state && l.state.char) || "char1", c = cz === "char1" ? "\uD83E\uDDD4 Sakallı" : cz === "char3" ? "\uD83C\uDFA7 Kulaklıklı" : "\uD83C\uDFA9 Fötr Şapkalı";
-        return "<div class=\"pl" + (l.id === p.id ? " me" : "") + "\"><i style=\"background:" + x(l) + "\"></i><span class=\"n\">" + W(l.name) + (l.id === p.id ? " (sen)" : "") + "</span><span class=\"cbadge\">" + c + "</span>" + (a && l.id === a.id ? "<em>host</em>" : "") + (n.creatorId && l.id === n.creatorId ? "<em style=\"background:var(--mint)\">kurucu</em>" : "") + "</div>";
+        let cz = (l.id === p.id ? o.char : l.state && l.state.char) || "char1", c = cz === "char1" ? __t("charBeard") : cz === "char3" ? __t("charHead") : __t("charHat");
+        return "<div class=\"pl" + (l.id === p.id ? " me" : "") + "\"><i style=\"background:" + x(l) + "\"></i><span class=\"n\">" + W(l.name) + (l.id === p.id ? " " + __t("youParen") : "") + "</span><span class=\"cbadge\">" + c + "</span>" + (a && l.id === a.id ? "<em>" + __t("host") + "</em>" : "") + (n.creatorId && l.id === n.creatorId ? "<em style=\"background:var(--mint)\">" + __t("creator") + "</em>" : "") + "</div>";
       }).join(""));
       let mgEl = e("mgPick");
       if (mgEl) {
         let sel = (n || w()).lpick || "", can = isLobbyHostView();
-        let lbl = { cars: "\uD83C\uDFCE\uFE0F Araba Yarışı", soccer: "\u26BD Futbol", backrooms: "\uD83D\uDFE8 Backrooms \u2014 Yaratık Kovalamacası", bomb: "\uD83D\uDCA3 Ebelemeç: Bomba", tag: "\uD83C\uDFC3 Ebelemeç" };
-        X(mgEl, "<div class=\"char-title\"><span>Harita / Mini oyun</span><span style=\"font-size:11px;opacity:.7\">" + (can ? "Seç ya da karışık bırak" : "Kurucu seçer") + "</span></div><div class=\"mg-grid\"><div class=\"mg-card wide" + (sel ? "" : " selected") + "\" data-mg=\"\">\uD83C\uDFB2 Karışık (hepsi sırayla)</div>" + Ue.map(f => "<div class=\"mg-card" + (sel === f.id ? " selected" : "") + "\" data-mg=\"" + W(f.id) + "\">" + W(lbl[f.id] || f.name) + "</div>").join("") + "</div>");
+        let lbl = { cars: __t("lbl_cars"), soccer: __t("lbl_soccer"), backrooms: __t("lbl_backrooms"), bomb: __t("lbl_bomb"), tag: __t("lbl_tag") };
+        X(mgEl, "<div class=\"char-title\"><span>" + __t("mapPick") + "</span><span style=\"font-size:11px;opacity:.7\">" + (can ? __t("mapPickHost") : __t("mapPickGuest")) + "</span></div><div class=\"mg-grid\"><div class=\"mg-card wide" + (sel ? "" : " selected") + "\" data-mg=\"\">" + __t("mixed") + "</div>" + Ue.map(f => "<div class=\"mg-card" + (sel === f.id ? " selected" : "") + "\" data-mg=\"" + W(f.id) + "\">" + W(lbl[f.id] || __t("mg_"+f.id) || f.name) + "</div>").join("") + "</div>");
         mgEl.classList.toggle("ro", !can);
       }
       ensureCreatorClaim(false);
@@ -4468,30 +4994,30 @@ function et() {
       let i = e("startBtn");
       if (i) {
         i.style.display = canStart ? "" : "none";
-        i.textContent = y.players.length < 2 ? "Solo başlat (test)" : "Oyunu başlat";
+        i.textContent = y.players.length < 2 ? __t("soloStart") : __t("startGame");
         i.disabled = !1;
       }
-      let t;
+      let noteMsg;
       let codeStr = (y && y.code) ? String(y.code) : "";
       if (!canStart) {
-        t = "Bekle — kurucu başlatmadan oyun açılmaz.";
+        noteMsg = __t("waitHost");
       } else if (y.players.length < 2) {
-        t = codeStr
-          ? ("Kodun: " + codeStr + " — arkadaşlarına paylaş; onlar odaya girince sen başlat.")
-          : ("Oda kur, kodu paylaş. Arkadaşlar odaya girince lobide bekler; sen başlatırsın.");
+        noteMsg = codeStr
+          ? __t("waitShare", { code: codeStr })
+          : __t("waitCreate");
       } else {
-        t = y.players.length + " oyuncu bekliyor. Hazır olunca «Oyunu başlat»a bas (otomatik başlamaz).";
+        noteMsg = __t("waitReady", { n: y.players.length });
       }
-      X(ae.note, W(t));
+      X(ae.note, W(noteMsg));
       let gw = e("guestWait");
       if (gw && !canStart) {
         let sub = gw.querySelector(".gw-sub");
-        if (sub) sub.innerHTML = "Kurucu başlatana kadar bekle. Oyun otomatik başlamaz.<br>" + y.players.length + " oyuncu lobide.";
+        if (sub) sub.innerHTML = __t("guestSubPlayers", { n: y.players.length });
       }
     }
     function Gt(n, a) {
       let i = (n.startCount || 1) <= 1;
-      n.winner ? (e("endIcon").textContent = "\uD83C\uDFC6", e("endTitle").textContent = i ? "Hayatta kaldın!" : "Genel şampiyon", e("endWho").textContent = n.wname || L(n.winner), e("endWho").style.color = Q(n.winner)) : (e("endIcon").textContent = "\uD83D\uDC80", e("endTitle").textContent = i ? "Oyun bitti" : "Şampiyon yok", e("endWho").textContent = ""), X(e("endRows"), On(n, !0)), X(e("endBack"), "Otomatik olarak lobiye dönülüyor: " + Math.max(0, Math.ceil((n.endsAt - a) / 1000)) + " sn"), e("lobbyBtn").style.display = y.isHost || y.host && y.host.id === p.id ? "" : "none";
+      n.winner ? (e("endIcon").textContent = "\uD83C\uDFC6", e("endTitle").textContent = i ? __t("youSurvived") : __t("champOverall"), e("endWho").textContent = n.wname || L(n.winner), e("endWho").style.color = Q(n.winner)) : (e("endIcon").textContent = "\uD83D\uDC80", e("endTitle").textContent = i ? __t("gameOver") : __t("noChamp"), e("endWho").textContent = ""), X(e("endRows"), On(n, !0)), X(e("endBack"), __t("autoLobby", { n: Math.max(0, Math.ceil((n.endsAt - a) / 1000)) })), e("lobbyBtn").style.display = y.isHost || y.host && y.host.id === p.id ? "" : "none";
     }
 
     /* =====================================================================
@@ -4550,7 +5076,7 @@ function et() {
       try { y.setState({ adm: d }); } catch (_) {}
     }
     function admPushEv(type, name) {
-      admEv.push([Date.now().toString(36) + Math.random().toString(36).slice(2, 6), type, name || "Oyuncu"]);
+      admEv.push([Date.now().toString(36) + Math.random().toString(36).slice(2, 6), type, name || __t("player")]);
       admEv = admEv.slice(-4);
     }
 
@@ -4569,7 +5095,7 @@ function et() {
       let t = admFind(id);
       if (!t) return;
       if (!admBans.some(b => b.id === id))
-        admBans.push({ id: id, did: (t.state && t.state.did) || "", name: t.name || "Oyuncu" });
+        admBans.push({ id: id, did: (t.state && t.state.did) || "", name: t.name || __t("player") });
       admPushEv("ban", t.name);
       admSave();
       admPublish();
@@ -4606,21 +5132,21 @@ function et() {
 
     /* ---- Arayüz (yalnızca yönetici için oluşturulur) ---- */
     function admPanelHtml() {
-      let now = performance.now(), h = '<div class="adm-h"><span>\uD83D\uDEE1 Admin Paneli</span><em>KURUCU</em></div>';
-      h += '<div class="adm-sub">Oyuncular (' + y.players.length + ')</div>';
+      let now = performance.now(), h = '<div class="adm-h"><span>' + __t("adminPanel") + '</span><em>' + __t("adminTag") + '</em></div>';
+      h += '<div class="adm-sub">' + __t("players") + ' (' + y.players.length + ')</div>';
       h += y.players.map(l => {
         let me = l.id === p.id, id = W(l.id);
         let ban = admPend && admPend.id === l.id && now < admPend.until;
-        return '<div class="adm-row' + (me ? " me" : "") + '"><i style="background:' + x(l) + '"></i><span class="n">' + W(l.name) + (me ? " (sen)" : "") + '</span>' +
-          (me ? '<span class="tag">yönetici</span>' :
-            '<button class="kk" data-adm="kick" data-id="' + id + '">Kick</button>' +
-            '<button class="bb" data-adm="ban" data-id="' + id + '">' + (ban ? "Emin misin?" : "Ban") + '</button>') + '</div>';
+        return '<div class="adm-row' + (me ? " me" : "") + '"><i style="background:' + x(l) + '"></i><span class="n">' + W(l.name) + (me ? " (" + __t("you").toLowerCase() + ")" : "") + '</span>' +
+          (me ? '<span class="tag">' + __t("manager") + '</span>' :
+            '<button class="kk" data-adm="kick" data-id="' + id + '">' + __t("kick") + '</button>' +
+            '<button class="bb" data-adm="ban" data-id="' + id + '">' + (ban ? __t("banConfirm") : __t("ban")) + '</button>') + '</div>';
       }).join("");
-      if (y.players.length <= 1) h += '<div class="adm-empty">Odada başka oyuncu yok.</div>';
-      h += '<div class="adm-sub">Banlılar (' + admBans.length + ')</div>';
+      if (y.players.length <= 1) h += '<div class="adm-empty">' + __t("noOtherPlayers") + '</div>';
+      h += '<div class="adm-sub">' + __t("banned") + ' (' + admBans.length + ')</div>';
       h += admBans.length
-        ? admBans.map(b => '<div class="adm-row"><span class="n">' + W(b.name || "Oyuncu") + '</span><button class="uu" data-adm="unban" data-id="' + W(b.id) + '">Banı kaldır</button></div>').join("")
-        : '<div class="adm-empty">Banlı oyuncu yok.</div>';
+        ? admBans.map(b => '<div class="adm-row"><span class="n">' + W(b.name || __t("player")) + '</span><button class="uu" data-adm="unban" data-id="' + W(b.id) + '">' + __t("unban") + '</button></div>').join("")
+        : '<div class="adm-empty">' + __t("noBanned") + '</div>';
       return h;
     }
     function admBuildUi() {
@@ -4632,7 +5158,7 @@ function et() {
         pl.parentNode.insertBefore(admLobbyEl, pl.nextSibling);
       }
       admBtnEl = document.createElement("button");
-      admBtnEl.id = "admBtn"; admBtnEl.className = "go"; admBtnEl.textContent = "\uD83D\uDEE1 Admin";
+      admBtnEl.id = "admBtn"; admBtnEl.className = "go"; admBtnEl.textContent = "🛡 " + __t("admin");
       admBtnEl.setAttribute("data-adm", "open");
       document.body.appendChild(admBtnEl);
       admFloatEl = document.createElement("div");
@@ -4676,7 +5202,7 @@ function et() {
     /* ---- Yetki devri ---- */
     function admBecome() {
       let seen = new Set(), list = [];
-      (admCache.b || []).map(b => ({ id: b[0], did: b[1] || "", name: b[2] || "Oyuncu" })).concat(admLoad()).forEach(b => {
+      (admCache.b || []).map(b => ({ id: b[0], did: b[1] || "", name: b[2] || __t("player") })).concat(admLoad()).forEach(b => {
         let k = b.id + "|" + b.did;
         if (!seen.has(k)) { seen.add(k); list.push(b); }
       });
@@ -4705,7 +5231,7 @@ function et() {
       for (let q of d.ev) {
         if (!q || admSeen.has(q[0])) continue;
         admSeen.add(q[0]);
-        _e((q[2] || "Oyuncu") + (q[1] === "ban" ? " banlandı" : " kicklendi"), "bad");
+        _e((q[2] || __t("player")) + (q[1] === "ban" ? " banlandı" : " kicklendi"), "bad");
       }
     }
     function admTick() {
