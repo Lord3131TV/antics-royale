@@ -12,7 +12,7 @@ import { io } from "https://cdn.socket.io/4.8.1/socket.io.esm.min.js";
 let SERVER_URL =
   (typeof window !== "undefined" && window.ANTICS_MP_SERVER) ||
   (typeof localStorage !== "undefined" && localStorage.getItem("antics_mp_server")) ||
-  "http://localhost:3001";
+  "https://antics-royale.onrender.com";
 
 export function setServerUrl(url) {
   SERVER_URL = String(url || "").replace(/\/$/, "");
