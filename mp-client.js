@@ -9,47 +9,13 @@
  */
 import { io } from "https://cdn.socket.io/4.8.1/socket.io.esm.min.js";
 
-const DEFAULT_SERVER_URL = "https://antics-royale.onrender.com";
-
-function normalizeServerUrl(url) {
-  let u = String(url || "").trim().replace(/\/$/, "");
-  if (!u) return DEFAULT_SERVER_URL;
-  // Eski localhost kayıtlarını Render'a taşı
-  try {
-    const host = new URL(u.includes("://") ? u : "http://" + u).hostname;
-    if (host === "localhost" || host === "127.0.0.1") return DEFAULT_SERVER_URL;
-  } catch (_) {
-    if (/localhost|127\.0\.0\.1/i.test(u)) return DEFAULT_SERVER_URL;
-  }
-  return u;
-}
-
-function readStoredServerUrl() {
-  try {
-    if (typeof localStorage === "undefined") return null;
-    const stored = localStorage.getItem("antics_mp_server");
-    if (!stored) return null;
-    const normalized = normalizeServerUrl(stored);
-    // Yanlışlıkla kaydedilmiş localhost'u kalıcı düzelt
-    if (normalized !== stored) {
-      try {
-        localStorage.setItem("antics_mp_server", normalized);
-      } catch (_) {}
-    }
-    return normalized;
-  } catch (_) {
-    return null;
-  }
-}
-
-let SERVER_URL = normalizeServerUrl(
+let SERVER_URL =
   (typeof window !== "undefined" && window.ANTICS_MP_SERVER) ||
-    readStoredServerUrl() ||
-    DEFAULT_SERVER_URL
-);
+  (typeof localStorage !== "undefined" && localStorage.getItem("antics_mp_server")) ||
+  "http://localhost:3001";
 
 export function setServerUrl(url) {
-  SERVER_URL = normalizeServerUrl(url);
+  SERVER_URL = String(url || "").replace(/\/$/, "");
   try {
     localStorage.setItem("antics_mp_server", SERVER_URL);
   } catch (_) {}
@@ -145,8 +111,7 @@ export function joinRoom(opts = {}) {
           return;
         }
         try {
-          // created === true → bu client odayı oluşturdu; host garantisi için kullanılır
-          const room = buildRoom(socket, res, !wantCode);
+          const room = buildRoom(socket, res);
           settled = true;
           resolve(room);
         } catch (e) {
@@ -157,21 +122,14 @@ export function joinRoom(opts = {}) {
   });
 }
 
-function buildRoom(socket, res, isCreator) {
+function buildRoom(socket, res) {
   const playersMap = new Map();
+  let hostId = res.hostId || null;
+  let roomState = res.state ? { ...res.state } : { phase: "lobby" };
   let myId = res.playerId;
   let code = res.code;
   let ping = 0;
   let _serverOffset = (res.serverNow || Date.now()) - Date.now();
-
-  // Host: sunucunun gönderdiği hostId esas alınır.
-  // create_room ise ve sunucu hostId göndermediyse creator anında host olur.
-  let hostId = res.hostId || null;
-  if (isCreator && !hostId && myId) {
-    hostId = myId;
-  }
-
-  let roomState = res.state ? { ...res.state } : { phase: "lobby" };
 
   const stateListeners = new Set();
   const playerStateListeners = new Set();
@@ -179,24 +137,6 @@ function buildRoom(socket, res, isCreator) {
   const leaveListeners = new Set();
   const hostChangeListeners = new Set();
   const hostTickListeners = new Set();
-
-  function notifyHostChange() {
-    const hostPlayer = hostId ? playersMap.get(hostId) || null : null;
-    hostChangeListeners.forEach((fn) => {
-      try {
-        fn(hostPlayer);
-      } catch (_) {}
-    });
-  }
-
-  function setHostId(newHostId, forceNotify = false) {
-    if (newHostId == null || newHostId === "") return;
-    const changed = hostId !== newHostId;
-    hostId = newHostId;
-    if (changed || forceNotify) {
-      notifyHostChange();
-    }
-  }
 
   function upsertPlayer(data) {
     let p = playersMap.get(data.id);
@@ -239,22 +179,18 @@ function buildRoom(socket, res, isCreator) {
       if (!ids.has(id) && id !== myId) playersMap.delete(id);
     }
     (msg.players || []).forEach((pl) => {
+      const existed = playersMap.has(pl.id);
       const p = upsertPlayer(pl);
       // full state replace on roster sync if provided
       if (pl.state) p.state = { ...pl.state };
     });
-    // Sunucunun gönderdiği hostId'yi anında uygula (değiştiyse dinleyicileri bilgilendir)
-    if (msg.hostId) {
-      setHostId(msg.hostId);
-    }
+    if (msg.hostId) hostId = msg.hostId;
   });
 
   socket.on("player_join", (msg) => {
     if (!msg || !msg.player) return;
     const p = upsertPlayer(msg.player);
-    if (msg.hostId) {
-      setHostId(msg.hostId);
-    }
+    if (msg.hostId) hostId = msg.hostId;
     joinListeners.forEach((fn) => {
       try {
         fn(p);
@@ -266,9 +202,7 @@ function buildRoom(socket, res, isCreator) {
     if (!msg || !msg.id) return;
     const p = playersMap.get(msg.id);
     playersMap.delete(msg.id);
-    if (msg.hostId) {
-      setHostId(msg.hostId);
-    }
+    if (msg.hostId) hostId = msg.hostId;
     leaveListeners.forEach((fn) => {
       try {
         fn(p || { id: msg.id, name: msg.name || "Oyuncu", state: {} });
@@ -302,10 +236,6 @@ function buildRoom(socket, res, isCreator) {
     if (typeof msg.serverNow === "number") {
       _serverOffset = msg.serverNow - Date.now();
     }
-    // room_state içinde hostId gelirse uygula
-    if (msg.hostId) {
-      setHostId(msg.hostId);
-    }
     stateListeners.forEach((fn) => {
       try {
         fn(roomState);
@@ -315,9 +245,12 @@ function buildRoom(socket, res, isCreator) {
 
   socket.on("host_change", (msg) => {
     if (!msg) return;
-    if (msg.hostId) {
-      setHostId(msg.hostId, true);
-    }
+    if (msg.hostId) hostId = msg.hostId;
+    hostChangeListeners.forEach((fn) => {
+      try {
+        fn(playersMap.get(hostId) || null);
+      } catch (_) {}
+    });
   });
 
   socket.on("host_tick", (msg) => {
@@ -393,13 +326,7 @@ function buildRoom(socket, res, isCreator) {
       if (typeof fn === "function") leaveListeners.add(fn);
     },
     onHostChange(fn) {
-      if (typeof fn === "function") {
-        hostChangeListeners.add(fn);
-        // Kayıt anında mevcut host bilgisini hemen ver (UI anında doğru olsun)
-        try {
-          fn(hostId ? playersMap.get(hostId) || null : null);
-        } catch (_) {}
-      }
+      if (typeof fn === "function") hostChangeListeners.add(fn);
     },
     on() {},
     send() {},
@@ -432,13 +359,6 @@ function buildRoom(socket, res, isCreator) {
     } catch (_) {}
     socket.emit("set_name", { name: n });
   };
-
-  // Oda kurulur kurulmaz host bilgisini dinleyicilere bildir
-  // (onHostChange daha sonra eklense bile yukarıdaki kayıt anında da çağrılır)
-  if (hostId) {
-    // Mikro görev: oyuncu map'i ve room objesi hazır olduktan sonra
-    queueMicrotask(() => notifyHostChange());
-  }
 
   return room;
 }
