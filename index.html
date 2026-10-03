@@ -2680,28 +2680,49 @@ function et() {
       banner(n) { return n.bb === p.id ? "BOMBA SENDE! Birine dokun!" : "Bombadan kaç!"; },
       hint: "WASD: hareket · Bombayı taşıyorsan birine dokun"
     };
-    // --- 5) EBELEMEÇ (TAG): kimse elenmez, yakalanan sadece ebe olur. Ebe seçimi/geçişi host'ta tek yetkiden yapılır ---
-    let xtI = "";
+    // --- 5) EBELEMEÇ (TAG): kimse elenmez, yakalanan sadece ebe olur ---
+    // TEK GERÇEK EBE = taggerId (state alanı "it"). Sadece HOST hesaplar ve yayınlar; her değişimde tv (sürüm) artar.
+    // Clientlar ebeyi ASLA kendileri değiştirmez/hesaplamaz; yalnızca host'tan gelen, daha yeni sürümlü (tv) değeri uygular.
+    // Mesaj "tr" (round id) taşır: eski round'dan kalan mesajlar da yok sayılır.
+    const TAG_DISTANCE = 1.6, TAG_COOLDOWN = 1000;
+    let xtC = { rid: null, id: null, ver: 0 }, xtH = { rid: null }, xtI = "";
+    const xtGet = n => {
+      if (xtC.rid !== n.rid) xtC = { rid: n.rid, id: null, ver: 0 };
+      if (n.tr === n.rid && typeof n.tv === "number" && n.tv > xtC.ver) { xtC.ver = n.tv; xtC.id = n.it || null; }
+      return xtC.id;
+    };
     const xtPil = [[-4, -4], [4, -4], [-4, 4], [4, 4]];
     const xTag = {
       id: "tag", name: "Ebelemeç", kind: "race", duration: 45000, finishZ: () => 1e9,
       rules: ["Ebe, dokunduğu oyuncuyu ebe yapar. Kimse elenmez!", "Ebe değilsen kaç, ebeysen birini yakala.", "Süre bitince ebe olarak kalan en son sırada biter."],
-      hostStart: () => ({ it: null, itOk: 0 }),
+      hostStart: () => ({ it: null, tv: 0, tr: null }),
       spawn(t, l) { let r = t / Math.max(1, l) * 6.2832 + 0.4; return { x: Math.cos(r) * 7.5, z: Math.sin(r) * 7.5 }; },
       camera(c) { return Ne(c.x * 0.3, c.z * 0.3, 16, 0.95, 0.5); },
       bounds: () => ({ x0: -9, x1: 9, z0: -9, z1: 9 }),
+      // SADECE host burada ebe üretir/değiştirir. Host kendi bellekteki (xtH) durumu esas alır; ağdan dönen eski/echo mesajlar onu ezemez.
       hostTick(n, a) {
-        if (!n.playAt) return null; let ids = xRun(n); if (!ids.length) return null; let h = n.it;
-        if (!h || !ids.includes(h)) return { it: ids[Math.random() * ids.length | 0], itOk: a + (h ? 1500 : 2500) };
-        if (a < (n.itOk || 0)) return null;
-        let hs = C(h).state, bd = 1.6, tg = null;
-        for (let id of ids) { if (id === h) continue; let ps = C(id).state, d = Math.hypot((ps.x || 0) - (hs.x || 0), (ps.z || 0) - (hs.z || 0)); if (d < bd) { bd = d; tg = id; } }
-        return tg ? { it: tg, itOk: a + 1500 } : null;
+        if (!n.playAt) return null; let ids = xRun(n); if (!ids.length) return null;
+        if (xtH.rid !== n.rid) xtH = { rid: n.rid, id: null, ver: 0, okAt: 0, blk: null };
+        let H = xtH;
+        // Başka bir host'un (host değişimi) daha yeni sürümü varsa devral
+        if (n.tr === n.rid && typeof n.tv === "number" && n.tv > H.ver) { H.ver = n.tv; H.id = n.it || null; H.okAt = a + TAG_COOLDOWN; H.blk = null; }
+        let give = (id, ms, blk) => { H.id = id; H.ver++; H.okAt = a + ms; H.blk = blk || null; return { it: id, tv: H.ver, tr: n.rid }; };
+        // Ebe yok / ebe yaşayanlar arasında değil (çıktı): yeni rastgele ebe
+        if (!H.id || !ids.includes(H.id)) return give(ids[Math.random() * ids.length | 0], H.id ? TAG_COOLDOWN : 2500, null);
+        // Cooldown: bu sürede hiç tag kontrolü yapılmaz
+        if (a < H.okAt) return null;
+        let hs = C(H.id).state, hx = hs.x || 0, hz = hs.z || 0;
+        // Eski ebe, yeni ebeden bir kez uzaklaşana kadar geri yakalanamaz (eski temas tekrar tag üretmez)
+        if (H.blk) { let bo = ids.includes(H.blk) ? C(H.blk) : null; if (!bo || Math.hypot((bo.state.x || 0) - hx, (bo.state.z || 0) - hz) > TAG_DISTANCE + 0.8) H.blk = null; }
+        let bd = TAG_DISTANCE, tg = null;
+        for (let id of ids) { if (id === H.id || id === H.blk) continue; let ps = C(id).state, d = Math.hypot((ps.x || 0) - hx, (ps.z || 0) - hz); if (d < bd) { bd = d; tg = id; } }
+        return tg ? give(tg, TAG_COOLDOWN, H.id) : null;
       },
+      // Client: ebeyi değiştirmez, sadece uygulanan (host'tan gelen) ebeyi okur
       localRule(n, now) {
         for (let q of xtPil) { let dx = o.x - q[0], dz = o.z - q[1], d = Math.hypot(dx, dz); if (d < 1.5) { if (d > 0.001) { o.x = q[0] + dx / d * 1.5; o.z = q[1] + dz / d * 1.5; } else o.x += 1.5; } }
-        let k = n.rid + ":" + (n.it || ""); if (k !== xtI) { xtI = k; if (n.it === p.id) { O("hit"); fe(o.x, 1.2, o.z, "#ff3d6e", 14, 5); We('<div class="bad">EBE sensin!</div><div class="small">Birine dokun</div>', 1500); } }
-        if (o.st === "run" && now >= n.endsAt - (n.it === p.id ? 300 : 700)) ct();
+        let it = xtGet(n), k = n.rid + ":" + (it || ""); if (k !== xtI) { xtI = k; if (it === p.id) { O("hit"); fe(o.x, 1.2, o.z, "#ff3d6e", 14, 5); We('<div class="bad">EBE sensin!</div><div class="small">Birine dokun</div>', 1500); } }
+        if (o.st === "run" && now >= n.endsAt - (it === p.id ? 300 : 700)) ct();
       },
       world(n, now, i) {
         s.fillStyle = "#1f5a36"; s.fillRect(0, 0, D, E);
@@ -2709,13 +2730,13 @@ function et() {
         for (let q = -9; q < 9; q += 6) Pe(q, q + 3, -9, 9, 0.01, "#6fd08a");
         Pe(-9, 9, -9.1, -8.9, 0.02, "#fff"); Pe(-9, 9, 8.9, 9.1, 0.02, "#fff"); Pe(-9.1, -8.9, -9, 9, 0.02, "#fff"); Pe(8.9, 9.1, -9, 9, 0.02, "#fff");
         let out = xtPil.map(q => ({ z: q[1], fn: () => Ee(qe(1.1, 14).map(u => [q[0] + u[0], q[1] + u[1]]), 0, 2, "#ffd166", "#c98f2a") }));
-        let hb = n.it && me.get(n.it); if (!hb) return out;
+        let tid = xtGet(n), hb = tid && me.get(tid); if (!hb) return out;
         out.push({ z: hb.z + 0.3, fn: () => { let g = Y(hb.x, 0, hb.z); if (!g) return; s.strokeStyle = "#ff3d3d"; s.lineWidth = 4; s.beginPath(); s.ellipse(g.x, g.y, 0.9 * g.k, 0.33 * g.k, 0, 0, 7); s.stroke(); } });
         out.push({ z: hb.z - 0.3, fn: () => { let q = Y(hb.x, hb.y + 3.3, hb.z); if (!q) return; let fs = K(q.k * 0.5, 13, 26); s.font = "900 " + fs + "px " + Hn; s.textAlign = "center"; s.textBaseline = "middle"; let tw = s.measureText("EBE").width + 16; s.fillStyle = "#ff3d3d"; s.beginPath(); s.roundRect(q.x - tw / 2, q.y - fs * 0.8, tw, fs * 1.6, fs * 0.8); s.fill(); s.fillStyle = "#fff"; s.fillText("EBE", q.x, q.y); } });
         return out;
       },
-      hud(n) { let l = Math.max(0, Math.ceil((n.endsAt - y.now()) / 1000)); return "🏃 Ebe: " + (n.it ? L(n.it) : "-") + " · " + l + " sn"; },
-      banner(n) { return !n.it ? "Ebe seçiliyor..." : n.it === p.id ? "EBE SENSİN! Birine dokun!" : "Kaç! Ebe: " + L(n.it); },
+      hud(n) { let l = Math.max(0, Math.ceil((n.endsAt - y.now()) / 1000)), it = xtGet(n); return "🏃 Ebe: " + (it ? L(it) : "-") + " · " + l + " sn"; },
+      banner(n) { let it = xtGet(n); return !it ? "Ebe seçiliyor..." : it === p.id ? "EBE SENSİN! Birine dokun!" : "Kaç! Ebe: " + L(it); },
       hint: "WASD: hareket · Ebeysen birine dokun, değilsen kaç"
     };
     Ue.splice(Ue.length - 1, 0, xCar, xFt, xBack, xBomb, xTag);
