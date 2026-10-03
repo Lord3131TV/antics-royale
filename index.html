@@ -3612,52 +3612,99 @@ function pt(n, a) {
       };
     // Serbest kamera (local): mouse look — multiplayer'a gitmez
     let lookYaw = 0, lookPitch = 0.35;
-    const LOOK_SENS = 0.0022;
+    let lookRmb = false; // sağ tık sürükleme (pointer lock yoksa)
+    const LOOK_SENS = 0.0035;
     const LOOK_PITCH_MIN = -0.55, LOOK_PITCH_MAX = 1.15;
+    // Sadece gerçek mobil (show-mobile) iken kapat — dokunmatik ekranlı laptop'ta mouse çalışsın
     function freeLookActive() {
-      // Mobilde serbest mouse-look yok; klasik kamera
-      if (isTouchDevice) return false;
-      let ph = (w().phase || "lobby");
-      if (ph === "lobby" || ph === "gameEnd") return false;
+      // Gerçek mobil kontroller açıkken kapalı; PC (ve dokunmatik laptop) mouse ile bakabilsin
+      if (document.body.classList.contains("show-mobile")) return false;
       if (gamePaused) return false;
+      let ph = (w().phase || "lobby");
+      if (ph === "gameEnd") return false;
+      // lobby + intro + play + roundEnd: serbest bakış açık
       return true;
     }
-    // —— PC serbest kamera: pointer lock + mouse look (canvas hazır olduktan sonra) ——
+    function applyLookDelta(dx, dy) {
+      if (!freeLookActive()) return;
+      if (!dx && !dy) return;
+      lookYaw += dx * LOOK_SENS;
+      // 360° sürekli; periyodik sadeleştir
+      lookYaw = ((lookYaw + Math.PI) % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2) - Math.PI;
+      lookPitch += dy * LOOK_SENS;
+      lookPitch = K(lookPitch, LOOK_PITCH_MIN, LOOK_PITCH_MAX);
+    }
+    // —— PC serbest kamera ——
     (function setupMouseLook() {
-      if (isTouchDevice) return;
-      function wantLock() {
+      function wantLook() {
         try {
-          let ph = (w() && w().phase) || "lobby";
-          if (ph === "lobby" || ph === "gameEnd") return false;
+          if (document.body.classList.contains("show-mobile")) return false;
           if (gamePaused) return false;
+          let ph = (w() && w().phase) || "lobby";
+          if (ph === "gameEnd") return false;
           return true;
         } catch (_) { return false; }
       }
       function tryLock() {
-        if (!wantLock()) return;
+        if (!wantLook()) return;
         if (document.pointerLockElement === Ce) return;
-        try { Ce.requestPointerLock && Ce.requestPointerLock(); } catch (_) {}
+        try {
+          let req = Ce.requestPointerLock || Ce.mozRequestPointerLock;
+          if (req) req.call(Ce);
+        } catch (_) {}
       }
-      Ce.addEventListener("click", () => { tryLock(); });
-      // HUD üzerinden tıklama da kilidi alsın (oyun alanı)
-      let hud = e("hud");
-      if (hud) hud.addEventListener("click", ev => {
-        if (ev.target && (ev.target.closest("button") || ev.target.closest("input") || ev.target.closest("a"))) return;
+      // Sol tık: pointer lock
+      function onClick(ev) {
+        if (ev.button != null && ev.button !== 0) return;
+        if (ev.target && (ev.target.closest("button") || ev.target.closest("input") || ev.target.closest("a") || ev.target.closest(".panel"))) return;
         tryLock();
+      }
+      Ce.style.cursor = "crosshair";
+      Ce.addEventListener("click", onClick);
+      let hud = e("hud");
+      if (hud) hud.addEventListener("click", onClick, true);
+      // Sağ tık sürükle = look (lock olmadan da çalışır)
+      window.addEventListener("mousedown", ev => {
+        if (ev.button === 2 && wantLook()) {
+          lookRmb = true;
+          ev.preventDefault();
+        }
+      });
+      window.addEventListener("mouseup", ev => {
+        if (ev.button === 2) lookRmb = false;
+      });
+      window.addEventListener("contextmenu", ev => {
+        if (wantLook()) ev.preventDefault();
       });
       document.addEventListener("mousemove", ev => {
-        if (document.pointerLockElement !== Ce) return;
-        if (!freeLookActive()) return;
-        lookYaw += (ev.movementX || 0) * LOOK_SENS;
-        if (lookYaw > Math.PI * 4 || lookYaw < -Math.PI * 4)
-          lookYaw = ((lookYaw + Math.PI) % (Math.PI * 2)) - Math.PI;
-        lookPitch += (ev.movementY || 0) * LOOK_SENS;
-        lookPitch = K(lookPitch, LOOK_PITCH_MIN, LOOK_PITCH_MAX);
+        let locked = document.pointerLockElement === Ce || document.pointerLockElement === document.body;
+        if (!locked && !lookRmb) return;
+        applyLookDelta(ev.movementX || 0, ev.movementY || 0);
       });
+      // Yedek: , ve . tuşları ile yatay bakış (mouse kilitlenmezse)
+      addEventListener("keydown", ev => {
+        if (!wantLook()) return;
+        if (ev.target && (ev.target.tagName === "INPUT" || ev.target.tagName === "TEXTAREA")) return;
+        const step = 0.12;
+        if (ev.code === "Comma") applyLookDelta(-step / LOOK_SENS, 0);
+        if (ev.code === "Period") applyLookDelta(step / LOOK_SENS, 0);
+        if (ev.code === "Semicolon") applyLookDelta(0, -step / LOOK_SENS);
+        if (ev.code === "Quote") applyLookDelta(0, step / LOOK_SENS);
+      });
+      // Oyun başlayınca otomatik lock dene (kullanıcı bir kez tıkladıysa)
+      let lastPh = "";
       setInterval(() => {
-        if (gamePaused && document.pointerLockElement === Ce) {
-          try { document.exitPointerLock && document.exitPointerLock(); } catch (_) {}
-        }
+        try {
+          let ph = (w() && w().phase) || "lobby";
+          if (ph !== lastPh && (ph === "intro" || ph === "play") && lastPh) {
+            // phase değişimi — kullanıcıya tıkla hatırlatması için cursor
+            Ce.style.cursor = "crosshair";
+          }
+          lastPh = ph;
+          if (gamePaused && document.pointerLockElement) {
+            try { document.exitPointerLock && document.exitPointerLock(); } catch (_) {}
+          }
+        } catch (_) {}
       }, 200);
     })();
     function _n() {
@@ -4182,29 +4229,27 @@ function pt(n, a) {
       if (freeLookActive()) {
         // Üçüncü şahıs orbit: yaw 360°, pitch sınırlı — tamamen local
         let dist = Math.hypot((base.x - (c.x || 0)), (base.z - (c.z || 0)));
-        if (!(dist > 2)) dist = 10;
-        dist = K(dist, 6, 28);
+        if (!(dist > 2)) dist = 11;
+        dist = K(dist, 7, 26);
         let yaw = lookYaw, pitch = lookPitch;
-        let horiz = dist * Math.cos(pitch);
+        let cpitch = Math.cos(pitch), spitch = Math.sin(pitch);
+        let horiz = dist * Math.max(0.25, cpitch);
         let py = (typeof c.y === "number" ? c.y : 0);
         u = {
           x: (c.x || 0) - Math.sin(yaw) * horiz,
           z: (c.z || 0) - Math.cos(yaw) * horiz,
-          y: Math.max(1.2, py + 2.2 + dist * Math.sin(pitch) * 0.85),
+          y: Math.max(1.5, py + 2.4 + dist * spitch * 0.9),
           pitch: pitch,
           cyf: base.cyf != null ? base.cyf : 0.42,
           yaw: yaw
         };
-        // Serbest bakışta daha sıkı takip (titreme olmasın)
-        let f = ve ? 1 : 1 - Math.exp(-n * 14);
-        let d = ve ? 1 : 1 - Math.exp(-n * 14);
-        let h = ve ? 1 : 1 - Math.exp(-n * 12);
-        P.x += (u.x - P.x) * f;
-        P.z += (u.z - P.z) * d;
-        P.y += (u.y - P.y) * h;
-        P.pitch = u.pitch; // pitch anında — lag yok
+        // Anında takip — mouse look gecikmesin
+        P.x = u.x;
+        P.z = u.z;
+        P.y = u.y;
+        P.pitch = u.pitch;
         P.yaw = u.yaw;
-        P.cyf += (u.cyf - P.cyf) * h;
+        P.cyf = u.cyf;
       } else {
         u = base;
         let f = ve ? 1 : 1 - Math.exp(-n * 9), d = ve ? 1 : 1 - Math.exp(-n * 11), h = ve ? 1 : 1 - Math.exp(-n * 6);
@@ -4356,6 +4401,10 @@ function pt(n, a) {
       } else if (l.dash) {
         let m = Math.max(0, (te - t) / 1000);
         b = l.hint + " (" + (m > 0 ? m.toFixed(1) + " sn" : "hazır") + ")";
+        if (freeLookActive() && document.pointerLockElement !== Ce)
+          b = "Tıkla veya sağ tut+sürükle: bakış · " + b;
+      } else if (freeLookActive() && document.pointerLockElement !== Ce) {
+        b = "Tıkla veya sağ tut+sürükle: 360° bakış · " + (l.hint || b);
       }
       X(ae.hint, W(b)), X(ae.ping, T ? "çevrimdışı test modu" : "ping " + Math.round(y.ping || 0) + " ms"), a === "lobby" && Dt(n), a === "gameEnd" && Gt(n, i);
     }
