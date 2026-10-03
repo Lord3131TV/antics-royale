@@ -8,9 +8,9 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#24123f">
 <title>Antics Royale 3D — Online Multiplayer</title>
-<meta name="description" content="Özel referans karakterler, lobi karakter seçimi ve 8 heyecanlı 3D mini oyun içeren çok oyunculu parti oyunu." />
+<meta name="description" content="Özel referans karakterler, lobi karakter seçimi ve 12 heyecanlı 3D mini oyun içeren çok oyunculu parti oyunu." />
 <meta property="og:title" content="Antics Royale 3D - Karakter Seçimli" />
-<meta property="og:description" content="Özel referans karakterler, lobi karakter seçimi ve 8 heyecanlı 3D mini oyun içeren çok oyunculu parti oyunu." />
+<meta property="og:description" content="Özel referans karakterler, lobi karakter seçimi ve 12 heyecanlı 3D mini oyun içeren çok oyunculu parti oyunu." />
 <meta property="og:type" content="website" />
 <meta name="twitter:card" content="summary_large_image" />
 <style>
@@ -87,6 +87,13 @@ body.red #vig{box-shadow:inset 0 0 150px 36px rgba(255,20,70,.6)}
 .char-card.selected .badge{background:var(--mint);color:var(--plum)}
 .char-card:not(.selected) .badge{background:rgba(255,255,255,.2);color:#fff}
 .char-card.wide{grid-column:1/-1}
+#mgPick{margin:10px 0 14px;background:rgba(0,0,0,.22);border-radius:14px;padding:10px;border:1px solid rgba(255,255,255,.1)}
+.mg-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;max-height:210px;overflow-y:auto}
+.mg-card{background:rgba(255,255,255,.07);border:2px solid rgba(255,255,255,.15);border-radius:10px;padding:7px 8px;cursor:pointer;font-size:12px;font-weight:800;line-height:1.25;color:#fff}
+.mg-card:hover{background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.4)}
+.mg-card.selected{border-color:var(--mint);background:rgba(46,229,157,.18);box-shadow:0 0 10px rgba(46,229,157,.3)}
+.mg-card.wide{grid-column:1/-1}
+#mgPick.ro .mg-card{cursor:default;pointer-events:none}
 
 .pl{display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:10px;background:rgba(255,255,255,.07);margin-bottom:5px;font-weight:700;font-size:14px}
 .pl.me{background:rgba(46,229,157,.18)}
@@ -120,6 +127,7 @@ input{flex:1;min-width:0;border-radius:12px;border:2px solid rgba(255,255,255,.3
 #menuDoor button{width:100%;padding:14px 12px;font-size:15px}
 #menuDoor .door-sub{font-size:11px;opacity:.8;font-weight:700;margin-top:2px}
 body.menu-mode #lobby .char-selector,
+body.menu-mode #mgPick,
 body.menu-mode #plist,
 body.menu-mode #startBtn,
 body.menu-mode .room-box,
@@ -359,7 +367,7 @@ body.ph-lobby #uiTopBtns{display:none}
 
   <div id="lobby" class="panel">
     <h1>Antics Royale</h1>
-    <p class="lead">8 kısa mini oyun: elenenler seyirci olur, son arenanın kazananı şampiyon!</p>
+    <p class="lead">12 kısa mini oyun: elenenler seyirci olur, son arenanın kazananı şampiyon!</p>
 
     <!-- Ön menü: oda seçimi (menu=1) -->
     <div id="menuDoor">
@@ -450,6 +458,9 @@ body.ph-lobby #uiTopBtns{display:none}
     </div>
 
 
+    <!-- Harita / Mini oyun seçimi -->
+    <div id="mgPick"></div>
+
     <!-- Oyuncu Listesi -->
     <div id="plist"></div>
 
@@ -527,7 +538,7 @@ body.ph-lobby #uiTopBtns{display:none}
       <li><b>M</b> — sesi aç/kapa</li>
       <li><b>ESC</b> — duraklat / menü</li>
       <li>Mobilde sol joystick + sağdaki Zıpla / Atıl butonları</li>
-      <li>8 mini oyun: elenenler seyirci olur, son arenanın kazananı şampiyon</li>
+      <li>12 mini oyun: elenenler seyirci olur, son arenanın kazananı şampiyon</li>
       <li>Lobide karakterini seç, ismini yaz, kurucu «Oyunu başlat»a basar</li>
     </ul>
     <button id="helpClose" class="go" type="button">Anladım</button>
@@ -2482,7 +2493,7 @@ function et() {
     const xRun = (n) => Ae(n).filter(id => { let s = C(id).state; return s.rd === n.rid && s.st === "run"; });
     const xRect = (x0, x1, z0, z1) => [[x0, z0], [x1, z0], [x1, z1], [x0, z1]];
     // --- 1) ARABA YARIŞI ---
-    let xc = { rid: 0, h: 0, v: 0, cp: 1, lap: 0, off: 0, sent: -1, hd: new Map() };
+    let xc = { rid: 0, h: 0, v: 0, cp: 1, lap: 0, off: 0, sent: -1, hs: 99, ht: 0, hd: new Map() };
     const xCar = {
       id: "cars", name: "Araba Yarışı", kind: "race", duration: 75000, finishZ: () => 1e9,
       rules: ["W gaz, S fren, A/D direksiyon. 3 tur at!", "Checkpoint'leri sırayla geç, bitişi 3 tur sonra geç.", "Pistten çıkarsan yavaşlarsın; uzun kalırsan son checkpoint'e dönersin."],
@@ -2490,7 +2501,7 @@ function et() {
       camera(c) { return Ne(c.x * 0.7, c.z * 0.7, 22, 0.95, 0.5); },
       bounds: () => ({ x0: -30, x1: 30, z0: -30, z1: 30 }),
       drive(dt, a) {
-        if (xc.rid !== a.rid) xc = { rid: a.rid, h: 0, v: 0, cp: 1, lap: 0, off: 0, sent: -1, hd: xc.hd };
+        if (xc.rid !== a.rid) xc = { rid: a.rid, h: 0, v: 0, cp: 1, lap: 0, off: 0, sent: -1, hs: 99, ht: 0, hd: xc.hd };
         let c = xc, go = y.now() - (a.playAt || 1e15) >= 3000, k = q => U.has(q);
         let st = (k("KeyD") || k("ArrowRight") ? 1 : 0) - (k("KeyA") || k("ArrowLeft") ? 1 : 0), th = (k("KeyW") || k("ArrowUp") ? 1 : 0) - (k("KeyS") || k("ArrowDown") ? 1 : 0);
         if (!go) { th = 0; st = 0; }
@@ -2503,6 +2514,7 @@ function et() {
         if (c.off > 2.5) { let th2 = ((c.cp + 3) % 4) * 1.5708; o.x = Math.cos(th2) * 22; o.z = Math.sin(th2) * 22; c.h = -th2; c.v = 0; c.off = 0; He(!0); }
         o.vx = Math.sin(c.h) * c.v; o.vz = Math.cos(c.h) * c.v; o.kx = o.kz = 0; o.fx = Math.sin(c.h); o.fz = Math.cos(c.h);
         if (c.sent !== c.lap) { c.sent = c.lap; p.setState({ lap: c.lap }); }
+        if (Math.abs(c.h - c.hs) > 0.04 && performance.now() - c.ht > 80) { c.hs = c.h; c.ht = performance.now(); p.setState({ ch: Math.round(c.h * 100) / 100 }); }
       },
       world(n, a, i, t) {
         Fe(Re.candy, i); s.fillStyle = "#1c5a2a"; s.fillRect(0, 0, D, E);
@@ -2512,14 +2524,20 @@ function et() {
         for (let q = 1; q < 4; q++) { let th = q * 1.5708; Pe(Math.cos(th) * 22 - 5, Math.cos(th) * 22 + 5, Math.sin(th) * 22 - 0.25, Math.sin(th) * 22 + 0.25, 0.03, "#ffd23f"); }
         let out = [];
         for (let d of y.players) { let b = me.get(d.id), st = d.id === p.id ? o.st : d.state.st; if (!b || (st !== "run" && st !== "fin")) continue;
-          let h = xc.hd.get(d.id) || 0; if (d.id === p.id) h = xc.h; else if (Math.hypot(b.vx, b.vz) > 0.6) h = Math.atan2(b.vx, b.vz); xc.hd.set(d.id, h);
+          let h = xc.hd.get(d.id) || 0; if (d.id === p.id) h = xc.h; else if (typeof d.state.ch === "number") h = d.state.ch; else if (Math.hypot(b.vx, b.vz) > 0.6) h = Math.atan2(b.vx, b.vz); xc.hd.set(d.id, h);
           let sx = Math.sin(h), cz = Math.cos(h), pt = (u, v) => [b.x + sx * u + cz * v, b.z + cz * u - sx * v];
-          out.push({ z: b.z - 0.5, fn: () => Ee([pt(1, 0.6), pt(1, -0.6), pt(-1, -0.6), pt(-1, 0.6)], 0, 0.55, x(d), "#222") }); }
+          out.push({ z: b.z - 0.5, fn: () => {
+            let q3 = (u0, u1, v0, v1) => [pt(u0, v0), pt(u1, v0), pt(u1, v1), pt(u0, v1)].map(f => [f[0], 0.57, f[1]]);
+            Ee([pt(1.2, 0.35), pt(0.8, 0.65), pt(-1, 0.65), pt(-1, -0.65), pt(0.8, -0.65), pt(1.2, -0.35)], 0, 0.55, x(d), "#222");
+            Ee([pt(0.35, 0.5), pt(0.35, -0.5), pt(-0.55, -0.5), pt(-0.55, 0.5)], 0.55, 1.0, "#d6efff", "#5a7a99");
+            pe(q3(0.95, 1.15, 0.12, 0.32), "#ffe34d", null); pe(q3(0.95, 1.15, -0.32, -0.12), "#ffe34d", null);
+            pe(q3(-1, -0.85, 0.35, 0.6), "#ff2a2a", null); pe(q3(-1, -0.85, -0.6, -0.35), "#ff2a2a", null);
+          } }); }
         return out;
       },
       hud() { return "🏎️ Tur " + Math.min(3, xc.lap + 1) + "/3 · Checkpoint " + Math.min(3, xc.cp) + "/3"; },
       banner(n, a) { return a < 3 ? String(Math.max(1, Math.ceil(3 - a))) : "Sür!"; },
-      hint: "W: gaz · S: fren · A/D: direksiyon · 3 tur"
+      hint: "W: ileri (sarı farlı uç ön) · S: geri/fren · A/D: direksiyon · 3 tur"
     };
     // --- 2) FUTBOL (top fiziği host'ta, state room_state ile herkese) ---
     let xf = { rid: 0 }, xb = { x: 0, z: 0, t: 0 }, xrs = "";
@@ -2815,6 +2833,7 @@ function et() {
       let r = Ke(nonFinal.slice());
       // URL ?mg=id1,id2 ile özel sıra (geliştirici/test)
       let fromUrl = (S.get("mg") || "").split(",").map(f => f.trim()).filter(f => allIds.includes(f));
+      if (!fromUrl.length && stNow.lpick && allIds.includes(stNow.lpick)) fromUrl = [stNow.lpick];
       if (fromUrl.length) r = fromUrl;
       // Klasik mod: karışık mini oyunlar + sonda final
       let u = fromUrl.length ? r.slice() : r.concat(["final"]);
@@ -3046,6 +3065,13 @@ function et() {
     }, e("lobbyBtn").onclick = n => {
       de(), Pn(), n.currentTarget.blur();
     };
+
+    // Harita seçimi: sadece kurucu seçer; seçim state'te "lpick" olarak herkese görünür
+    e("mgPick").addEventListener("click", ev => {
+      let b = ev.target && ev.target.closest ? ev.target.closest("[data-mg]") : null;
+      if (!b || !isLobbyHostView() || (w().phase || "lobby") !== "lobby") return;
+      try { y.setState({ lpick: b.getAttribute("data-mg") || null }); } catch (_) {}
+    });
 
     /* ===== Pause / Ayarlar / Yardım UI ===== */
     let gamePaused = false;
@@ -4186,7 +4212,7 @@ function et() {
       if ((a === "lobby" || a === "gameEnd") && gamePaused) closeAllUi();
       updateMobileUI(a);
       if (a !== "lobby") {
-        let m = Ae(n).length, g = (n.roster || []).length, k = (n.order || []).length || 8, A = (a === "play" || a === "intro") && l.hud ? l.hud(n, c, r) : "";
+        let m = Ae(n).length, g = (n.roster || []).length, k = (n.order || []).length || Ue.length, A = (a === "play" || a === "intro") && l.hud ? l.hud(n, c, r) : "";
         X(ae.tl, "<div class=\"h\">Mini oyun " + (n.round || 1) + "/" + k + "</div><div class=\"m\">" + W(l.name) + "</div><div class=\"big\">Kalan oyuncu <b>" + m + "</b>/" + g + "</div>" + (A ? "<div class=\"sub\">" + W(A) + "</div>" : "")), X(ae.tr, "<div class=\"ttl\">Skor</div>" + On(n, !1));
       }
       if (a === "play") {
@@ -4204,7 +4230,7 @@ function et() {
       if (ze && t < ze.until ? d = ze.html : ze = null, a === "intro" && !d) {
         let m = (n.endsAt - i) / 1000;
         if (m > 3.2)
-          d = "<div class=\"k\">Mini oyun " + (n.round || 1) + "/" + ((n.order || []).length || 8) + "</div><div class=\"t\">" + W(l.name) + "</div><div class=\"d\">" + l.rules.map(W).join("<br>") + "</div>" + (o.st === "spec" ? "<div class=\"small\">Bu turda izleyicisin.</div>" : "");
+          d = "<div class=\"k\">Mini oyun " + (n.round || 1) + "/" + ((n.order || []).length || Ue.length) + "</div><div class=\"t\">" + W(l.name) + "</div><div class=\"d\">" + l.rules.map(W).join("<br>") + "</div>" + (o.st === "spec" ? "<div class=\"small\">Bu turda izleyicisin.</div>" : "");
         else {
           let g = Math.max(1, Math.ceil(m));
           d = "<div class=\"cnt\" data-c=\"" + g + "\">" + g + "</div>", g !== nn && (nn = g, O("tick"));
@@ -4318,6 +4344,13 @@ function et() {
         let cz = (l.id === p.id ? o.char : l.state && l.state.char) || "char1", c = cz === "char1" ? "\uD83E\uDDD4 Sakallı" : cz === "char3" ? "\uD83C\uDFA7 Kulaklıklı" : "\uD83C\uDFA9 Fötr Şapkalı";
         return "<div class=\"pl" + (l.id === p.id ? " me" : "") + "\"><i style=\"background:" + x(l) + "\"></i><span class=\"n\">" + W(l.name) + (l.id === p.id ? " (sen)" : "") + "</span><span class=\"cbadge\">" + c + "</span>" + (a && l.id === a.id ? "<em>host</em>" : "") + (n.creatorId && l.id === n.creatorId ? "<em style=\"background:var(--mint)\">kurucu</em>" : "") + "</div>";
       }).join(""));
+      let mgEl = e("mgPick");
+      if (mgEl) {
+        let sel = (n || w()).lpick || "", can = isLobbyHostView();
+        let lbl = { cars: "\uD83C\uDFCE\uFE0F Araba Yarışı", soccer: "\u26BD Futbol", backrooms: "\uD83D\uDFE8 Backrooms \u2014 Yaratık Kovalamacası", bomb: "\uD83C\uDFC3 Ebelemeç" };
+        X(mgEl, "<div class=\"char-title\"><span>Harita / Mini oyun</span><span style=\"font-size:11px;opacity:.7\">" + (can ? "Seç ya da karışık bırak" : "Kurucu seçer") + "</span></div><div class=\"mg-grid\"><div class=\"mg-card wide" + (sel ? "" : " selected") + "\" data-mg=\"\">\uD83C\uDFB2 Karışık (hepsi sırayla)</div>" + Ue.map(f => "<div class=\"mg-card" + (sel === f.id ? " selected" : "") + "\" data-mg=\"" + W(f.id) + "\">" + W(lbl[f.id] || f.name) + "</div>").join("") + "</div>");
+        mgEl.classList.toggle("ro", !can);
+      }
       let st = n || w();
       // Kurucu sabit kalır; çıkmış kurucu yerine başkası atanmaz
       if (!st.creatorId && isRealHost() && y.players.length <= 1) {
