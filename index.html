@@ -1038,6 +1038,7 @@ function et() {
         // disconnects. Server also keeps empty rooms for EMPTY_ROOM_MS so
         // create→redirect→join and friends joining by code still work.
         if (code) {
+          try { sessionStorage.setItem("antics_just_created", String(code)); } catch (_) {}
           goToRoomCode(code);
           return;
         }
@@ -2858,8 +2859,9 @@ function et() {
       // Sunucunun gönderdiği gerçek hostId — gecikme / retry yok
       if (y.isHost === true) return !0;
       if (y.host && y.host.id === p.id) return !0;
-      // Henüz host atanmamış ve odada tek kişiysen sen hostsun
-      if (!y.host && y.players.length <= 1) return !0;
+      // Odada fiilen tek kişiysen (veya host henüz yoksa) sen hostsun — ghost/stale host bekleme
+      if (y.players.length <= 1) return !0;
+      if (!y.host) return !0;
       return !1;
     }
     function playerReady(pl) {
@@ -3041,9 +3043,9 @@ function et() {
             return;
           }
           if (i === "lobby") {
-            // Kurucu SABİT: ilk giren / odayı açan. Çıksa bile başkasına geçmez.
-            // Sadece henüz atanmamışsa ve odada tek kişi / host isen ata.
-            if (!n.creatorId && isRealHost() && y.players.length <= 1) {
+            // Kurucu: yoksa veya odadan çıkmışsa host/solo hemen claim eder (host_tick gecikmesi yok)
+            let cHere = n.creatorId && y.players.some(pl => pl.id === n.creatorId);
+            if ((!n.creatorId || !cHere) && (isRealHost() || y.players.length <= 1)) {
               y.setState({ creatorId: p.id });
               n.creatorId = p.id;
             }
@@ -4323,13 +4325,43 @@ function et() {
     }
     // URL'de room = bir odaya bağlanıldı (invite veya kod)
     let arrivedViaInvite = !!(S.get("room"));
+    // Oda kurucu id'sini gecikmesiz ata: create→redirect ghost, stale creatorId, host_tick bekleme
+    function ensureCreatorClaim(force) {
+      try {
+        let st = w() || {};
+        let cid = st.creatorId;
+        let code = String((y && y.code) || S.get("room") || "");
+        let justCreated = false;
+        try {
+          justCreated = sessionStorage.getItem("antics_just_created") === code;
+          if (justCreated) sessionStorage.removeItem("antics_just_created");
+        } catch (_) {}
+        let creatorHere = cid && y.players.some(pl => pl.id === cid);
+        // Geçerli kurucu odadaysa dokunma (force değilse)
+        if (cid && creatorHere && !force && !justCreated) return;
+        // Sadece odayı açan / yalnız / sunucu hostu claim eder
+        if (!(force || justCreated || T || isRealHost() || y.players.length <= 1)) return;
+        if (cid === p.id && creatorHere) return;
+        let patch = { creatorId: p.id };
+        if (!st.phase) {
+          patch.phase = "lobby";
+          patch.light = st.light || "green";
+          patch.lightAt = st.lightAt || y.now();
+        }
+        y.setState(patch);
+      } catch (_) {}
+    }
     function isLobbyHostView() {
       if (T) return true;
       let st = w() || {};
       let cid = st.creatorId;
-      // Kurucu id atanmışsa sadece o kişi kurucu görünümü alır (çıkmış olsa bile başkası almaz)
-      if (cid) return cid === p.id;
-      // Henüz kurucu yok: yalnız / SDK host ilk giren olabilir
+      // Kurucu hâlâ odadaysa sadece o kişi kurucu görünümü alır
+      if (cid) {
+        let creatorHere = y.players.some(pl => pl.id === cid);
+        if (creatorHere) return cid === p.id;
+        // Kurucu ayrılmış: stale creatorId — yalnız/host isen kurucu ol
+      }
+      // Henüz kurucu yok veya ayrılmış: yalnız / gerçek host
       if (y.players.length <= 1) return true;
       return isRealHost();
     }
@@ -4396,6 +4428,19 @@ function et() {
       if (crb) crb.onclick = () => createNewRoom();
       updateRoomBox();
     })();
+    // Anında kurucu claim + host değişiminde yeniden dene (10-15 sn host_tick bekleme yok)
+    try { ensureCreatorClaim(false); updateRoomBox(); } catch (_) {}
+    try {
+      y.onHostChange && y.onHostChange(function () {
+        try { ensureCreatorClaim(false); updateRoomBox(); } catch (_) {}
+      });
+      y.onJoin && y.onJoin(function () {
+        try { ensureCreatorClaim(false); } catch (_) {}
+      });
+      y.onLeave && y.onLeave(function () {
+        try { ensureCreatorClaim(false); } catch (_) {}
+      });
+    } catch (_) {}
     function Dt(n) {
       let a = y.host;
       updateRoomBox();
@@ -4410,11 +4455,10 @@ function et() {
         X(mgEl, "<div class=\"char-title\"><span>Harita / Mini oyun</span><span style=\"font-size:11px;opacity:.7\">" + (can ? "Seç ya da karışık bırak" : "Kurucu seçer") + "</span></div><div class=\"mg-grid\"><div class=\"mg-card wide" + (sel ? "" : " selected") + "\" data-mg=\"\">\uD83C\uDFB2 Karışık (hepsi sırayla)</div>" + Ue.map(f => "<div class=\"mg-card" + (sel === f.id ? " selected" : "") + "\" data-mg=\"" + W(f.id) + "\">" + W(lbl[f.id] || f.name) + "</div>").join("") + "</div>");
         mgEl.classList.toggle("ro", !can);
       }
+      ensureCreatorClaim(false);
       let st = n || w();
-      // Kurucu sabit kalır; çıkmış kurucu yerine başkası atanmaz
-      if (!st.creatorId && isRealHost() && y.players.length <= 1) {
-        try { y.setState({ creatorId: p.id }); st = Object.assign({}, st, { creatorId: p.id }); } catch (_) {}
-      }
+      // ensureCreatorClaim sonrası güncel state
+      st = w() || st;
       let hostView = isLobbyHostView();
       let isCreator = !st.creatorId || st.creatorId === p.id;
       // Sadece kurucu başlatır (SDK host değişse bile)
