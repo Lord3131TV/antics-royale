@@ -4227,20 +4227,22 @@ function pt(n, a) {
       let base = a.camera(c, i, t, l);
       let u;
       if (freeLookActive()) {
-        // Üçüncü şahıs orbit: yaw 360°, pitch sınırlı — tamamen local
-        let dist = Math.hypot((base.x - (c.x || 0)), (base.z - (c.z || 0)));
-        if (!(dist > 2)) dist = 11;
-        dist = K(dist, 7, 26);
+        // Üçüncü şahıs orbit — yakın mesafe (harita kamerası uzak kalmasın)
+        let mapDist = Math.hypot((base.x - (c.x || 0)), (base.z - (c.z || 0)));
+        // Sabit yakın üçüncü şahıs; arena gibi geniş haritalarda biraz aç
+        let dist = 6.2;
+        if (mapDist > 14) dist = 7.4;
+        if (mapDist > 20) dist = 8.2;
         let yaw = lookYaw, pitch = lookPitch;
         let cpitch = Math.cos(pitch), spitch = Math.sin(pitch);
-        let horiz = dist * Math.max(0.25, cpitch);
+        let horiz = dist * Math.max(0.35, cpitch);
         let py = (typeof c.y === "number" ? c.y : 0);
         u = {
           x: (c.x || 0) - Math.sin(yaw) * horiz,
           z: (c.z || 0) - Math.cos(yaw) * horiz,
-          y: Math.max(1.5, py + 2.4 + dist * spitch * 0.9),
+          y: Math.max(1.8, py + 1.85 + dist * spitch * 0.75),
           pitch: pitch,
-          cyf: base.cyf != null ? base.cyf : 0.42,
+          cyf: 0.38,
           yaw: yaw
         };
         // Anında takip — mouse look gecikmesin
