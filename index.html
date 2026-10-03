@@ -376,7 +376,7 @@ body.ph-lobby #uiTopBtns{display:none}
         <div class="settings-row" style="margin-top:12px;text-align:left">
           <span style="font-size:12px;opacity:.85">Sunucu</span>
         </div>
-        <input id="menuServerUrl" placeholder="ws sunucu (örn. http://localhost:3001)" style="width:100%;margin-top:4px;font-size:12px">
+        <input id="menuServerUrl" placeholder="ws sunucu (örn. https://antics-royale.onrender.com)" style="width:100%;margin-top:4px;font-size:12px">
         <button id="menuServerSave" class="alt" style="margin-top:6px;width:100%">Sunucuyu kaydet</button>
       </div>
     </div>
@@ -672,7 +672,7 @@ function Kt(e, S) {
     T ? (e.strokeStyle = "#231c20", e.lineWidth = 0.04, e.beginPath(), e.arc(-0.15, v + 0.01, 0.07, Math.PI * 1.1, Math.PI * 1.9), e.stroke(), e.beginPath(), e.arc(0.15, v + 0.01, 0.07, Math.PI * 1.1, Math.PI * 1.9), e.stroke()) : (e.fillStyle = "#ffffff", e.beginPath(), e.ellipse(-0.15, v - 0.03, 0.08, 0.06, 0, 0, Math.PI * 2), e.ellipse(0.15, v - 0.03, 0.08, 0.06, 0, 0, Math.PI * 2), e.fill(), e.fillStyle = "#3a271c", e.beginPath(), e.arc(-0.15, v - 0.03, 0.045, 0, Math.PI * 2), e.arc(0.15, v - 0.03, 0.045, 0, Math.PI * 2), e.fill(), e.fillStyle = "#110f13", e.beginPath(), e.arc(-0.15, v - 0.03, 0.025, 0, Math.PI * 2), e.arc(0.15, v - 0.03, 0.025, 0, Math.PI * 2), e.fill(), e.fillStyle = "#ffffff", e.beginPath(), e.arc(-0.17, v - 0.05, 0.015, 0, Math.PI * 2), e.arc(0.13, v - 0.05, 0.015, 0, Math.PI * 2), e.fill());
   e.fillStyle = q, e.beginPath(), e.ellipse(0, v + 0.04, 0.07, 0.09, 0, 0, Math.PI * 2), e.fill(), e.fillStyle = _, e.beginPath(), e.moveTo(-0.18, v + 0.16), e.quadraticCurveTo(-0.09, v + 0.11, 0, v + 0.13), e.quadraticCurveTo(0.09, v + 0.11, 0.18, v + 0.16), e.quadraticCurveTo(0.1, v + 0.22, 0, v + 0.2), e.quadraticCurveTo(-0.1, v + 0.22, -0.18, v + 0.16), e.fill(), e.fillStyle = "rgba(0,0,0,0.08)", e.beginPath(), e.arc(0, v + 0.28, 0.06, 0, Math.PI), e.fill(), e.fillStyle = "rgba(0,0,0,0.18)", e.beginPath(), e.ellipse(0, v - 0.17, 0.38, 0.08, 0, 0, Math.PI), e.fill(), e.fillStyle = se, e.beginPath(), e.moveTo(-0.34, v - 0.26), e.lineTo(-0.28, v - 0.58), e.quadraticCurveTo(-0.14, v - 0.52, 0, v - 0.57), e.quadraticCurveTo(0.14, v - 0.52, 0.28, v - 0.58), e.lineTo(0.34, v - 0.26), e.closePath(), e.fill(), e.fillStyle = o, e.beginPath(), e.ellipse(0, v - 0.55, 0.15, 0.05, 0, 0, Math.PI * 2), e.fill(), e.fillStyle = he, e.beginPath(), e.roundRect(-0.35, v - 0.35, 0.7, 0.11, 0.03), e.fill(), e.fillStyle = se, e.beginPath(), e.ellipse(0, v - 0.24, 0.49, 0.14, 0, 0, Math.PI * 2), e.fill(), e.fillStyle = o, e.beginPath(), e.ellipse(0, v - 0.22, 0.48, 0.08, 0, 0, Math.PI), e.fill();
 }
-var ln = 8, V = 16, $ = 80, Un = $ + 16, rn = 7.4, Yn = 28, Zn = 9.2, Vn = 4000, Jn = 3500, Qn = 10000, ge = [
+var ln = 16, V = 16, $ = 80, Un = $ + 16, rn = 7.4, Yn = 28, Zn = 9.2, Vn = 4000, Jn = 3500, Qn = 10000, ge = [
     "#ff5a5f",
     "#ffb020",
     "#ffe14d",
@@ -982,7 +982,7 @@ function et() {
     };
     try {
       let inp = e("menuServerUrl");
-      if (inp) inp.value = localStorage.getItem("antics_mp_server") || "http://localhost:3001";
+      if (inp) inp.value = localStorage.getItem("antics_mp_server") || "https://antics-royale.onrender.com";
     } catch (_) {}
   })();
   // mint_failed dinle
@@ -1058,7 +1058,7 @@ function et() {
         let su = localStorage.getItem("antics_mp_server");
         if (su && p.setServerUrl) p.setServerUrl(su);
         let inp = e("menuServerUrl");
-        if (inp) inp.value = (p.getServerUrl && p.getServerUrl()) || su || "http://localhost:3001";
+        if (inp) inp.value = (p.getServerUrl && p.getServerUrl()) || su || "https://antics-royale.onrender.com";
       } catch (_) {}
     }).catch(() => { T = !0; });
     e("nameBtn") && (e("nameBtn").onclick = n => {
@@ -2480,10 +2480,10 @@ function et() {
     function isRealHost() {
       // Offline test mode: always host
       if (T) return !0;
-      // SDK: host object matches me, or isHost flag without conflicting host
+      // Sunucunun gönderdiği gerçek hostId — gecikme / retry yok
+      if (y.isHost === true) return !0;
       if (y.host && y.host.id === p.id) return !0;
-      if (y.isHost && (!y.host || y.host.id === p.id)) return !0;
-      // Fallback: alone in room or no host assigned yet
+      // Henüz host atanmamış ve odada tek kişiysen sen hostsun
       if (!y.host && y.players.length <= 1) return !0;
       return !1;
     }
@@ -2564,27 +2564,53 @@ function et() {
         if (t.filter(R => l(R).st === "run").length > 0 && !u)
           return null;
         let k = m, A = "";
-        return !k.length && t.length && c && (k = [t.slice().sort((B, le) => (C(le).state.z || 0) - (C(B).state.z || 0))[0]], A = "Kimse bitiremedi! En ileri giden kurtuldu."), {
+        // Pozisyona göre otomatik kazanan YOK — bitişe ulaşan yoksa kimse kurtulmaz
+        if (!k.length && t.length && c) {
+          k = [];
+          A = "Kimse bitişe ulaşamadı!";
+        }
+        return {
           q: k,
           note: A
         };
       }
       let f = t.filter(m => l(m).st === "run"), d = c ? n.target(r) : 0;
+      // Kral Tepesi (Sarı Tepe): süre bitince veya hedefe ulaşılınca en düşük 2 skor elenir
+      if (n.id === "hill") {
+        if (!(f.length <= d || u))
+          return null;
+        let sorted = f.slice().sort((g, k) => (l(k).hp || 0) - (l(g).hp || 0));
+        let h, b = "";
+        if (sorted.length > 2) {
+          // Tam 2 oyuncu elensin (eşit skorda da en alttaki 2)
+          h = sorted.slice(0, sorted.length - 2);
+          let top = l(sorted[0]).hp || 0;
+          b = "En çok tepe puanı: " + top + " · " + (L(sorted[0]) || "") + " · En düşük 2 elendi";
+        } else if (sorted.length === 2) {
+          // 2 kişi kaldıysa düşük skorlu elenir, yüksek kazanır (eşitse ilk sıradaki)
+          h = [sorted[0]];
+          b = "Tepe puanı: " + (l(sorted[0]).hp || 0) + " · " + (L(sorted[0]) || "");
+        } else {
+          h = sorted;
+          if (h.length) b = "Tepe puanı: " + (l(h[0]).hp || 0);
+        }
+        // Ölü/elenmiş oyuncu asla kazanan olmasın (sadece st===run)
+        h = h.filter(g => l(g).st === "run");
+        return { q: h, note: b };
+      }
       if (!(f.length <= d || u))
         return null;
       let h = f, b = "";
-      if (!h.length && t.length && c && (h = [t.slice().sort((g, k) => (l(k).ot || 0) - (l(g).ot || 0))[0]], b = "Hepsi aynı anda düştü! En son düşen kurtuldu."), n.final && h.length > 1) {
-        let m = g => {
-          let k = C(g).state;
-          return Math.hypot(k.x || 0, k.z || 0);
-        };
-        h = [h.slice().sort((g, k) => m(g) - m(k))[0]], b = "Süre doldu! Merkeze en yakın oyuncu şampiyon.";
+      // Hepsi düştüyse: en son düşen (ot zamanına göre) — pozisyon kullanılmaz
+      if (!h.length && t.length && c) {
+        h = [t.slice().sort((g, k) => (l(k).ot || 0) - (l(g).ot || 0))[0]];
+        b = "Hepsi aynı anda düştü! En son düşen kurtuldu.";
       }
-      // Kral Tepesi: en çok tepe puanı olanlar kazanır
-      if (n.id === "hill" && h.length > 1) {
-        h = h.slice().sort((g, k) => (l(k).hp || 0) - (l(g).hp || 0));
-        let top = l(h[0]).hp || 0;
-        b = "En çok tepe puanı: " + top + " · " + (L(h[0]) || "");
+      // Final: merkeze yakınlık / pozisyon ile kazanan YOK
+      if (n.final && h.length > 1) {
+        // Süre doldu, birden fazla hayatta — hepsi hayatta kalır (veya tek şampiyon için rastgele değil, host tick hedefe göre)
+        // Pozisyon karşılaştırması yapılmaz; target 1 ise ve süre bittiyse hayatta kalanlardan biri seçilmez konuma göre
+        b = "Süre doldu! " + h.length + " oyuncu ayakta.";
       }
       return {
         q: h,
@@ -3071,48 +3097,70 @@ function et() {
         let mySpd = Math.hypot(myVx, myVz);
         let theirSpd = Math.hypot(theirVx, theirVz);
         let isDash = Math.hypot(o.kx, o.kz) > 5;
-        // Karşılıklı itme — saldıran daha az savrulur, vurulan daha çok
-        // Rakibe doğru hareket ediyorsan veya temas varsa savrulma (dash şart değil)
+        // Karşılıklı itme — saldıran ve itilen her iki tarafta da uygulanır
+        // (İtilen oyuncunun kendi istemcisinde de knockback alınmalı ki platform dışına çıkınca düşsün)
         let pushing = myInto > 0.15 || mySpd > 2.5;
-        if (pushing && a - (Ln.get(i.id) || 0) > (isArena ? 70 : 90)) {
+        let beingPushed = theirInto > 0.15 || theirSpd > 2.5;
+        let theirDash = Math.hypot(theirVx, theirVz) > 5 && theirInto > 0.5;
+        if ((pushing || beingPushed) && a - (Ln.get(i.id) || 0) > (isArena ? 70 : 90)) {
           Ln.set(i.id, a);
-          // Orta seviye itme — dash olmadan da savrulur, dash biraz ekstra verir
           let base = isArena ? 5.2 : 3.2;
-          let fromSpeed = Math.max(0, myInto) * (isArena ? 1.8 : 1.4) + (mySpd > 3 ? (mySpd - 3) * (isArena ? 0.45 : 0.3) : 0);
-          let dashBonus = isDash ? (isArena ? 5.5 : 4) : 0;
-          let knockThem = base + fromSpeed + dashBonus;
-          // Üst sınır: çok uzağa fırlatmasın
-          knockThem = Math.min(knockThem, isArena ? 12 : 9);
-          // Sen az geriye git
-          let knockMe = Math.min(isArena ? 3.2 : 4, knockThem * 0.28 + Math.max(0, theirInto) * 1.2);
-          o.kx -= d * knockMe;
-          o.kz -= h * knockMe;
-          // Rakibi savur
-          let imp = hitImp.get(i.id) || { kx: 0, kz: 0, vy: 0, ox: 0, oz: 0, oy: 0 };
-          imp.kx += d * knockThem;
-          imp.kz += h * knockThem;
-          imp.ox = (imp.ox || 0) + d * Math.min(1.4, knockThem * 0.08);
-          imp.oz = (imp.oz || 0) + h * Math.min(1.4, knockThem * 0.08);
-          // Hafif yukarı — sadece biraz
-          if (knockThem > 6) {
-            imp.vy = Math.max(imp.vy || 0, isDash ? 4.5 : 2.8);
-            imp.oy = Math.max(imp.oy || 0, isDash ? 0.35 : 0.18);
-            l.y = Math.max(l.y, 0.08);
+          // Ben itiyorsam: rakibi savur + hafif geri git
+          if (pushing) {
+            let fromSpeed = Math.max(0, myInto) * (isArena ? 1.8 : 1.4) + (mySpd > 3 ? (mySpd - 3) * (isArena ? 0.45 : 0.3) : 0);
+            let dashBonus = isDash ? (isArena ? 5.5 : 4) : 0;
+            let knockThem = Math.min(base + fromSpeed + dashBonus, isArena ? 12 : 9);
+            let knockMe = Math.min(isArena ? 3.2 : 4, knockThem * 0.28 + Math.max(0, theirInto) * 1.2);
+            o.kx -= d * knockMe;
+            o.kz -= h * knockMe;
+            let imp = hitImp.get(i.id) || { kx: 0, kz: 0, vy: 0, ox: 0, oz: 0, oy: 0 };
+            imp.kx += d * knockThem;
+            imp.kz += h * knockThem;
+            imp.ox = (imp.ox || 0) + d * Math.min(1.4, knockThem * 0.08);
+            imp.oz = (imp.oz || 0) + h * Math.min(1.4, knockThem * 0.08);
+            if (knockThem > 6) {
+              imp.vy = Math.max(imp.vy || 0, isDash ? 4.5 : 2.8);
+              imp.oy = Math.max(imp.oy || 0, isDash ? 0.35 : 0.18);
+              l.y = Math.max(l.y, 0.08);
+            }
+            let ik = Math.hypot(imp.kx, imp.kz);
+            if (ik > 22) { imp.kx *= 22 / ik; imp.kz *= 22 / ik; }
+            hitImp.set(i.id, imp);
+            l.x += d * Math.min(0.7, knockThem * 0.03);
+            l.z += h * Math.min(0.7, knockThem * 0.03);
+            l.vx = (l.vx || 0) + d * knockThem * 0.25;
+            l.vz = (l.vz || 0) + h * knockThem * 0.25;
+            O("hit");
+            re = Math.max(re, Math.min(0.55, knockThem / 16));
+            fe(l.x, 1.1, l.z, isDash ? "#ffd23f" : "#ff6bd6", isDash ? 16 : 12, isDash ? 5 : 4);
+            fe(o.x, 0.9, o.z, "#ffffff", 6, 3);
           }
-          let ik = Math.hypot(imp.kx, imp.kz);
-          if (ik > 22) { imp.kx *= 22 / ik; imp.kz *= 22 / ik; }
-          hitImp.set(i.id, imp);
-          l.x += d * Math.min(0.7, knockThem * 0.03);
-          l.z += h * Math.min(0.7, knockThem * 0.03);
-          l.vx = (l.vx || 0) + d * knockThem * 0.25;
-          l.vz = (l.vz || 0) + h * knockThem * 0.25;
-          O("hit");
-          re = Math.max(re, Math.min(0.55, knockThem / 16));
-          fe(l.x, 1.1, l.z, isDash ? "#ffd23f" : "#ff6bd6", isDash ? 16 : 12, isDash ? 5 : 4);
-          fe(o.x, 0.9, o.z, "#ffffff", 6, 3);
+          // Ben itiliyorsam: kendi konumuma knockback uygula (platform dışına çıkınca mevcut ölüm sistemi çalışır)
+          if (beingPushed && !pushing) {
+            let fromTheir = Math.max(0, theirInto) * (isArena ? 1.8 : 1.4) + (theirSpd > 3 ? (theirSpd - 3) * (isArena ? 0.45 : 0.3) : 0);
+            let theirDashBonus = theirDash ? (isArena ? 5.5 : 4) : 0;
+            let knockOnMe = Math.min(base + fromTheir + theirDashBonus, isArena ? 12 : 9);
+            // d = benden rakibe; itilince -d yönünde savrul
+            o.kx -= d * knockOnMe;
+            o.kz -= h * knockOnMe;
+            if (knockOnMe > 6) {
+              o.vy = Math.max(o.vy, theirDash ? 4.5 : 2.8);
+              o.gr = !1;
+            }
+            // Çakışmayı ayır
+            o.x -= d * Math.min(0.7, knockOnMe * 0.03);
+            o.z -= h * Math.min(0.7, knockOnMe * 0.03);
+            O("hit");
+            re = Math.max(re, Math.min(0.55, knockOnMe / 16));
+            fe(o.x, 1.1, o.z, theirDash ? "#ffd23f" : "#ff6bd6", theirDash ? 16 : 12, theirDash ? 5 : 4);
+          }
         } else if (myInto > 0) {
           o.kx -= d * myInto * 0.35;
           o.kz -= h * myInto * 0.35;
+        } else if (theirInto > 0) {
+          // Hafif temas: rakip bana doğru geliyor, hafif geri itil
+          o.kx -= d * theirInto * 0.35;
+          o.kz -= h * theirInto * 0.35;
         }
       }
     }
