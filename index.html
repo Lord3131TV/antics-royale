@@ -3207,7 +3207,9 @@ function pt(n, a) {
         l.x += d * overlap * 0.45;
         l.z += h * overlap * 0.45;
         let myVx = o.vx + o.kx, myVz = o.vz + o.kz;
-        let theirVx = (t.vx || 0), theirVz = (t.vz || 0);
+        // Ağ state + yerel interpolasyon (hitImp sonrası me.vx) — itilme algısı için
+        let theirVx = (typeof l.vx === "number" ? l.vx : (t.vx || 0));
+        let theirVz = (typeof l.vz === "number" ? l.vz : (t.vz || 0));
         // Benim rakibe doğru hız bileşenim
         let myInto = myVx * d + myVz * h;
         // Rakibin bana doğru hız bileşeni (pozitif = beni itiyor)
@@ -3277,9 +3279,26 @@ function pt(n, a) {
             o.vy = Math.max(o.vy, theyDash ? 3.2 : 1.6);
             o.gr = !1;
           }
-          // Son itilme zamanı — düşme nedeni için
+          // Son itilme zamanı — düşme nedeni için (aynı vn("p") yolu)
           o._pushedAt = a;
           o._pushedBy = i.id;
+          // Arena: itilme anında gerçek platform yarıçapı dışındaysak düşüşü kilitle
+          // (mevcut ölüm sistemi _arenaOut + vn ile eler — ayrı ölüm yolu yok)
+          if (isArena) {
+            try {
+              let _st = n, _mg = Ye(_st, _st.phase || "play");
+              if (_mg && _mg.cfg && typeof _mg.cfg.radius === "function") {
+                let _el = typeof Ve === "function" ? Ve(_st, y.now()) : 0;
+                let _rr = _mg.cfg.radius(_el);
+                if (Math.hypot(o.x, o.z) > _rr + 0.02) {
+                  o._arenaOut = !0;
+                  o.gr = !1;
+                  // Yukarı savrulmayı kes — platform dışıysa düşmeye başla
+                  o.vy = Math.min(o.vy, -2);
+                }
+              }
+            } catch (_) {}
+          }
           O("hit");
           re = Math.max(re, Math.min(0.55, knockMeP / 16));
           fe(o.x, 1.1, o.z, theyDash ? "#ffd23f" : "#ff6bd6", theyDash ? 16 : 12, theyDash ? 5 : 4);
@@ -3362,7 +3381,7 @@ function pt(n, a) {
         let _rr = l.cfg.radius(c), _hd = Math.hypot(o.x, o.z);
         if (_hd > _rr + 0.02) {
           o._arenaOut = !0;
-          R = null; // asla platform desteği verme
+          R = null; // asla platform desteği verme (itilerek veya yürüyerek)
           let _nx = o.x / (_hd || 1), _nz = o.z / (_hd || 1), _out = _hd - _rr;
           // Merkeze geri itilmeyi engelle: dışarı ve aşağı
           let _inward = (o.vx + o.kx) * (-_nx) + (o.vz + o.kz) * (-_nz);
@@ -3374,6 +3393,7 @@ function pt(n, a) {
           }
           o.kx += _nx * (12 + _out * 5) * n * 60;
           o.kz += _nz * (12 + _out * 5) * n * 60;
+          // İtme sonrası da aynı düşüş: yukarı savrulma platform dışıysa kesilir
           o.vy = Math.min(o.vy, -8);
           if (_out > 0.3) o.vy = Math.min(o.vy, -12);
           o.gr = !1;
@@ -3404,6 +3424,8 @@ function pt(n, a) {
             if (o.y < -8) yt();
           } else {
             // fall:"out" — aynı round respawn YOK
+            // Arena İtişi / Son Arena: gerçek platform = cfg.radius(c) dairesi (merkez 0,0)
+            // İtme (knockback) sonrası X/Z dışı = kendi yürüyerek çıkmakla AYNI vn() yolu
             let isArenaMap = (l.id === "final" || l.id === "brawl");
             let deathY = isArenaMap ? -0.35 : -3.5;
             let outside = !R;
@@ -3411,30 +3433,37 @@ function pt(n, a) {
             if (isArenaMap && l.cfg && typeof l.cfg.radius === "function") {
               // Gerçek arena zemini: merkez (0,0), yarıçap cfg.radius(süre) — Rt/Ee ile çizilen daire
               rr = l.cfg.radius(c);
-              outside = Math.hypot(o.x, o.z) > rr + 0.02 || !!o._arenaOut;
-              if (Math.hypot(o.x, o.z) > rr + 0.02) o._arenaOut = !0;
+              let hd = Math.hypot(o.x, o.z);
+              outside = hd > rr + 0.02 || !!o._arenaOut;
+              if (hd > rr + 0.02) o._arenaOut = !0;
             }
             if (outside || !R) o._offT = (o._offT || 0) + n;
             else if (!isArenaMap) o._offT = 0;
-            let recentPush = o._pushedAt && (performance.now() - o._pushedAt) < 1600;
+            let recentPush = o._pushedAt && (performance.now() - o._pushedAt) < 2000;
             let shouldDie = false;
             if (o.y < deathY) shouldDie = true;
             if (isArenaMap) {
-              // X/Z arena dışı: düşüş başladıysa veya kısa süre dışarıdaysa kesin elen
+              // Platform dışı (yürüyerek VEYA itilerek): mevcut ölüm sistemi
               if (o._arenaOut || outside) {
-                if (o.y < 0.2 || o.vy < 0 || !o.gr) shouldDie = true;
-                if ((o._offT || 0) > 0.06) shouldDie = true;
+                // İtildikten sonra arena dışındaysa: anında aynı eliminasyon (vn)
+                if (recentPush) shouldDie = true;
+                // Normal düşme / kendi çıkışı
+                if (o.y < 0.35 || o.vy < 0 || !o.gr) shouldDie = true;
+                if ((o._offT || 0) > 0.05) shouldDie = true;
               }
             } else {
               if (outside && o.y < -0.15 && o.vy < -0.5) shouldDie = true;
               if ((outside || !R) && (o._offT || 0) > 0.45 && o.y < 0.05 && o.vy <= 0) shouldDie = true;
+              // İtme sonrası void platform dışı: aynı ölüm
+              if (recentPush && (outside || !R) && (o.y < 0.2 || o.vy < 0 || !o.gr || (o._offT || 0) > 0.08))
+                shouldDie = true;
             }
             if (shouldDie) {
               if (isArenaMap) {
                 try {
-                  console.log("[ARENA ELIM] playerId=" + p.id + " x=" + o.x.toFixed(2) + " y=" + o.y.toFixed(2) + " z=" + o.z.toFixed(2) + " r=" + (rr != null ? rr.toFixed(2) : "?") + " out=" + !!o._arenaOut);
+                  console.log("[ARENA ELIM] playerId=" + p.id + " x=" + o.x.toFixed(2) + " y=" + o.y.toFixed(2) + " z=" + o.z.toFixed(2) + " r=" + (rr != null ? rr.toFixed(2) : "?") + " out=" + !!o._arenaOut + " push=" + !!recentPush);
                 } catch (_) {}
-                vn(recentPush ? "p" : "f", !0); // arena debug mesajı
+                vn(recentPush ? "p" : "f", !0);
               } else {
                 vn(recentPush ? "p" : "f");
               }
