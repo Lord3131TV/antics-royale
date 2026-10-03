@@ -182,7 +182,13 @@ function buildRoom(socket, res) {
       const existed = playersMap.has(pl.id);
       const p = upsertPlayer(pl);
       // full state replace on roster sync if provided
-      if (pl.state) p.state = { ...pl.state };
+      // (eski snapshot, daha yeni pozisyon/ölüm state'ini ezmesin)
+      if (pl.state) {
+        const curAt = p.state && p.state.at, newAt = pl.state.at;
+        const stale = p.id !== myId && typeof curAt === "number" && typeof newAt === "number" && newAt < curAt;
+        const deadKept = p.id !== myId && p.state && p.state.st === "out" && pl.state.st === "run" && pl.state.rd === p.state.rd;
+        if (!stale && !deadKept) p.state = { ...pl.state };
+      }
     });
     if (msg.hostId) hostId = msg.hostId;
   });
@@ -220,6 +226,19 @@ function buildRoom(socket, res) {
     if (!msg || !msg.id) return;
     const p = playersMap.get(msg.id);
     if (!p) return;
+    if (msg.id !== myId && msg.state && typeof msg.state === "object") {
+      const cur = p.state || {};
+      // aynı turda ölmüş oyuncu tekrar "run" olamaz (respawn yok)
+      if (cur.st === "out" && msg.state.st === "run" && msg.state.rd !== undefined && msg.state.rd === cur.rd) {
+        msg.state = { ...msg.state };
+        delete msg.state.st;
+      }
+      // sırasız gelen eski konum paketi yeni konumu ezmesin
+      if (typeof cur.at === "number" && typeof msg.state.at === "number" && msg.state.at < cur.at && !msg.full) {
+        msg.state = { ...msg.state };
+        for (const k of ["x", "y", "z", "vx", "vz", "at"]) delete msg.state[k];
+      }
+    }
     if (msg.full && msg.state) p.state = { ...msg.state };
     else mergeState(p.state, msg.state);
     playerStateListeners.forEach((fn) => {
