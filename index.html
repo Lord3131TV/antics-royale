@@ -1238,32 +1238,16 @@ function et() {
       p.setState(n);
     }
     let v = 0, ce = "";
-    // pendingPk: saldıranın kurbanına ilettiği anlık itme (kurban kendi fizik motorunda uygular)
-    let pendingPk = null;
-    let lastPkApplied = new Map(); // sourceId -> t
-    let pkCooldownUntil = 0; // pk uygulandıktan sonra yerel beingPushed çift vuruş yapmasın
     function He(n = !1) {
-      let a = performance.now(), i = o.vx + o.kx, t = o.vz + o.kz;
-      let highKnock = Math.hypot(o.kx, o.kz) > 1.5;
-      let l = ie(o.x) + "," + ie(o.y) + "," + ie(o.z) + "," + ie(i) + "," + ie(t);
-      // Knockback sırasında daha sık gönder; aksi halde 400ms throttle
-      let throttle = highKnock || pendingPk ? 45 : 400;
-      if (!n && l === ce && a - v < throttle && !pendingPk) return;
-      ce = l; v = a;
-      let payload = {
+      let a = performance.now(), i = o.vx + o.kx, t = o.vz + o.kz, l = ie(o.x) + "," + ie(o.y) + "," + ie(o.z) + "," + ie(i) + "," + ie(t);
+      !n && l === ce && a - v < 400 || (ce = l, v = a, p.setState({
         x: ie(o.x),
         y: ie(Math.max(o.y, -30)),
         z: ie(o.z),
         vx: ie(i),
         vz: ie(t),
         at: Math.round(y.now())
-      };
-      if (Math.abs(o.vy) > 0.4) payload.vy = ie(o.vy);
-      if (pendingPk) {
-        payload.pk = pendingPk;
-        pendingPk = null;
-      }
-      p.setState(payload);
+      }));
     }
     let fn = -1000000000;
     function un() {
@@ -3163,43 +3147,20 @@ function et() {
           }, me.set(a.id, t)), a.id === p.id)
           t.x = o.x, t.y = o.y, t.z = o.z, t.vx = o.vx + o.kx, t.vz = o.vz + o.kz;
         else {
-          // Ağ pozisyonunu hızla ekstrapolasyonla tahmin et; yüksek hızda daha uzun pencere
-          let netSpd = Math.hypot(i.vx || 0, i.vz || 0);
-          let maxEx = netSpd > 8 ? 0.35 : 0.22;
-          let u = K((y.now() - (i.at || y.now())) / 1000, 0, maxEx);
-          let f = (i.x || 0) + (i.vx || 0) * u, d = (i.z || 0) + (i.vz || 0) * u;
+          let u = K((y.now() - (i.at || y.now())) / 1000, 0, 0.25), f = (i.x || 0) + (i.vx || 0) * u, d = (i.z || 0) + (i.vz || 0) * u;
           let imp = hitImp.get(a.id);
-          // Yerel hitImp sadece anlık görsel; ağ state yakalayınca hızlı sön
           if (imp) {
-            f += (imp.ox || 0) * 0.85;
-            d += (imp.oz || 0) * 0.85;
-            // Ağ pozisyonu itme yönünde ilerlediyse offset'i agresif azalt
-            let nx = (i.x || 0) - (t.x - (imp.ox || 0));
-            let nz = (i.z || 0) - (t.z - (imp.oz || 0));
-            let along = (imp.kx || 0) * nx + (imp.kz || 0) * nz;
-            if (along > 1.2 || netSpd > 10) {
-              imp.ox = (imp.ox || 0) * 0.72;
-              imp.oz = (imp.oz || 0) * 0.72;
-              imp.kx = (imp.kx || 0) * 0.85;
-              imp.kz = (imp.kz || 0) * 0.85;
-            }
+            f += imp.ox || 0;
+            d += imp.oz || 0;
           }
-          let err = Math.hypot(f - t.x, d - t.z);
-          let yErr = Math.abs((i.y || 0) - t.y);
-          if (err > 8 || yErr > 5)
+          if (Math.hypot(f - t.x, d - t.z) > 10 || Math.abs((i.y || 0) - t.y) > 6)
             t.x = f, t.z = d, t.y = i.y || 0;
           else {
-            // Yüksek hız / aktif impulse: daha hızlı yakala (smoothing lag'ı azalt)
-            let rate = imp ? 12 : (netSpd > 6 ? 22 : 16);
-            let h = 1 - Math.exp(-n * rate);
-            t.x += (f - t.x) * h, t.z += (d - t.z) * h;
-            let ty = (i.y || 0) + (imp && imp.oy || 0);
-            if (typeof i.vy === "number" && Math.abs(i.vy) > 0.5)
-              ty += i.vy * Math.min(u, 0.12);
-            t.y += (ty - t.y) * h;
+            let h = 1 - Math.exp(-n * (imp ? 8 : 16));
+            t.x += (f - t.x) * h, t.z += (d - t.z) * h, t.y += ((i.y || 0) + (imp && imp.oy || 0) - t.y) * h;
           }
-          t.vx = (i.vx || 0) + (imp ? imp.kx * 0.65 : 0);
-          t.vz = (i.vz || 0) + (imp ? imp.kz * 0.65 : 0);
+          t.vx = (i.vx || 0) + (imp ? imp.kx * 0.5 : 0);
+          t.vz = (i.vz || 0) + (imp ? imp.kz * 0.5 : 0);
         }
         let l = a.id === p.id ? o.st : i.st, r = a.id === p.id ? o.oc : i.oc, c = l === "out" && r !== "f";
         t.fall = K(t.fall + (c ? n * 3.2 : -n * 6), 0, 1), t.walk += Math.hypot(t.vx, t.vz) * n * 1.5;
@@ -3260,64 +3221,52 @@ function et() {
         let theirDash = Math.hypot(theirVx, theirVz) > 5 && theirInto > 0.5;
         if ((pushing || beingPushed) && a - (Ln.get(i.id) || 0) > (isArena ? 70 : 90)) {
           Ln.set(i.id, a);
-          let base = isArena ? 8.8 : 5.8;
+          let base = isArena ? 5.2 : 3.2;
           // Ben itiyorsam: rakibi savur + hafif geri git
           if (pushing) {
-            let fromSpeed = Math.max(0, myInto) * (isArena ? 2.4 : 1.9) + (mySpd > 3 ? (mySpd - 3) * (isArena ? 0.7 : 0.5) : 0);
-            let dashBonus = isDash ? (isArena ? 8.5 : 6.5) : 0;
-            let knockThem = Math.min(base + fromSpeed + dashBonus, isArena ? 18 : 14);
-            let knockMe = Math.min(isArena ? 4.2 : 5, knockThem * 0.22 + Math.max(0, theirInto) * 1.1);
+            let fromSpeed = Math.max(0, myInto) * (isArena ? 1.8 : 1.4) + (mySpd > 3 ? (mySpd - 3) * (isArena ? 0.45 : 0.3) : 0);
+            let dashBonus = isDash ? (isArena ? 5.5 : 4) : 0;
+            let knockThem = Math.min(base + fromSpeed + dashBonus, isArena ? 12 : 9);
+            let knockMe = Math.min(isArena ? 3.2 : 4, knockThem * 0.28 + Math.max(0, theirInto) * 1.2);
             o.kx -= d * knockMe;
             o.kz -= h * knockMe;
             let imp = hitImp.get(i.id) || { kx: 0, kz: 0, vy: 0, ox: 0, oz: 0, oy: 0 };
             imp.kx += d * knockThem;
             imp.kz += h * knockThem;
-            imp.ox = (imp.ox || 0) + d * Math.min(2.2, knockThem * 0.12);
-            imp.oz = (imp.oz || 0) + h * Math.min(2.2, knockThem * 0.12);
-            let impVy = 0;
-            if (knockThem > 7) {
-              impVy = isDash ? 5.2 : 3.4;
-              imp.vy = Math.max(imp.vy || 0, impVy);
-              imp.oy = Math.max(imp.oy || 0, isDash ? 0.45 : 0.22);
-              l.y = Math.max(l.y, 0.12);
+            imp.ox = (imp.ox || 0) + d * Math.min(1.4, knockThem * 0.08);
+            imp.oz = (imp.oz || 0) + h * Math.min(1.4, knockThem * 0.08);
+            if (knockThem > 6) {
+              imp.vy = Math.max(imp.vy || 0, isDash ? 4.5 : 2.8);
+              imp.oy = Math.max(imp.oy || 0, isDash ? 0.35 : 0.18);
+              l.y = Math.max(l.y, 0.08);
             }
             let ik = Math.hypot(imp.kx, imp.kz);
-            if (ik > 28) { imp.kx *= 28 / ik; imp.kz *= 28 / ik; }
+            if (ik > 22) { imp.kx *= 22 / ik; imp.kz *= 22 / ik; }
             hitImp.set(i.id, imp);
-            l.x += d * Math.min(1.35, knockThem * 0.06);
-            l.z += h * Math.min(1.35, knockThem * 0.06);
-            l.vx = (l.vx || 0) + d * knockThem * 0.55;
-            l.vz = (l.vz || 0) + h * knockThem * 0.55;
-            // Kurbana ağ üzerinden aynı itmeyi ilet (kendi client'ında gerçek fizik)
-            pendingPk = {
-              id: i.id,
-              kx: ie(d * knockThem),
-              kz: ie(h * knockThem),
-              vy: ie(impVy),
-              t: Math.round(y.now())
-            };
-            He(!0);
+            l.x += d * Math.min(0.7, knockThem * 0.03);
+            l.z += h * Math.min(0.7, knockThem * 0.03);
+            l.vx = (l.vx || 0) + d * knockThem * 0.25;
+            l.vz = (l.vz || 0) + h * knockThem * 0.25;
             O("hit");
             re = Math.max(re, Math.min(0.55, knockThem / 16));
             fe(l.x, 1.1, l.z, isDash ? "#ffd23f" : "#ff6bd6", isDash ? 16 : 12, isDash ? 5 : 4);
             fe(o.x, 0.9, o.z, "#ffffff", 6, 3);
           }
           // Ben itiliyorsam: kendi konumuma knockback uygula (platform dışına çıkınca mevcut ölüm sistemi çalışır)
-          if (beingPushed && !pushing && performance.now() > pkCooldownUntil) {
-            let fromTheir = Math.max(0, theirInto) * (isArena ? 2.4 : 1.9) + (theirSpd > 3 ? (theirSpd - 3) * (isArena ? 0.7 : 0.5) : 0);
-            let theirDashBonus = theirDash ? (isArena ? 8.5 : 6.5) : 0;
-            let knockOnMe = Math.min(base + fromTheir + theirDashBonus, isArena ? 18 : 14);
+          if (beingPushed && !pushing) {
+            let fromTheir = Math.max(0, theirInto) * (isArena ? 1.8 : 1.4) + (theirSpd > 3 ? (theirSpd - 3) * (isArena ? 0.45 : 0.3) : 0);
+            let theirDashBonus = theirDash ? (isArena ? 5.5 : 4) : 0;
+            let knockOnMe = Math.min(base + fromTheir + theirDashBonus, isArena ? 12 : 9);
             // d = benden rakibe; itilince -d yönünde savrul
             o.kx -= d * knockOnMe;
             o.kz -= h * knockOnMe;
-            if (knockOnMe > 7) {
-              o.vy = Math.max(o.vy, theirDash ? 5.2 : 3.4);
+            if (knockOnMe > 6) {
+              o.vy = Math.max(o.vy, theirDash ? 4.5 : 2.8);
               o.gr = !1;
             }
             // Çakışmayı ayır
-            o.x -= d * Math.min(1.35, knockOnMe * 0.06);
-            o.z -= h * Math.min(1.35, knockOnMe * 0.06);
-            He(!0);
+            o.x -= d * Math.min(0.7, knockOnMe * 0.03);
+            o.z -= h * Math.min(0.7, knockOnMe * 0.03);
             O("hit");
             re = Math.max(re, Math.min(0.55, knockOnMe / 16));
             fe(o.x, 1.1, o.z, theirDash ? "#ffd23f" : "#ff6bd6", theirDash ? 16 : 12, theirDash ? 5 : 4);
@@ -3330,40 +3279,6 @@ function et() {
           o.kx -= d * theirInto * 0.35;
           o.kz -= h * theirInto * 0.35;
         }
-      }
-    }
-    // Saldıranın pk paketini oku; kurban kendi otoritesinde uygular
-    function consumeIncomingPushes() {
-      if (o.st !== "run") return;
-      let now = y.now();
-      for (let pl of y.players) {
-        if (pl.id === p.id) continue;
-        let pk = pl.state && pl.state.pk;
-        if (!pk || pk.id !== p.id || typeof pk.t !== "number") continue;
-        let prev = lastPkApplied.get(pl.id) || 0;
-        if (pk.t <= prev) continue;
-        // Eski paketleri yutma (2 sn'den eski)
-        if (now - pk.t > 2000) { lastPkApplied.set(pl.id, pk.t); continue; }
-        lastPkApplied.set(pl.id, pk.t);
-        let kx = Number(pk.kx) || 0, kz = Number(pk.kz) || 0, pvy = Number(pk.vy) || 0;
-        // Aynı kaynaktan üst üste çok birikmesin
-        let mag = Math.hypot(kx, kz);
-        if (mag > 28) { kx *= 28 / mag; kz *= 28 / mag; }
-        o.kx += kx;
-        o.kz += kz;
-        if (pvy > 0) {
-          o.vy = Math.max(o.vy, pvy);
-          o.gr = !1;
-        }
-        // Anlık ayırma (çakışmayı kır) — belirgin savrulma için daha güçlü
-        let hm = Math.hypot(kx, kz) || 1;
-        o.x += (kx / hm) * Math.min(1.2, mag * 0.05);
-        o.z += (kz / hm) * Math.min(1.2, mag * 0.05);
-        re = Math.max(re, Math.min(0.65, mag / 14));
-        fe(o.x, 1.1, o.z, mag > 8 ? "#ffd23f" : "#ff6bd6", mag > 8 ? 14 : 10, 4);
-        O("hit");
-        pkCooldownUntil = performance.now() + 120;
-        He(!0);
       }
     }
     function applyHitImpulses(n) {
@@ -3384,14 +3299,14 @@ function et() {
         l.x += imp.kx * n;
         l.z += imp.kz * n;
         if (imp.oy) l.y = Math.max(l.y, imp.oy);
-        let damp = Math.exp(-n * 1.2);
+        let damp = Math.exp(-n * 1.55);
         imp.kx *= damp;
         imp.kz *= damp;
         // offset da yavaşça sönsün (ağ state yakalasın)
-        let od = Math.exp(-n * 0.7);
+        let od = Math.exp(-n * 0.9);
         imp.ox *= od;
         imp.oz *= od;
-        imp.oy = (imp.oy || 0) * Math.exp(-n * 1.5);
+        imp.oy = (imp.oy || 0) * Math.exp(-n * 1.8);
         if (Math.hypot(imp.kx, imp.kz) < 0.06 && Math.abs(imp.vy || 0) < 0.08 && Math.hypot(imp.ox || 0, imp.oz || 0) < 0.05)
           hitImp.delete(id);
         else
@@ -3410,14 +3325,11 @@ function et() {
         let dashPow = (l.id === "final" || l.id === "brawl") ? 26 : 24;
         o.kx += Z * dashPow, o.kz += G * dashPow, te = performance.now() + 1100, O("jump"), fe(o.x, 0.4, o.z, "#ffffff", 6, 3);
       }
-      // Önce ağdan gelen itmeleri uygula, sonra yerel çarpışma
-      if (u && o.st === "run") consumeIncomingPushes();
       l.push && u && o.st === "run" && kt(a);
-      // Knockback sönümü: 1.35 → daha uzun savrulma mesafesi (eski 2 çok hızlı kesiyordu)
-      let g = Math.exp(-n * 1.35);
+      let g = Math.exp(-n * 2);
       o.kx *= g, o.kz *= g;
       let k = Math.hypot(o.kx, o.kz);
-      k > 36 && (o.kx *= 36 / k, o.kz *= 36 / k), k < 0.06 && (o.kx = o.kz = 0), o.x += (o.vx + o.kx) * n, o.z += (o.vz + o.kz) * n;
+      k > 32 && (o.kx *= 32 / k, o.kz *= 32 / k), k < 0.06 && (o.kx = o.kz = 0), o.x += (o.vx + o.kx) * n, o.z += (o.vz + o.kz) * n;
       let A = l.bounds(i, r);
       o.x = K(o.x, A.x0, A.x1), o.z = K(o.z, A.z0, A.z1);
       let R = l.void && i !== "lobby" && typeof l.support == "function" ? l.support(o.x, o.z, c, a, r) : je, B = !1;
