@@ -560,6 +560,39 @@ body.ph-lobby #uiTopBtns{display:none}
 <div id="fatal"></div>
 <script type="module">
 
+
+/* CrazyGames / relative ES-module loader: resolve next to this HTML, try both filenames */
+function loadMpClient() {
+  const names = ["mp-client.js", "mp.client.js"];
+  const bases = [];
+  try { bases.push(import.meta.url); } catch (_) {}
+  try { bases.push(document.baseURI || location.href); } catch (_) {}
+  const candidates = [];
+  for (const base of bases) {
+    for (const name of names) {
+      try { candidates.push(new URL(name, base).href); } catch (_) {}
+      try { candidates.push(new URL("./" + name, base).href); } catch (_) {}
+    }
+  }
+  for (const name of names) {
+    candidates.push("./" + name);
+    candidates.push(name);
+  }
+  const seen = new Set();
+  const unique = [];
+  for (const u of candidates) {
+    if (u && !seen.has(u)) { seen.add(u); unique.push(u); }
+  }
+  let i = 0;
+  function tryNext() {
+    if (i >= unique.length) return Promise.reject(new Error("mp-client.js not found"));
+    const url = unique[i++];
+    return import(/* @vite-ignore */ url).catch(() => tryNext());
+  }
+  return tryNext();
+}
+
+
 /* Canvas roundRect polyfill (Safari < 15 / older browsers) */
 (function(){
   if (typeof CanvasRenderingContext2D !== "undefined" && !CanvasRenderingContext2D.prototype.roundRect) {
@@ -1544,7 +1577,7 @@ function et() {
   function createNewRoom() {
     de();
     // Standalone: sunucuda oda oluştur, kod ile yönlendir
-    import("./mp-client.js").then(async mod => {
+    loadMpClient().then(async mod => {
       try {
         let su = localStorage.getItem("antics_mp_server");
         if (su && mod.setServerUrl) mod.setServerUrl(su);
@@ -1615,7 +1648,7 @@ function et() {
       let v = (e("menuServerUrl") && e("menuServerUrl").value || "").trim().replace(/\/$/, "");
       if (!v) return;
       try { localStorage.setItem("antics_mp_server", v); } catch (_) {}
-      import("./mp-client.js").then(m => { if (m.setServerUrl) m.setServerUrl(v); }).catch(() => {});
+      loadMpClient().then(m => { if (m.setServerUrl) m.setServerUrl(v); }).catch(() => {});
       let note = e("lobbyNote");
       if (note) {
         note.style.display = "block";
@@ -1644,7 +1677,7 @@ function et() {
     }
     let joinOpts = { room: opts.room };
     // Standalone multiplayer client (Socket.IO) — replaces Antics /sdk/v1.js
-    import("./mp-client.js").then(p => {
+    loadMpClient().then(p => {
       M = p;
       try {
         let su = localStorage.getItem("antics_mp_server");
@@ -1694,7 +1727,7 @@ function et() {
         }
       }
     } catch (_) {}
-    import("./mp-client.js").then(p => {
+    loadMpClient().then(p => {
       M = p;
       try {
         let su = localStorage.getItem("antics_mp_server");
