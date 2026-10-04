@@ -3583,9 +3583,20 @@ function et() {
         scores: t
       });
     }
+    // Phase makinesini kim sürer: SDK host VEYA odayı kuran (creator).
+    // host_tick gelmese / host stale olsa bile intro→play kilitlenmesin.
+    function canDrivePhases() {
+      if (T) return !0;
+      if (isRealHost()) return !0;
+      let cid = (y.state || {}).creatorId;
+      if (cid && cid === p.id) return !0;
+      if (y.players.length <= 1) return !0;
+      return !1;
+    }
     function Mt() {
-      if (isRealHost())
-        try {
+      if (!canDrivePhases())
+        return;
+      try {
           let n = y.state || {}, a = y.now(), i = n.phase;
           if (!i) {
             y.setState({
@@ -3611,13 +3622,18 @@ function et() {
             // ASLA otomatik başlatma
             if (n.autoAt) y.setState({ autoAt: null });
           } else if (i === "intro") {
-            if (a >= n.endsAt) {
-              let t = Se(n.mg);
+            // endsAt yoksa veya geçersizse hemen play'e geç (donma koruması)
+            let ends = typeof n.endsAt === "number" ? n.endsAt : 0;
+            if (a >= ends) {
+              let t = Se(n.mg) || Ue[0];
+              let dur = (t && typeof t.duration === "number" && t.duration > 0) ? t.duration : 35000;
+              let extra = {};
+              try { extra = t.hostStart ? (t.hostStart(a) || {}) : {}; } catch (hsErr) { console.warn("hostStart", hsErr); }
               y.setState(Object.assign({
                 phase: "play",
                 playAt: a,
-                endsAt: a + t.duration
-              }, t.hostStart ? t.hostStart(a) : {}));
+                endsAt: a + dur
+              }, extra));
             }
           } else if (i === "play") {
             let t = Se(n.mg), l = t.hostTick ? t.hostTick(n, a) : null;
@@ -3628,17 +3644,26 @@ function et() {
               });
             u && pt(n, u);
           } else if (i === "roundEnd") {
-            if (a >= n.endsAt) {
+            let ends = typeof n.endsAt === "number" ? n.endsAt : 0;
+            if (a >= ends) {
               let t = n.roster || [], l = n.elim || [], r = n.order || [], c = t.filter(b => !l.includes(b) && C(b)), u = (n.startCount || t.length) <= 1, f = !!Se(n.mg).final, d = n.round || r.length;
               !u && c.length <= 2 && d < r.length - 1 && (d = r.length - 1), f || d >= r.length || (u ? c.length === 0 : c.length <= 1) ? gt(n, c) : Sn(d, t, l, r);
             }
           } else
-            i === "gameEnd" && a >= n.endsAt && Pn();
+            i === "gameEnd" && typeof n.endsAt === "number" && a >= n.endsAt && Pn();
         } catch (n) {
           console.warn("hostTick", n);
         }
     }
-    y.onHostTick(Mt), addEventListener("keydown", n => {
+    y.onHostTick(Mt);
+    // Sunucu host_tick göndermese bile host/creator yerel olarak phase makinesini sürsün
+    // (intro countdown sonrası play'e geçiş burada da garanti edilir)
+    try {
+      setInterval(function () {
+        try { Mt(); } catch (_) {}
+      }, 50);
+    } catch (_) {}
+    addEventListener("keydown", n => {
       n.target && n.target.tagName === "INPUT" || ([
         "Space",
         "ArrowUp",
