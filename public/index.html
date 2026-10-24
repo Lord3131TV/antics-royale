@@ -2202,7 +2202,12 @@ function et() {
           },
           hint: "WASD: hareket \xB7 SPACE: zıpla (engellerin üstünden)"
         }
-      ], Se = n => Ue.find(a => a.id === n) || Ue[0], Ye = (n, a) => a === "lobby" ? yn : Se(n.mg), gn = "", Mn = null;
+      ], Se = n => {
+        // Kaldırılan modlar (brawl/final/hill) asla yüklenmez
+        const banned = { brawl: 1, final: 1, hill: 1 };
+        if (banned[n]) return Ue[0];
+        return Ue.find(a => a.id === n) || Ue[0];
+      }, Ye = (n, a) => a === "lobby" ? yn : Se(n.mg), gn = "", Mn = null;
     function Ze(n, a) {
       let i = a.rid + "|" + n.id + "|" + a.seed;
       return i !== gn && (gn = i, Mn = n.build ? n.build(a.seed >>> 0) : null), Mn;
@@ -2349,12 +2354,14 @@ function et() {
       n.forEach(f => {
         i[f.id] = f.name, t[f.id] = 0;
       });
-      let allIds = Ue.map(f => f.id), nonFinal = Ue.filter(f => !f.final).map(f => f.id);
+      let banned = { brawl: 1, final: 1, hill: 1 };
+      let allIds = Ue.map(f => f.id).filter(id => !banned[id]);
+      let nonFinal = Ue.filter(f => !f.final && !banned[f.id]).map(f => f.id);
       let r = Ke(nonFinal.slice());
-      // URL ?mg=id1,id2 ile özel sıra (geliştirici/test)
-      let fromUrl = (S.get("mg") || "").split(",").map(f => f.trim()).filter(f => allIds.includes(f));
+      // URL ?mg=id1,id2 ile özel sıra (geliştirici/test) — yasaklı modlar elenir
+      let fromUrl = (S.get("mg") || "").split(",").map(f => f.trim()).filter(f => allIds.includes(f) && !banned[f]);
       if (fromUrl.length) r = fromUrl;
-      // Klasik mod: karışık mini oyunlar (final/arena yok)
+      // Klasik: karışık mini oyunlar (kaldırılan modlar yok)
       let u = r.slice();
       Sn(0, a, [], u, {
         order: u,
@@ -2865,7 +2872,7 @@ function et() {
     function kt(n) {
       let a = performance.now();
       let mapId = (Ye(n, n.phase || "play") || {}).id || "";
-      let isArena = mapId === "final" || mapId === "brawl";
+      let isArena = false; // brawl/final removed
       let hitRad = isArena ? 1.65 : 1.45;
       for (let i of y.players) {
         if (i.id === p.id)
@@ -2982,7 +2989,7 @@ function et() {
       if (o.vx += (d / b * rn - o.vx) * m, o.vz += (h / b * rn - o.vz) * m, !d && Math.abs(o.vx) < 0.35 && (o.vx = 0), !h && Math.abs(o.vz) < 0.35 && (o.vz = 0), ne && (ne = !1, f && l.dash && u && o.st === "run" && performance.now() >= te)) {
         let Z = o.fx, G = o.fz, Be = Math.hypot(Z, G);
         Be < 0.01 ? (Z = 0, G = 1) : (Z /= Be, G /= Be);
-        let dashPow = (l.id === "final" || l.id === "brawl") ? 26 : 24;
+        let dashPow = 24;
         o.kx += Z * dashPow, o.kz += G * dashPow, te = performance.now() + 1100, O("jump"), fe(o.x, 0.4, o.z, "#ffffff", 6, 3);
       }
       l.push && u && o.st === "run" && kt(a);
@@ -3004,7 +3011,7 @@ function et() {
             o.vy = Math.min(o.vy, -8);
         }
       }
-      f && o.gr && performance.now() - he < 120 && (o.vy = Zn, B = !0, he = -1000000000, o.gr = !1, O("jump")), o.vy -= Yn * n, o.y += o.vy * n, o.gr = !1, R && o.vy <= 0 && o.y <= 0.02 && o.y > -0.7 && (o.y = 0, o.vy = 0, o.gr = !0, u && (R.vx || R.vz) && (o.x += R.vx * n, o.z += R.vz * n), R.plat && R.plat.cp && !R.plat.amp && o.st === "run" && (o.cp = R.plat)), o.y < -40 && (o.y = -40, o.vy = 0), u && (o.y < (l.id === "final" || l.id === "brawl" ? -1.2 : l.fall === "respawn" ? -8 : -3.5) && (o.st === "run" || o.st === "fin" && l.fall === "respawn") && (l.fall === "respawn" ? yt() : vn("f")), o.st === "run" && l.id === "hill" && o.gr && Math.hypot(o.x, o.z) <= 3.2 && (o._hpAcc = (o._hpAcc || 0) + n, o._hpAcc >= 0.2 && (o.hp = (o.hp || 0) + Math.floor(o._hpAcc / 0.2), o._hpAcc %= 0.2, (o._hpSync = o._hpSync || 0), performance.now() - o._hpSync > 300 && (o._hpSync = performance.now(), ee({ hp: o.hp })))), o.st === "run" && (l.localRule && l.localRule(a, t, B), o.st === "run" && l.hazards && l.hazards(n, c, a, r), o.st === "run" && l.kind === "race" && o.z >= l.finishZ(r) && ct())), He();
+      f && o.gr && performance.now() - he < 120 && (o.vy = Zn, B = !0, he = -1000000000, o.gr = !1, O("jump")), o.vy -= Yn * n, o.y += o.vy * n, o.gr = !1, R && o.vy <= 0 && o.y <= 0.02 && o.y > -0.7 && (o.y = 0, o.vy = 0, o.gr = !0, u && (R.vx || R.vz) && (o.x += R.vx * n, o.z += R.vz * n), R.plat && R.plat.cp && !R.plat.amp && o.st === "run" && (o.cp = R.plat)), o.y < -40 && (o.y = -40, o.vy = 0), u && (o.y < (l.fall === "respawn" ? -8 : -3.5) && (o.st === "run" || o.st === "fin" && l.fall === "respawn") && (l.fall === "respawn" ? yt() : vn("f")), o.st === "run" && (l.localRule && l.localRule(a, t, B), o.st === "run" && l.hazards && l.hazards(n, c, a, r), o.st === "run" && l.kind === "race" && o.z >= l.finishZ(r) && ct())), He();
       let le = u && l.id === "redlight" ? a.rid + ":" + a.light + ":" + a.lightAt : (u && l.id === "colors" ? a.rid + ":col:" + (a.colMode || "all") + ":" + a.safeCol + ":" + a.lightAt : "");
       le !== Bn && (Bn = le, le && a.playAt && t - (a.lightAt || 0) < 1500 && (a.lightAt || 0) > a.playAt + 50 && O(l.id === "colors" ? ((a.colMode === "pick") ? "go" : "tick") : (a.light === "red" ? "red" : "green"))), zt(n), applyHitImpulses(n), St();
       for (let Z = Te.length - 1; Z >= 0; Z--) {
@@ -3593,7 +3600,7 @@ function et() {
           g = "<div class=\"lb " + (u ? "red" : "green") + "\">" + (u ? "Kırmızı ışık \u2014 DUR!" : "Yeşil ışık \u2014 KOŞ!") + "</div>";
         else {
           let k = l.banner ? l.banner(n, c) : l.name;
-          g = "<div class=\"lb " + (l.id === "final" || l.id === "brawl" && c >= 40 ? "warn" : "wait") + "\">" + W(k) + "</div>";
+          g = "<div class=\"lb wait\">" + W(k) + "</div>";
         }
         X(ae.tc, g + "<div class=\"tm" + (m <= 10 ? " low" : "") + "\">" + m + " sn</div>");
       } else
@@ -3602,7 +3609,7 @@ function et() {
       if (ze && t < ze.until ? d = ze.html : ze = null, a === "intro" && !d) {
         let m = (n.endsAt - i) / 1000;
         if (m > 3.2)
-          d = "<div class=\"k\">Mini oyun " + (n.round || 1) + "/" + ((n.order || []).length || 8) + "</div><div class=\"t\">" + W(l.name) + "</div><div class=\"d\">" + l.rules.map(W).join("<br>") + "</div>" + (o.st === "spec" ? "<div class=\"small\">Bu turda izleyicisin.</div>" : "");
+          d = "<div class=\"k\">Mini oyun " + (n.round || 1) + "/" + ((n.order || []).length || 5) + "</div><div class=\"t\">" + W(l.name) + "</div><div class=\"d\">" + l.rules.map(W).join("<br>") + "</div>" + (o.st === "spec" ? "<div class=\"small\">Bu turda izleyicisin.</div>" : "");
         else {
           let g = Math.max(1, Math.ceil(m));
           d = "<div class=\"cnt\" data-c=\"" + g + "\">" + g + "</div>", g !== nn && (nn = g, O("tick"));
