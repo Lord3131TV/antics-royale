@@ -2,10 +2,10 @@
   "name": "antics-royale-server",
   "version": "1.0.0",
   "description": "Realtime multiplayer server for Antics Royale 3D",
-  "main": "index.js",
+  "main": "server/index.js",
   "scripts": {
-    "start": "node index.js",
-    "dev": "node index.js"
+    "start": "node server/index.js",
+    "dev": "node server/index.js"
   },
   "engines": {
     "node": ">=18"
