@@ -2203,9 +2203,6 @@ function et() {
           hint: "WASD: hareket \xB7 SPACE: zıpla (engellerin üstünden)"
         }
       ], Se = n => {
-        // Kaldırılan modlar (brawl/final/hill) asla yüklenmez
-        const banned = { brawl: 1, final: 1, hill: 1 };
-        if (banned[n]) return Ue[0];
         return Ue.find(a => a.id === n) || Ue[0];
       }, Ye = (n, a) => a === "lobby" ? yn : Se(n.mg), gn = "", Mn = null;
     function Ze(n, a) {
@@ -2354,14 +2351,11 @@ function et() {
       n.forEach(f => {
         i[f.id] = f.name, t[f.id] = 0;
       });
-      let banned = { brawl: 1, final: 1, hill: 1 };
-      let allIds = Ue.map(f => f.id).filter(id => !banned[id]);
-      let nonFinal = Ue.filter(f => !f.final && !banned[f.id]).map(f => f.id);
-      let r = Ke(nonFinal.slice());
-      // URL ?mg=id1,id2 ile özel sıra (geliştirici/test) — yasaklı modlar elenir
-      let fromUrl = (S.get("mg") || "").split(",").map(f => f.trim()).filter(f => allIds.includes(f) && !banned[f]);
+      let allIds = Ue.map(f => f.id);
+      let r = Ke(allIds.slice());
+      // URL ?mg=id1,id2 ile özel sıra (geliştirici/test)
+      let fromUrl = (S.get("mg") || "").split(",").map(f => f.trim()).filter(f => allIds.includes(f));
       if (fromUrl.length) r = fromUrl;
-      // Klasik: karışık mini oyunlar (kaldırılan modlar yok)
       let u = r.slice();
       Sn(0, a, [], u, {
         order: u,
@@ -2498,8 +2492,8 @@ function et() {
             u && pt(n, u);
           } else if (i === "roundEnd") {
             if (a >= n.endsAt) {
-              let t = n.roster || [], l = n.elim || [], r = n.order || [], c = t.filter(b => !l.includes(b) && C(b)), u = (n.startCount || t.length) <= 1, f = !!Se(n.mg).final, d = n.round || r.length;
-              !u && c.length <= 2 && d < r.length - 1 && (d = r.length - 1), f || d >= r.length || (u ? c.length === 0 : c.length <= 1) ? gt(n, c) : Sn(d, t, l, r);
+              let t = n.roster || [], l = n.elim || [], r = n.order || [], c = t.filter(b => !l.includes(b) && C(b)), u = (n.startCount || t.length) <= 1, d = n.round || r.length;
+              !u && c.length <= 2 && d < r.length - 1 && (d = r.length - 1), d >= r.length || (u ? c.length === 0 : c.length <= 1) ? gt(n, c) : Sn(d, t, l, r);
             }
           } else
             i === "gameEnd" && a >= n.endsAt && Pn();
@@ -2871,9 +2865,7 @@ function et() {
     let hitImp = new Map();
     function kt(n) {
       let a = performance.now();
-      let mapId = (Ye(n, n.phase || "play") || {}).id || "";
-      let isArena = false; // brawl/final removed
-      let hitRad = isArena ? 1.65 : 1.45;
+      let hitRad = 1.45;
       for (let i of y.players) {
         if (i.id === p.id)
           continue;
@@ -2889,7 +2881,7 @@ function et() {
           continue;
         let d = u > 0.0001 ? rx / u : 1, h = u > 0.0001 ? rz / u : 0;
         // Çakışmayı ayır (ben geri, rakip ileri — yerel tahmin)
-        let overlap = (hitRad - u) * (isArena ? 1.35 : 1.15);
+        let overlap = (hitRad - u) * 1.15;
         o.x -= d * overlap * 0.55;
         o.z -= h * overlap * 0.55;
         l.x += d * overlap * 0.45;
@@ -2906,17 +2898,17 @@ function et() {
         // Karşılıklı itme — saldıran daha az savrulur, vurulan daha çok
         // Rakibe doğru hareket ediyorsan veya temas varsa savrulma (dash şart değil)
         let pushing = myInto > 0.15 || mySpd > 2.5;
-        if (pushing && a - (Ln.get(i.id) || 0) > (isArena ? 70 : 90)) {
+        if (pushing && a - (Ln.get(i.id) || 0) > 90) {
           Ln.set(i.id, a);
           // Orta seviye itme — dash olmadan da savrulur, dash biraz ekstra verir
-          let base = isArena ? 5.2 : 3.2;
-          let fromSpeed = Math.max(0, myInto) * (isArena ? 1.8 : 1.4) + (mySpd > 3 ? (mySpd - 3) * (isArena ? 0.45 : 0.3) : 0);
-          let dashBonus = isDash ? (isArena ? 5.5 : 4) : 0;
+          let base = 3.2;
+          let fromSpeed = Math.max(0, myInto) * 1.4 + (mySpd > 3 ? (mySpd - 3) * 0.3 : 0);
+          let dashBonus = isDash ? 4 : 0;
           let knockThem = base + fromSpeed + dashBonus;
           // Üst sınır: çok uzağa fırlatmasın
-          knockThem = Math.min(knockThem, isArena ? 12 : 9);
+          knockThem = Math.min(knockThem, 9);
           // Sen az geriye git
-          let knockMe = Math.min(isArena ? 3.2 : 4, knockThem * 0.28 + Math.max(0, theirInto) * 1.2);
+          let knockMe = Math.min(4, knockThem * 0.28 + Math.max(0, theirInto) * 1.2);
           o.kx -= d * knockMe;
           o.kz -= h * knockMe;
           // Rakibi savur
