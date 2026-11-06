@@ -8,9 +8,9 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#24123f">
 <title>Antics Royale 3D — Online Multiplayer</title>
-<meta name="description" content="Özel referans karakterler, lobi karakter seçimi ve 10 heyecanlı 3D mini oyun içeren çok oyunculu parti oyunu." />
+<meta name="description" content="Özel referans karakterler, lobi karakter seçimi ve 13 heyecanlı 3D mini oyun içeren çok oyunculu parti oyunu." />
 <meta property="og:title" content="Antics Royale 3D - Karakter Seçimli" />
-<meta property="og:description" content="Özel referans karakterler, lobi karakter seçimi ve 10 heyecanlı 3D mini oyun içeren çok oyunculu parti oyunu." />
+<meta property="og:description" content="Özel referans karakterler, lobi karakter seçimi ve 13 heyecanlı 3D mini oyun içeren çok oyunculu parti oyunu." />
 <meta property="og:type" content="website" />
 <meta name="twitter:card" content="summary_large_image" />
 <style>
@@ -374,7 +374,7 @@ body.ph-lobby #uiTopBtns{display:none}
 
   <div id="lobby" class="panel">
     <h1>Antics Royale</h1>
-    <p class="lead" data-i18n="lead">10 kısa mini oyun: elenenler seyirci olur, son kalan şampiyon olur!</p>
+    <p class="lead" data-i18n="lead">13 kısa mini oyun: elenenler seyirci olur, son arenanın kazananı şampiyon!</p>
 
     <!-- Ön menü: oda seçimi (menu=1) -->
     <div id="menuDoor">
@@ -550,7 +550,7 @@ body.ph-lobby #uiTopBtns{display:none}
       <li data-i18n="help4"><b>M</b> — sesi aç/kapa</li>
       <li data-i18n="help5"><b>ESC</b> — duraklat / menü</li>
       <li data-i18n="help6">Mobilde sol joystick + sağdaki Zıpla / Atıl butonları</li>
-      <li data-i18n="help7">10 mini oyun: elenenler seyirci olur, son kalan şampiyon olur</li>
+      <li data-i18n="help7">13 mini oyun: elenenler seyirci olur, son arenanın kazananı şampiyon</li>
       <li data-i18n="help8">Lobide karakterini seç, ismini yaz, kurucu «Oyunu başlat»a basar</li>
     </ul>
     <button id="helpClose" class="go" type="button" data-i18n="gotIt">Anladım</button>
@@ -967,7 +967,7 @@ function admShowGone(type, code) {
 const I18N = {
   tr: {
     doorTitle: "Oda",
-    lead: "10 kısa mini oyun: elenenler seyirci olur, son kalan şampiyon olur!",
+    lead: "13 kısa mini oyun: elenenler seyirci olur, son arenanın kazananı şampiyon!",
     createRoom: "Oda kur",
     createRoomSub: "Yeni oda aç · kodu arkadaşlarına ver",
     roomCodePh: "ODA KODU",
@@ -1010,7 +1010,7 @@ const I18N = {
     help4: "<b>M</b> — sesi aç/kapa",
     help5: "<b>ESC</b> — duraklat / menü",
     help6: "Mobilde sol joystick + sağdaki Zıpla / Atıl butonları",
-    help7: "10 mini oyun: elenenler seyirci olur, son kalan şampiyon olur",
+    help7: "13 mini oyun: elenenler seyirci olur, son arenanın kazananı şampiyon",
     help8: "Lobide karakterini seç, ismini yaz, kurucu «Oyunu başlat»a basar",
     player: "Oyuncu", you: "Sen", youParen: "(sen)", host: "host", creator: "kurucu",
     mapPick: "Harita / Mini oyun", mapPickHost: "Seç ya da karışık bırak", mapPickGuest: "Kurucu seçer",
@@ -1107,6 +1107,9 @@ const I18N = {
     mg_backrooms: "Backrooms: Yaratıktan Kaç",
     mg_bomb: "Ebelemeç: Bomba",
     mg_tag: "Ebelemeç",
+    mg_final: "Son Arena",
+    mg_brawl: "Arena İtişi",
+    mg_hill: "Tepe Kontrolü",
     mg_lava: "Lav Adaları",
     mg_glass: "Cam Köprü",
     mg_blades: "Dönen Bıçaklar",
@@ -1121,7 +1124,7 @@ const I18N = {
   },
   en: {
     doorTitle: "Room",
-    lead: "10 short mini-games: eliminated players spectate — last one standing is champion!",
+    lead: "13 short mini-games: eliminated players spectate — last arena winner is champion!",
     createRoom: "Create room",
     createRoomSub: "Open a new room · share the code with friends",
     roomCodePh: "ROOM CODE",
@@ -1164,7 +1167,7 @@ const I18N = {
     help4: "<b>M</b> — mute / unmute",
     help5: "<b>ESC</b> — pause / menu",
     help6: "On mobile: left joystick + Jump / Dash on the right",
-    help7: "10 mini-games: eliminated players spectate; last one standing is champion",
+    help7: "13 mini-games: eliminated players spectate; last arena winner is champion",
     help8: "In the lobby pick a character, set your name; the host presses «Start game»",
     player: "Player", you: "You", youParen: "(you)", host: "host", creator: "creator",
     mapPick: "Map / Mini-game", mapPickHost: "Pick or leave mixed", mapPickGuest: "Host chooses",
@@ -1260,6 +1263,9 @@ const I18N = {
     mg_backrooms: "Backrooms: Escape the Entity",
     mg_bomb: "Hot Potato: Bomb",
     mg_tag: "Tag",
+    mg_final: "Final Arena",
+    mg_brawl: "Arena Brawl",
+    mg_hill: "King of the Hill",
     mg_lava: "Lava Islands",
     mg_glass: "Glass Bridge",
     mg_blades: "Spinning Blades",
@@ -1414,6 +1420,24 @@ const MG_I18N = {
       en: ["It tags another player by touch. Nobody is eliminated!", "If you are not It, run; if you are It, catch someone.", "Whoever is It when time ends places last."]
     },
     hint: { en: "WASD: move · If It, touch someone; if not, run" }
+  },
+  final: {
+    rules: {
+      en: ["Push rivals off the arena. SHIFT/E to dash.", "Falling off eliminates you.", "Last one standing is the overall champion."]
+    },
+    hint: { en: "WASD: move · SPACE: jump · SHIFT/E: dash" }
+  },
+  brawl: {
+    rules: {
+      en: ["Bump rivals — they get knocked back! SHIFT/E to dash.", "Dash hits send them flying. Falling eliminates.", "Arena shrinks over time. Round ends when half are out."]
+    },
+    hint: { en: "WASD: move · SPACE: jump · SHIFT/E: dash" }
+  },
+  hill: {
+    rules: {
+      en: ["Stand on the yellow peak to score points!", "Most hill points when time ends wins.", "Push rivals off the peak."]
+    },
+    hint: { en: "WASD: move · SPACE: jump · SHIFT/E: dash · Score on yellow" }
   },
   lava: {
     rules: {
@@ -2059,7 +2083,101 @@ function et() {
           return "Platformlar düşüyor!";
         },
         hint: "WASD: hareket \xB7 SPACE: zıpla (boşlukları atla)"
+      }, ft = {
+        sky: Re.sea,
+        ab1: "#2b8cf0",
+        ab2: "#124b9c",
+        glow: "rgba(255,255,255,.14)",
+        top: "#cdb9ff",
+        r1: "#b79cff",
+        r2: "#ffd166",
+        side: "#7a5cc7",
+        radius: n => n < 40 ? 11 : Math.max(6.5, 11 - (n - 40) * 0.15),
+        rim: n => n >= 40
+      }, bn = {
+        sky: Re.night,
+        ab1: "#ff5a3d",
+        ab2: "#8a0f2e",
+        glow: "rgba(255,214,102,.2)",
+        top: "#3b2560",
+        r1: "#4d3080",
+        r2: "#ff3d6e",
+        side: "#1d1035",
+        radius: n => n < 5 ? 12 : Math.max(2, 12 - (n - 5) * 0.18),
+        rim: () => !0
       };
+    function mn(n, a) {
+      let i = a && a.ring || 7;
+      return Object.assign({
+        kind: "survival",
+        void: !0,
+        fall: "out",
+        push: !0,
+        dash: !0,
+        cfg: n,
+        spawn(t, l) {
+          let r = t / Math.max(1, l) * Math.PI * 2 + 0.4;
+          return {
+            x: Math.cos(r) * i,
+            z: Math.sin(r) * i
+          };
+        },
+        camera(t, l, r) {
+          let c = n.radius(r);
+          return Ne(t.x * 0.2, t.z * 0.2, 9 + c * 1.35, 0.72, 0.5);
+        },
+        bounds: () => ({
+          x0: -16,
+          x1: 16,
+          z0: -16,
+          z1: 16
+        }),
+        support(t, l, r) {
+          return Math.hypot(t, l) <= n.radius(r) + 0.05 ? je : null;
+        },
+        world(t, l, r, c) {
+          return Rt(n, c, r), [];
+        }
+      }, a);
+    }
+    let ut = mn(ft, {
+        id: "brawl",
+        name: "Arena İtişi",
+        duration: 40000,
+        ring: 7,
+        rules: [
+          "Rakiplerine çarpınca savrulurlar — dışarı it!",
+          "SHIFT / E ile atıl (dash), güçlü vuruşta uçarlar. Düşen elenir.",
+          "Süre uzarsa arena küçülür. Yarısı elenince tur biter."
+        ],
+        target: cn,
+        hud(n, a) {
+          return a < 40 ? "Küçülmeye: " + Math.max(0, Math.ceil(40 - a)) + " sn" : "Arena küçülüyor!";
+        },
+        banner(n, a) {
+          return a < 40 ? "İt ve ayakta kal!" : "Arena küçülüyor!";
+        },
+        hint: "WASD: hareket \xB7 SPACE: zıpla \xB7 SHIFT / E: atıl"
+      }), dt = mn(bn, {
+        id: "final",
+        name: "Son Arena",
+        final: !0,
+        duration: 38000,
+        ring: 8,
+        rules: [
+          "Güvenli alan gittikçe küçülüyor!",
+          "Rakiplerine çarp / atıl — savrulurlar! SHIFT / E ile atıl.",
+          "Son kalan oyuncu genel şampiyon olur."
+        ],
+        target: () => 1,
+        hud(n, a) {
+          return "Güvenli alan: " + bn.radius(a).toFixed(1) + " m";
+        },
+        banner() {
+          return "Alan küçülüyor!";
+        },
+        hint: "WASD: hareket \xB7 SPACE: zıpla \xB7 SHIFT / E: atıl"
+      });
     function ht(n) {
       let a = sn(n), i = (u, f) => u + a() * (f - u), t = [], l = [];
       t.push({
@@ -2389,6 +2507,73 @@ function et() {
         return "Lav yükseliyor!";
       },
       hint: "WASD: hareket \xB7 SPACE: zıpla (adalar arası)"
+    };
+    var hill = {
+      id: "hill",
+      name: "Kral Tepesi",
+      kind: "survival",
+      duration: 30000,
+      void: !0,
+      fall: "out",
+      push: !0,
+      dash: !0,
+      rules: [
+        "Sarı zirvenin üstünde durarak puan kazan!",
+        "Rakiplerini iterek düşür. SHIFT/E ile atıl.",
+        "Süre bitince en çok puanı olan kazanır."
+      ],
+      target: cn,
+      spawn(n, a) {
+        let i = n / Math.max(1, a) * Math.PI * 2;
+        return {
+          x: Math.cos(i) * 10,
+          z: Math.sin(i) * 10
+        };
+      },
+      camera(n) {
+        return Ne(n.x * 0.25, n.z * 0.25, 18, 0.68, 0.48);
+      },
+      bounds: () => ({
+        x0: -18,
+        x1: 18,
+        z0: -18,
+        z1: 18
+      }),
+      support(n, a, i) {
+        return Math.hypot(n, a) <= 13.6 ? je : null;
+      },
+      world(n, a, i) {
+        Fe(Re.candy, i);
+        en(-10, "#8a6de0", "#4d3399", "rgba(255,255,255,.12)", i);
+        Ee(qe(14, 48), -1.2, 0, "#9b59b6", "#6c3483");
+        Ee(qe(7, 32), -0.6, 0, "#bb8fce", "#7d3c98");
+        Ee(qe(3.2, 24), 0, 0.8, "#f1c40f", "#d4ac0d");
+        pe(qe(3.2, 24).map(p => [
+          p[0],
+          0.82,
+          p[1]
+        ]), "#f7dc6f", null);
+        let c = 0.55 + 0.45 * Math.sin(i * 5);
+        pe(qe(3.4, 32).map(p => [
+          p[0],
+          0.85,
+          p[1]
+        ]), null, "rgba(255,215,0," + c.toFixed(2) + ")", 4);
+        pe(qe(3.6, 28).map(p => [
+          p[0],
+          0.9,
+          p[1]
+        ]), null, "rgba(255,240,120," + (0.25 + 0.25 * Math.sin(i * 7)).toFixed(2) + ")", 2);
+        return [];
+      },
+      hud(n, a) {
+        let mine = (typeof o !== "undefined" && o.hp) ? o.hp : 0;
+        return "Tepe puanın: " + mine;
+      },
+      banner() {
+        return "Sarı zirvede puan kazan!";
+      },
+      hint: "WASD: hareket \xB7 SPACE: zıpla \xB7 SHIFT/E: atıl \xB7 Sarıda puan"
     };
     var bladesBuild = function (n) {
       let a = sn(n), i = (u, f) => u + a() * (f - u), t = [], l = [], r = 0;
@@ -2778,7 +2963,9 @@ function et() {
     let pn = 0, Ue = [
         yn,
         st,
+        ut,
         stones,
+        hill,
         blades,
         {
           id: "course",
@@ -2852,7 +3039,8 @@ function et() {
             return __t("runToFinish");
           },
           hint: "WASD: hareket \xB7 SPACE: zıpla (engellerin üstünden)"
-        }
+        },
+        dt
       ], Se = n => Ue.find(a => a.id === n) || Ue[0], Ye = (n, a) => a === "lobby" ? yn : Se(n.mg), gn = "", Mn = null;
     function localizeMgName(mg) {
       if (!mg) return "";
@@ -3111,7 +3299,7 @@ function et() {
       banner(n) { let it = xtGet(n); return !it ? "Ebe seçiliyor..." : it === p.id ? "EBE SENSİN! Birine dokun!" : "Kaç! Ebe: " + L(it); },
       hint: "WASD: hareket · Ebeysen birine dokun, değilsen kaç"
     };
-    Ue.push(xCar, xFt, xBack, xBomb, xTag);
+    Ue.splice(Ue.length - 1, 0, xCar, xFt, xBack, xBomb, xTag);
     function Ze(n, a) {
       let i = a.rid + "|" + n.id + "|" + a.seed;
       return i !== gn && (gn = i, Mn = n.build ? n.build(a.seed >>> 0) : null), Mn;
@@ -3261,13 +3449,14 @@ function et() {
       n.forEach(f => {
         i[f.id] = f.name, t[f.id] = 0;
       });
-      let allIds = Ue.map(f => f.id);
-      let r = Ke(allIds.slice());
+      let allIds = Ue.map(f => f.id), nonFinal = Ue.filter(f => !f.final).map(f => f.id);
+      let r = Ke(nonFinal.slice());
       // URL ?mg=id1,id2 ile özel sıra (geliştirici/test)
       let fromUrl = (S.get("mg") || "").split(",").map(f => f.trim()).filter(f => allIds.includes(f));
       if (!fromUrl.length && stNow.lpick && allIds.includes(stNow.lpick)) fromUrl = [stNow.lpick];
       if (fromUrl.length) r = fromUrl;
-      let u = r.slice();
+      // Klasik mod: karışık mini oyunlar + sonda final
+      let u = fromUrl.length ? r.slice() : r.concat(["final"]);
       Sn(0, a, [], u, {
         order: u,
         roster: a,
@@ -3323,6 +3512,29 @@ function et() {
         };
       }
       let f = t.filter(m => l(m).st === "run"), d = c ? n.target(r) : 0;
+      // Kral Tepesi (Sarı Tepe): süre bitince veya hedefe ulaşılınca en düşük 2 skor elenir
+      if (n.id === "hill") {
+        if (!(f.length <= d || u))
+          return null;
+        let sorted = f.slice().sort((g, k) => (l(k).hp || 0) - (l(g).hp || 0));
+        let h, b = "";
+        if (sorted.length > 2) {
+          // Tam 2 oyuncu elensin (eşit skorda da en alttaki 2)
+          h = sorted.slice(0, sorted.length - 2);
+          let top = l(sorted[0]).hp || 0;
+          b = "En çok tepe puanı: " + top + " · " + (L(sorted[0]) || "") + " · En düşük 2 elendi";
+        } else if (sorted.length === 2) {
+          // 2 kişi kaldıysa düşük skorlu elenir, yüksek kazanır (eşitse ilk sıradaki)
+          h = [sorted[0]];
+          b = "Tepe puanı: " + (l(sorted[0]).hp || 0) + " · " + (L(sorted[0]) || "");
+        } else {
+          h = sorted;
+          if (h.length) b = "Tepe puanı: " + (l(h[0]).hp || 0);
+        }
+        // Ölü/elenmiş oyuncu asla kazanan olmasın (sadece st===run)
+        h = h.filter(g => l(g).st === "run");
+        return { q: h, note: b };
+      }
       if (!(f.length <= d || u))
         return null;
       let h = f, b = "";
@@ -3330,6 +3542,12 @@ function et() {
       if (!h.length && t.length && c) {
         h = [t.slice().sort((g, k) => (l(k).ot || 0) - (l(g).ot || 0))[0]];
         b = "Hepsi aynı anda düştü! En son düşen kurtuldu.";
+      }
+      // Final: merkeze yakınlık / pozisyon ile kazanan YOK
+      if (n.final && h.length > 1) {
+        // Süre doldu, birden fazla hayatta — hepsi hayatta kalır (veya tek şampiyon için rastgele değil, host tick hedefe göre)
+        // Pozisyon karşılaştırması yapılmaz; target 1 ise ve süre bittiyse hayatta kalanlardan biri seçilmez konuma göre
+        b = "Süre doldu! " + h.length + " oyuncu ayakta.";
       }
       return {
         q: h,
@@ -3428,8 +3646,8 @@ function et() {
           } else if (i === "roundEnd") {
             let ends = typeof n.endsAt === "number" ? n.endsAt : 0;
             if (a >= ends) {
-              let t = n.roster || [], l = n.elim || [], r = n.order || [], c = t.filter(b => !l.includes(b) && C(b)), u = (n.startCount || t.length) <= 1, d = n.round || r.length;
-              !u && c.length <= 2 && d < r.length - 1 && (d = r.length - 1), d >= r.length || (u ? c.length === 0 : c.length <= 1) ? gt(n, c) : Sn(d, t, l, r);
+              let t = n.roster || [], l = n.elim || [], r = n.order || [], c = t.filter(b => !l.includes(b) && C(b)), u = (n.startCount || t.length) <= 1, f = !!Se(n.mg).final, d = n.round || r.length;
+              !u && c.length <= 2 && d < r.length - 1 && (d = r.length - 1), f || d >= r.length || (u ? c.length === 0 : c.length <= 1) ? gt(n, c) : Sn(d, t, l, r);
             }
           } else
             i === "gameEnd" && typeof n.endsAt === "number" && a >= n.endsAt && Pn();
@@ -3913,7 +4131,8 @@ function et() {
     function kt(n) {
       let a = performance.now();
       let mapId = (Ye(n, n.phase || "play") || {}).id || "";
-      let hitRad = 1.45;
+      let isArena = mapId === "final" || mapId === "brawl";
+      let hitRad = isArena ? 1.65 : 1.45;
       for (let i of y.players) {
         if (i.id === p.id)
           continue;
@@ -3929,7 +4148,7 @@ function et() {
           continue;
         let d = u > 0.0001 ? rx / u : 1, h = u > 0.0001 ? rz / u : 0;
         // Çakışmayı ayır (ben geri, rakip ileri — yerel tahmin)
-        let overlap = (hitRad - u) * 1.15;
+        let overlap = (hitRad - u) * (isArena ? 1.35 : 1.15);
         o.x -= d * overlap * 0.55;
         o.z -= h * overlap * 0.55;
         let myVx = o.vx + o.kx, myVz = o.vz + o.kz;
@@ -3946,15 +4165,15 @@ function et() {
         let pushing = myInto > 0.15 || mySpd > 2.5;
         let beingPushed = theirInto > 0.15 || theirSpd > 2.5;
         let theirDash = Math.hypot(theirVx, theirVz) > 5 && theirInto > 0.5;
-        if ((pushing || beingPushed) && a - (Ln.get(i.id) || 0) > 90) {
+        if ((pushing || beingPushed) && a - (Ln.get(i.id) || 0) > (isArena ? 70 : 90)) {
           Ln.set(i.id, a);
-          let base = 3.2;
+          let base = isArena ? 5.2 : 3.2;
           // Ben itiyorsam: rakibi savur + hafif geri git
           if (pushing) {
-            let fromSpeed = Math.max(0, myInto) * 1.4 + (mySpd > 3 ? (mySpd - 3) * 0.3 : 0);
-            let dashBonus = isDash ? 4 : 0;
-            let knockThem = Math.min(base + fromSpeed + dashBonus, 9);
-            let knockMe = Math.min(4, knockThem * 0.28 + Math.max(0, theirInto) * 1.2);
+            let fromSpeed = Math.max(0, myInto) * (isArena ? 1.8 : 1.4) + (mySpd > 3 ? (mySpd - 3) * (isArena ? 0.45 : 0.3) : 0);
+            let dashBonus = isDash ? (isArena ? 5.5 : 4) : 0;
+            let knockThem = Math.min(base + fromSpeed + dashBonus, isArena ? 12 : 9);
+            let knockMe = Math.min(isArena ? 3.2 : 4, knockThem * 0.28 + Math.max(0, theirInto) * 1.2);
             o.kx -= d * knockMe;
             o.kz -= h * knockMe;
             O("hit");
@@ -4016,7 +4235,7 @@ function et() {
       if (o.vx += (d / b * rn - o.vx) * m, o.vz += (h / b * rn - o.vz) * m, !d && Math.abs(o.vx) < 0.35 && (o.vx = 0), !h && Math.abs(o.vz) < 0.35 && (o.vz = 0), ne && (ne = !1, f && l.dash && u && o.st === "run" && performance.now() >= te)) {
         let Z = o.fx, G = o.fz, Be = Math.hypot(Z, G);
         Be < 0.01 ? (Z = 0, G = 1) : (Z /= Be, G /= Be);
-        let dashPow = 24;
+        let dashPow = (l.id === "final" || l.id === "brawl") ? 26 : 24;
         o.kx += Z * dashPow, o.kz += G * dashPow, te = performance.now() + 1100, O("jump"), fe(o.x, 0.4, o.z, "#ffffff", 6, 3);
       }
       u && o.st === "run" && l.drive && l.drive(n, a);
@@ -4040,7 +4259,7 @@ function et() {
             o.vy = Math.min(o.vy, -8);
         }
       }
-      f && o.gr && performance.now() - he < 120 && (o.vy = Zn, B = !0, he = -1000000000, o.gr = !1, O("jump")), o.vy -= Yn * n, o.y += o.vy * n, o.gr = !1, R && o.vy <= 0 && o.y <= 0.02 && o.y > -0.7 && (o.y = 0, o.vy = 0, o.gr = !0, u && (R.vx || R.vz) && (o.x += R.vx * n, o.z += R.vz * n), R.plat && R.plat.cp && !R.plat.amp && o.st === "run" && (o.cp = R.plat)), o.y < -40 && (o.y = -40, o.vy = 0), u && (o.y < (l.fall === "respawn" ? -8 : -3.5) && (o.st === "run" || o.st === "fin" && l.fall === "respawn") && (l.fall === "respawn" ? yt() : vn("f")), o.st === "run" && (l.localRule && l.localRule(a, t, B), o.st === "run" && l.hazards && l.hazards(n, c, a, r), o.st === "run" && l.kind === "race" && o.z >= l.finishZ(r) && ct())), He();
+      f && o.gr && performance.now() - he < 120 && (o.vy = Zn, B = !0, he = -1000000000, o.gr = !1, O("jump")), o.vy -= Yn * n, o.y += o.vy * n, o.gr = !1, R && o.vy <= 0 && o.y <= 0.02 && o.y > -0.7 && (o.y = 0, o.vy = 0, o.gr = !0, u && (R.vx || R.vz) && (o.x += R.vx * n, o.z += R.vz * n), R.plat && R.plat.cp && !R.plat.amp && o.st === "run" && (o.cp = R.plat)), o.y < -40 && (o.y = -40, o.vy = 0), u && (o.y < (l.id === "final" || l.id === "brawl" ? -1.2 : l.fall === "respawn" ? -8 : -3.5) && (o.st === "run" || o.st === "fin" && l.fall === "respawn") && (l.fall === "respawn" ? yt() : vn("f")), o.st === "run" && l.id === "hill" && o.gr && Math.hypot(o.x, o.z) <= 3.2 && (o._hpAcc = (o._hpAcc || 0) + n, o._hpAcc >= 0.2 && (o.hp = (o.hp || 0) + Math.floor(o._hpAcc / 0.2), o._hpAcc %= 0.2, (o._hpSync = o._hpSync || 0), performance.now() - o._hpSync > 300 && (o._hpSync = performance.now(), ee({ hp: o.hp })))), o.st === "run" && (l.localRule && l.localRule(a, t, B), o.st === "run" && l.hazards && l.hazards(n, c, a, r), o.st === "run" && l.kind === "race" && o.z >= l.finishZ(r) && ct())), He();
       let le = u && l.id === "redlight" ? a.rid + ":" + a.light + ":" + a.lightAt : (u && l.id === "colors" ? a.rid + ":col:" + (a.colMode || "all") + ":" + a.safeCol + ":" + a.lightAt : "");
       le !== Bn && (Bn = le, le && a.playAt && t - (a.lightAt || 0) < 1500 && (a.lightAt || 0) > a.playAt + 50 && O(l.id === "colors" ? ((a.colMode === "pick") ? "go" : "tick") : (a.light === "red" ? "red" : "green"))), zt(n), applyHitImpulses(n), St();
       for (let Z = Te.length - 1; Z >= 0; Z--) {
@@ -4412,6 +4631,24 @@ function et() {
       let A = r - 16.6 * t, R = u ? "#ff1e3c" : "#2ee59d";
       s.fillStyle = "#24123f", s.fillRect(l - 0.18 * t, A, 0.36 * t, 3.2 * t), s.fillStyle = "#24123f", s.beginPath(), s.arc(l, A, 2 * t, 0, 7), s.fill(), s.shadowColor = R, s.shadowBlur = 24, s.fillStyle = R, s.beginPath(), s.arc(l, A, 1.5 * t, 0, 7), s.fill(), s.shadowBlur = 0;
     }
+    function Rt(n, a, i) {
+      Fe(n.sky, i), en(-10, n.ab1, n.ab2, n.glow, i);
+      let t = n.radius(a), l = 56;
+      Ee(qe(t, l), -1.4, 0, n.top, n.side);
+      let r = (c, u) => pe(qe(c, l).map(f => [
+        f[0],
+        0.01,
+        f[1]
+      ]), u, null);
+      if (r(t * 0.78, n.r1), r(t * 0.56, n.top), r(t * 0.34, n.r1), r(t * 0.12, n.r2), n.rim(a)) {
+        let c = 0.65 + 0.35 * Math.sin(i * 6);
+        pe(qe(t, 64).map(u => [
+          u[0],
+          0.03,
+          u[1]
+        ]), null, "rgba(255,61,110," + c.toFixed(2) + ")", 4);
+      }
+    }
     function Ct(n, a, i, t) {
       Fe(Re.candy, a), en(-10, "#8a6de0", "#4d3399", "rgba(255,255,255,.12)", a);
       let l = t.plats.slice().sort((u, f) => f.z0 + f.z1 - (u.z0 + u.z1));
@@ -4629,7 +4866,7 @@ function et() {
           g = "<div class=\"lb " + (u ? "red" : "green") + "\">" + (u ? __t("redLight") : __t("greenLight")) + "</div>";
         else {
           let k = l.banner ? l.banner(n, c) : localizeMgName(l);
-          g = "<div class=\"lb wait\">" + W(k) + "</div>";
+          g = "<div class=\"lb " + (l.id === "final" || l.id === "brawl" && c >= 40 ? "warn" : "wait") + "\">" + W(k) + "</div>";
         }
         X(ae.tc, g + "<div class=\"tm" + (m <= 10 ? " low" : "") + "\">" + m + " " + __t("sec") + "</div>");
       } else
