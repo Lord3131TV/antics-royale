@@ -8,9 +8,9 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#24123f">
 <title>Antics Royale 3D — Online Multiplayer</title>
-<meta name="description" content="Özel referans karakterler, lobi karakter seçimi ve 5 heyecanlı 3D mini oyun içeren çok oyunculu parti oyunu." />
-<meta property="og:title" content="Antics Royale 3D - Karakter Seçimli" />
-<meta property="og:description" content="Özel referans karakterler, lobi karakter seçimi ve 5 heyecanlı 3D mini oyun içeren çok oyunculu parti oyunu." />
+<meta name="description" content="Sevimli maskot Kıvılcım ve 5 heyecanlı 3D mini oyun içeren çok oyunculu parti oyunu." />
+<meta property="og:title" content="Antics Royale 3D" />
+<meta property="og:description" content="Sevimli maskot Kıvılcım ve 5 heyecanlı 3D mini oyun içeren çok oyunculu parti oyunu." />
 <meta property="og:type" content="website" />
 <meta name="twitter:card" content="summary_large_image" />
 <style>
@@ -72,25 +72,10 @@ body.red #vig{box-shadow:inset 0 0 150px 36px rgba(255,20,70,.6)}
 #lobby h1{margin:0;font-size:32px;line-height:1.1;font-weight:900;color:var(--sun);text-shadow:0 3px 0 rgba(0,0,0,.35)}
 #lobby .lead{margin:6px 0 10px;font-size:13px;line-height:1.45;opacity:.92}
 
-/* Karakter Seçici Kartları */
-.char-selector{margin:10px 0 14px;background:rgba(0,0,0,.22);border-radius:14px;padding:10px;border:1px solid rgba(255,255,255,.1)}
-.char-title{font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.8px;color:var(--sun);margin-bottom:8px;display:flex;align-items:center;justify-content:space-between}
-.char-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.char-card{background:rgba(255,255,255,.07);border:2px solid rgba(255,255,255,.15);border-radius:12px;padding:8px;cursor:pointer;text-align:left;transition:all .18s ease;display:flex;flex-direction:column;gap:4px}
-.char-card:hover{background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.4);transform:translateY(-2px)}
-.char-card.selected{border-color:var(--mint);background:rgba(46,229,157,.18);box-shadow:0 0 14px rgba(46,229,157,.35)}
-.char-card .card-head{display:flex;align-items:center;gap:6px}
-.char-card .avatar-icon{font-size:22px;line-height:1}
-.char-card .name{font-weight:900;font-size:13px;line-height:1.2;color:#fff}
-.char-card .subtext{font-size:11px;opacity:.85;line-height:1.3}
-.char-card .badge{align-self:flex-start;font-size:10px;font-weight:900;border-radius:6px;padding:1px 6px;margin-top:2px}
-.char-card.selected .badge{background:var(--mint);color:var(--plum)}
-.char-card:not(.selected) .badge{background:rgba(255,255,255,.2);color:#fff}
 
 .pl{display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:10px;background:rgba(255,255,255,.07);margin-bottom:5px;font-weight:700;font-size:14px}
 .pl.me{background:rgba(46,229,157,.18)}
 .pl .n{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.pl .cbadge{font-size:11px;opacity:.9;background:rgba(255,255,255,.14);border-radius:6px;padding:2px 6px}
 .pl em{font-style:normal;font-size:11px;background:var(--sun);color:var(--plum);border-radius:6px;padding:1px 6px;font-weight:900}
 .pl .rd{font-size:12px;opacity:.9}
 .row2{display:flex;gap:8px;margin-top:8px}
@@ -118,7 +103,6 @@ input{flex:1;min-width:0;border-radius:12px;border:2px solid rgba(255,255,255,.3
 #menuDoor .door-btns{display:flex;flex-direction:column;gap:8px}
 #menuDoor button{width:100%;padding:14px 12px;font-size:15px}
 #menuDoor .door-sub{font-size:11px;opacity:.8;font-weight:700;margin-top:2px}
-body.menu-mode #lobby .char-selector,
 body.menu-mode #plist,
 body.menu-mode #startBtn,
 body.menu-mode .room-box,
@@ -200,16 +184,8 @@ body.show-mobile #mobileCtrls{display:block}
   #lobby{left:max(8px,env(safe-area-inset-left));right:max(8px,env(safe-area-inset-right));top:max(8px,env(safe-area-inset-top));width:auto;max-width:none;max-height:calc(100% - 16px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));padding:12px 12px 14px;border-radius:14px}
   #lobby h1{font-size:clamp(24px,7vw,30px)}
   #lobby .lead{font-size:12px;margin:4px 0 8px}
-  .char-selector{padding:8px;margin:8px 0 10px}
-  .char-title{font-size:11px;margin-bottom:6px}
-  .char-grid{gap:6px}
-  .char-card{padding:7px;border-radius:10px}
-  .char-card .avatar-icon{font-size:20px}
-  .char-card .name{font-size:12px}
-  .char-card .subtext{font-size:10px}
-  .pl{font-size:12px;padding:5px 7px;gap:6px;margin-bottom:4px}
-  .pl .cbadge{font-size:10px;padding:1px 5px}
-  .pl em{font-size:10px}
+        .pl{font-size:12px;padding:5px 7px;gap:6px;margin-bottom:4px}
+    .pl em{font-size:10px}
   .row2{gap:6px;margin-top:6px}
   button,input{font-size:13px;padding:11px 12px;border-radius:11px;min-height:44px}
   #lobbyNote{font-size:11px;margin-top:6px}
@@ -239,7 +215,6 @@ body.show-mobile #mobileCtrls{display:block}
   #btnJump{bottom:max(14px,env(safe-area-inset-bottom))}
   #btnDash{bottom:max(86px,calc(env(safe-area-inset-bottom) + 70px))}
   body.show-mobile #hint,body.show-mobile #ping,body.show-mobile #tr{bottom:max(130px,calc(env(safe-area-inset-bottom) + 118px))}
-  .char-grid{grid-template-columns:1fr}
   #lobby h1{font-size:22px}
 }
 
@@ -266,9 +241,7 @@ body.show-mobile #mobileCtrls{display:block}
   #lobby{max-height:calc(100% - 12px);padding:8px 10px}
   #lobby h1{font-size:20px}
   #lobby .lead{font-size:11px;margin:2px 0 6px}
-  .char-selector{margin:4px 0 6px;padding:6px}
-  .char-grid{grid-template-columns:1fr 1fr}
-  .row2{margin-top:4px}
+    .row2{margin-top:4px}
   button,input{min-height:40px;padding:8px 10px;font-size:12px}
   #msg{top:40%}
   #msg .t{font-size:clamp(18px,5vh,32px)}
@@ -284,9 +257,7 @@ body.show-mobile #mobileCtrls{display:block}
   #lobby{padding:10px}
   #lobby h1{font-size:22px}
   #lobby .lead{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-  .char-card .subtext{display:none}
-  .char-selector{margin:6px 0 8px}
-}
+  }
 
 
 /* ===== Admin sistemi ===== */
@@ -403,40 +374,6 @@ body.ph-lobby #uiTopBtns{display:none}
       <div class="gw-dots">···</div>
     </div>
 
-    <!-- Karakter Seçimi -->
-    <div class="char-selector">
-      <div class="char-title">
-        <span>Karakterini Seç (Skin)</span>
-        <span style="font-size:11px;opacity:.7">Oyun boyu kalır</span>
-      </div>
-      <div class="char-grid">
-        <div id="charBtn1" class="char-card selected">
-          <div class="card-head">
-            <span class="avatar-icon">🧔</span>
-            <div>
-              <div class="name">Karakter 1</div>
-              <div style="font-size:11px;opacity:.8">Savaşçı / Boss</div>
-            </div>
-          </div>
-          <div class="subtext">Kel, gür sakallı, piercingli, siyah WILD tişört</div>
-          <div class="badge">Seçildi ✓</div>
-        </div>
-
-        <div id="charBtn2" class="char-card">
-          <div class="card-head">
-            <span class="avatar-icon">🎩</span>
-            <div>
-              <div class="name">Karakter 2</div>
-              <div style="font-size:11px;opacity:.8">Beyefendi</div>
-            </div>
-          </div>
-          <div class="subtext">Gri fötr şapka, bıyık, siyah ceket & gri gömlek</div>
-          <div class="badge">Seç</div>
-        </div>
-      </div>
-    </div>
-
-
     <!-- Oyuncu Listesi -->
     <div id="plist"></div>
 
@@ -515,7 +452,7 @@ body.ph-lobby #uiTopBtns{display:none}
       <li><b>ESC</b> — duraklat / menü</li>
       <li>Mobilde sol joystick + sağdaki Zıpla / Atıl butonları</li>
       <li>5 mini oyun: elenenler seyirci olur, son kalan şampiyon olur</li>
-      <li>Lobide karakterini seç, ismini yaz, kurucu «Oyunu başlat»a basar</li>
+      <li>Lobide ismini yaz, kurucu «Oyunu başlat»a basar</li>
     </ul>
     <button id="helpClose" class="go" type="button">Anladım</button>
   </div>
@@ -555,122 +492,148 @@ function an(e, S) {
       sx: M,
       sy: y,
       u: T,
-      color: N,
       walk: H,
       moving: I,
       fall: p,
-      out: w,
-      fin: q,
       alpha: _
-    } = S, L = S.charType || "char1";
+    } = S;
   e.save(), e.globalAlpha = _, e.translate(M, y), p > 0 && (e.rotate(p * 1.55), e.translate(0, p * 0.4 * T)), e.scale(T, T);
   let C = I ? Math.abs(Math.sin(H * 2)) * 0.08 : 0, x = I ? Math.sin(H) : 0, Q = I ? Math.sin(H) * 0.35 : 0;
-  e.lineJoin = "round", e.lineCap = "round", L === "char1" ? Ft(e, {
-    color: N,
+  e.lineJoin = "round", e.lineCap = "round", Ft(e, {
+    color: S.color,
     walk: H,
     moving: I,
     fall: p,
-    out: w,
-    fin: q,
+    out: S.out,
+    fin: S.fin,
     bob: C,
     sw: x,
-    armSw: Q
-  }) : Kt(e, {
-    color: N,
-    walk: H,
-    moving: I,
-    fall: p,
-    out: w,
-    fin: q,
-    bob: C,
-    sw: x,
-    armSw: Q
+    armSw: Q,
+    ph: S.ph || 0
   }), e.restore();
 }
+/* Kıvılcım — özgün oyun maskotu: gözlüklü, parlayan kuyruklu küçük tilki */
 function Ft(e, S) {
-  let {
-      color: M,
-      out: y,
-      fin: T,
-      bob: N,
-      sw: H,
-      armSw: I,
-      fall: p
-    } = S, w = y && p > 0.4 ? "#9e9aa8" : "#f0c2a2", q = y && p > 0.4 ? "#7c7886" : "#dfa585", _ = y && p > 0.4 ? "#524e5a" : "#5c3d28", L = y && p > 0.4 ? "#686470" : "#785338", C = y && p > 0.4 ? "#333238" : "#17161b", x = y && p > 0.4 ? "#25242b" : "#141318", Q = Math.max(0, H) * 0.14, se = Math.max(0, -H) * 0.14;
-  e.fillStyle = x, e.beginPath(), e.roundRect(-0.38, -0.62 - Q, 0.28, 0.62 + Q, 0.1), e.fill(), e.beginPath(), e.roundRect(0.1, -0.62 - se, 0.28, 0.62 + se, 0.1), e.fill(), e.fillStyle = "#1c1b22", e.beginPath(), e.roundRect(-0.41, -0.16 - Q, 0.32, 0.16, 0.06), e.fill(), e.fillStyle = "#ffffff", e.fillRect(-0.41, -0.04 - Q, 0.32, 0.04), e.fillStyle = M, e.fillRect(-0.35, -0.12 - Q, 0.18, 0.03), e.fillStyle = "#1c1b22", e.beginPath(), e.roundRect(0.08, -0.16 - se, 0.32, 0.16, 0.06), e.fill(), e.fillStyle = "#ffffff", e.fillRect(0.08, -0.04 - se, 0.32, 0.04), e.fillStyle = M, e.fillRect(0.14, -0.12 - se, 0.18, 0.03), e.translate(0, -N);
-  let o = T ? -1.65 - Math.abs(Math.sin(S.walk * 0.6)) * 0.2 : -1.1 + I, he = T ? -1.65 - Math.abs(Math.sin(S.walk * 0.6 + 1)) * 0.2 : -1.1 - I, ne = T ? -0.4 : 0.15 + I * 0.3, te = T ? 0.4 : -0.15 - I * 0.3;
-  e.save(), e.translate(-0.52, o), e.rotate(ne), e.fillStyle = C, e.beginPath(), e.roundRect(-0.13, -0.16, 0.26, 0.28, 0.1), e.fill(), e.fillStyle = w, e.beginPath(), e.roundRect(-0.1, 0.12, 0.2, 0.34, 0.08), e.fill(), e.fillStyle = q, e.beginPath(), e.arc(0, 0.46, 0.09, 0, Math.PI * 2), e.fill(), e.restore(), e.save(), e.translate(0.52, he), e.rotate(te), e.fillStyle = C, e.beginPath(), e.roundRect(-0.13, -0.16, 0.26, 0.28, 0.1), e.fill(), e.fillStyle = w, e.beginPath(), e.roundRect(-0.1, 0.12, 0.2, 0.34, 0.08), e.fill(), e.fillStyle = q, e.beginPath(), e.arc(0, 0.46, 0.09, 0, Math.PI * 2), e.fill(), e.restore(), e.fillStyle = C, e.beginPath(), e.roundRect(-0.46, -1.34, 0.92, 0.8, [
-    0.24,
-    0.24,
-    0.08,
-    0.08
-  ]), e.fill(), e.fillStyle = "#26252c", e.beginPath(), e.ellipse(0, -1.32, 0.22, 0.1, 0, 0, Math.PI), e.fill(), e.fillStyle = q, e.beginPath(), e.ellipse(0, -1.34, 0.17, 0.08, 0, 0, Math.PI), e.fill(), e.fillStyle = "#ffffff", e.font = "900 0.13px sans-serif", e.textAlign = "center", e.textBaseline = "middle", e.fillText("WILD", 0, -1.06), e.strokeStyle = "rgba(255,255,255,0.06)", e.lineWidth = 0.02, e.beginPath(), e.moveTo(-0.25, -0.9), e.lineTo(0.25, -0.9), e.stroke();
-  let z = -1.68;
-  if (e.fillStyle = q, e.fillRect(-0.14, z + 0.15, 0.28, 0.22), e.fillStyle = w, e.beginPath(), e.roundRect(-0.36, z - 0.44, 0.72, 0.78, [
-      0.36,
-      0.36,
-      0.28,
-      0.28
-    ]), e.fill(), e.fillStyle = "rgba(255,255,255,0.22)", e.beginPath(), e.ellipse(-0.08, z - 0.32, 0.18, 0.09, -0.2, 0, Math.PI * 2), e.fill(), e.fillStyle = w, e.beginPath(), e.arc(-0.37, z - 0.08, 0.08, 0, Math.PI * 2), e.arc(0.37, z - 0.08, 0.08, 0, Math.PI * 2), e.fill(), e.fillStyle = q, e.beginPath(), e.arc(-0.36, z - 0.08, 0.04, 0, Math.PI * 2), e.arc(0.36, z - 0.08, 0.04, 0, Math.PI * 2), e.fill(), e.strokeStyle = "#382215", e.lineWidth = 0.045, e.beginPath(), e.moveTo(-0.24, z - 0.17), e.lineTo(-0.06, z - 0.16), e.moveTo(0.06, z - 0.16), e.lineTo(0.24, z - 0.17), e.stroke(), y && p > 0.4) {
-    e.strokeStyle = "#2d2420", e.lineWidth = 0.04;
-    for (let F of [
-        -0.15,
-        0.15
-      ])
-      e.beginPath(), e.moveTo(F - 0.06, z - 0.11), e.lineTo(F + 0.06, z + 0.01), e.moveTo(F + 0.06, z - 0.11), e.lineTo(F - 0.06, z + 0.01), e.stroke();
-  } else
-    T ? (e.strokeStyle = "#22150d", e.lineWidth = 0.04, e.beginPath(), e.arc(-0.15, z - 0.04, 0.07, Math.PI * 1.1, Math.PI * 1.9), e.stroke(), e.beginPath(), e.arc(0.15, z - 0.04, 0.07, Math.PI * 1.1, Math.PI * 1.9), e.stroke()) : (e.fillStyle = "#ffffff", e.beginPath(), e.ellipse(-0.15, z - 0.07, 0.08, 0.065, 0, 0, Math.PI * 2), e.ellipse(0.15, z - 0.07, 0.08, 0.065, 0, 0, Math.PI * 2), e.fill(), e.fillStyle = "#5a9cad", e.beginPath(), e.arc(-0.15, z - 0.07, 0.045, 0, Math.PI * 2), e.arc(0.15, z - 0.07, 0.045, 0, Math.PI * 2), e.fill(), e.fillStyle = "#1a1d20", e.beginPath(), e.arc(-0.15, z - 0.07, 0.024, 0, Math.PI * 2), e.arc(0.15, z - 0.07, 0.024, 0, Math.PI * 2), e.fill(), e.fillStyle = "#ffffff", e.beginPath(), e.arc(-0.17, z - 0.09, 0.015, 0, Math.PI * 2), e.arc(0.13, z - 0.09, 0.015, 0, Math.PI * 2), e.fill());
-  e.fillStyle = q, e.beginPath(), e.ellipse(0, z - 0.01, 0.065, 0.08, 0, 0, Math.PI * 2), e.fill(), e.strokeStyle = "#d5e0ea", e.lineWidth = 0.025, e.beginPath(), e.arc(0.07, z + 0.01, 0.03, -Math.PI * 0.4, Math.PI * 0.6), e.stroke(), e.fillStyle = _, e.beginPath(), e.moveTo(-0.35, z - 0.02), e.lineTo(-0.35, z + 0.16), e.bezierCurveTo(-0.36, z + 0.36, -0.15, z + 0.42, 0, z + 0.42), e.bezierCurveTo(0.15, z + 0.42, 0.36, z + 0.36, 0.35, z + 0.16), e.lineTo(0.35, z - 0.02), e.lineTo(0.18, z + 0.04), e.lineTo(-0.18, z + 0.04), e.closePath(), e.fill(), e.fillStyle = L, e.beginPath(), e.ellipse(0, z + 0.28, 0.18, 0.1, 0, 0, Math.PI), e.fill(), e.fillStyle = L, e.beginPath(), e.ellipse(0, z + 0.09, 0.19, 0.07, 0, 0, Math.PI), e.fill(), e.fillStyle = _, e.beginPath(), e.moveTo(-0.18, z + 0.09), e.quadraticCurveTo(0, z + 0.14, 0.18, z + 0.09), e.quadraticCurveTo(0, z + 0.05, -0.18, z + 0.09), e.fill();
-}
-function Kt(e, S) {
-  let {
-      color: M,
-      out: y,
-      fin: T,
-      bob: N,
-      sw: H,
-      armSw: I,
-      fall: p
-    } = S, w = y && p > 0.4 ? "#9e9aa8" : "#eec2a4", q = y && p > 0.4 ? "#7c7886" : "#daa484", _ = y && p > 0.4 ? "#4a4650" : "#232026", L = y && p > 0.4 ? "#2c2b33" : "#1a1920", C = y && p > 0.4 ? "#383640" : "#282630", x = y && p > 0.4 ? "#686770" : "#767e8a", Q = y && p > 0.4 ? "#25242b" : "#1e1d24", se = y && p > 0.4 ? "#666570" : "#5a626f", o = y && p > 0.4 ? "#4f4e58" : "#454c57", he = "#131317", ne = Math.max(0, H) * 0.14, te = Math.max(0, -H) * 0.14;
-  e.fillStyle = Q, e.beginPath(), e.roundRect(-0.38, -0.62 - ne, 0.28, 0.62 + ne, 0.08), e.fill(), e.beginPath(), e.roundRect(0.1, -0.62 - te, 0.28, 0.62 + te, 0.08), e.fill(), e.fillStyle = "#100f14", e.beginPath(), e.roundRect(-0.41, -0.16 - ne, 0.33, 0.16, [
-    0.08,
-    0.1,
-    0.04,
-    0.04
-  ]), e.fill(), e.fillStyle = "rgba(255,255,255,0.2)", e.fillRect(-0.35, -0.14 - ne, 0.16, 0.03), e.fillStyle = M, e.fillRect(-0.38, -0.04 - ne, 0.28, 0.03), e.fillStyle = "#100f14", e.beginPath(), e.roundRect(0.08, -0.16 - te, 0.33, 0.16, [
-    0.1,
-    0.08,
-    0.04,
-    0.04
-  ]), e.fill(), e.fillStyle = "rgba(255,255,255,0.2)", e.fillRect(0.14, -0.14 - te, 0.16, 0.03), e.fillStyle = M, e.fillRect(0.1, -0.04 - te, 0.28, 0.03), e.translate(0, -N);
-  let z = T ? -1.65 - Math.abs(Math.sin(S.walk * 0.6)) * 0.2 : -1.1 + I, F = T ? -1.65 - Math.abs(Math.sin(S.walk * 0.6 + 1)) * 0.2 : -1.1 - I, U = T ? -0.4 : 0.14 + I * 0.3, ee = T ? 0.4 : -0.14 - I * 0.3;
-  e.save(), e.translate(-0.52, z), e.rotate(U), e.fillStyle = L, e.beginPath(), e.roundRect(-0.13, -0.16, 0.26, 0.54, 0.1), e.fill(), e.fillStyle = x, e.fillRect(-0.1, 0.38, 0.2, 0.05), e.fillStyle = w, e.beginPath(), e.arc(0, 0.48, 0.085, 0, Math.PI * 2), e.fill(), e.restore(), e.save(), e.translate(0.52, F), e.rotate(ee), e.fillStyle = L, e.beginPath(), e.roundRect(-0.13, -0.16, 0.26, 0.54, 0.1), e.fill(), e.fillStyle = x, e.fillRect(-0.1, 0.38, 0.2, 0.05), e.fillStyle = w, e.beginPath(), e.arc(0, 0.48, 0.085, 0, Math.PI * 2), e.fill(), e.restore(), e.fillStyle = x, e.beginPath(), e.roundRect(-0.35, -1.34, 0.7, 0.78, 0.12), e.fill(), e.fillStyle = q, e.beginPath(), e.moveTo(-0.12, -1.34), e.lineTo(0.12, -1.34), e.lineTo(0, -1.08), e.closePath(), e.fill(), e.fillStyle = "#8a94a2", e.beginPath(), e.moveTo(-0.16, -1.34), e.lineTo(-0.06, -1.2), e.lineTo(-0.14, -1.16), e.closePath(), e.fill(), e.beginPath(), e.moveTo(0.16, -1.34), e.lineTo(0.06, -1.2), e.lineTo(0.14, -1.16), e.closePath(), e.fill(), e.fillStyle = L, e.beginPath(), e.roundRect(-0.46, -1.34, 0.36, 0.82, [
-    0.2,
-    0.05,
-    0.08,
-    0.18
-  ]), e.fill(), e.beginPath(), e.roundRect(0.1, -1.34, 0.36, 0.82, [
-    0.05,
-    0.2,
-    0.18,
-    0.08
-  ]), e.fill(), e.fillStyle = C, e.beginPath(), e.moveTo(-0.42, -1.32), e.lineTo(-0.16, -1.1), e.lineTo(-0.25, -0.92), e.lineTo(-0.44, -1.1), e.closePath(), e.fill(), e.beginPath(), e.moveTo(0.42, -1.32), e.lineTo(0.16, -1.1), e.lineTo(0.25, -0.92), e.lineTo(0.44, -1.1), e.closePath(), e.fill();
-  let v = -1.68;
-  if (e.fillStyle = q, e.fillRect(-0.13, v + 0.15, 0.26, 0.2), e.fillStyle = w, e.beginPath(), e.roundRect(-0.35, v - 0.38, 0.7, 0.72, [
-      0.28,
-      0.28,
-      0.25,
-      0.25
-    ]), e.fill(), e.fillStyle = w, e.beginPath(), e.arc(-0.36, v - 0.05, 0.075, 0, Math.PI * 2), e.arc(0.36, v - 0.05, 0.075, 0, Math.PI * 2), e.fill(), e.fillStyle = "#26222b", e.beginPath(), e.arc(-0.34, v - 0.12, 0.065, 0, Math.PI * 2), e.arc(0.34, v - 0.12, 0.065, 0, Math.PI * 2), e.fillRect(-0.36, v - 0.14, 0.08, 0.12), e.fillRect(0.28, v - 0.14, 0.08, 0.12), e.fill(), e.strokeStyle = "#26212b", e.lineWidth = 0.042, e.beginPath(), e.moveTo(-0.24, v - 0.12), e.quadraticCurveTo(-0.15, v - 0.15, -0.06, v - 0.11), e.moveTo(0.06, v - 0.11), e.quadraticCurveTo(0.15, v - 0.15, 0.24, v - 0.12), e.stroke(), y && p > 0.4) {
-    e.strokeStyle = "#2b2326", e.lineWidth = 0.04;
-    for (let ce of [
-        -0.15,
-        0.15
-      ])
-      e.beginPath(), e.moveTo(ce - 0.06, v - 0.07), e.lineTo(ce + 0.06, v + 0.05), e.moveTo(ce + 0.06, v - 0.07), e.lineTo(ce - 0.06, v + 0.05), e.stroke();
-  } else
-    T ? (e.strokeStyle = "#231c20", e.lineWidth = 0.04, e.beginPath(), e.arc(-0.15, v + 0.01, 0.07, Math.PI * 1.1, Math.PI * 1.9), e.stroke(), e.beginPath(), e.arc(0.15, v + 0.01, 0.07, Math.PI * 1.1, Math.PI * 1.9), e.stroke()) : (e.fillStyle = "#ffffff", e.beginPath(), e.ellipse(-0.15, v - 0.03, 0.08, 0.06, 0, 0, Math.PI * 2), e.ellipse(0.15, v - 0.03, 0.08, 0.06, 0, 0, Math.PI * 2), e.fill(), e.fillStyle = "#3a271c", e.beginPath(), e.arc(-0.15, v - 0.03, 0.045, 0, Math.PI * 2), e.arc(0.15, v - 0.03, 0.045, 0, Math.PI * 2), e.fill(), e.fillStyle = "#110f13", e.beginPath(), e.arc(-0.15, v - 0.03, 0.025, 0, Math.PI * 2), e.arc(0.15, v - 0.03, 0.025, 0, Math.PI * 2), e.fill(), e.fillStyle = "#ffffff", e.beginPath(), e.arc(-0.17, v - 0.05, 0.015, 0, Math.PI * 2), e.arc(0.13, v - 0.05, 0.015, 0, Math.PI * 2), e.fill());
-  e.fillStyle = q, e.beginPath(), e.ellipse(0, v + 0.04, 0.07, 0.09, 0, 0, Math.PI * 2), e.fill(), e.fillStyle = _, e.beginPath(), e.moveTo(-0.18, v + 0.16), e.quadraticCurveTo(-0.09, v + 0.11, 0, v + 0.13), e.quadraticCurveTo(0.09, v + 0.11, 0.18, v + 0.16), e.quadraticCurveTo(0.1, v + 0.22, 0, v + 0.2), e.quadraticCurveTo(-0.1, v + 0.22, -0.18, v + 0.16), e.fill(), e.fillStyle = "rgba(0,0,0,0.08)", e.beginPath(), e.arc(0, v + 0.28, 0.06, 0, Math.PI), e.fill(), e.fillStyle = "rgba(0,0,0,0.18)", e.beginPath(), e.ellipse(0, v - 0.17, 0.38, 0.08, 0, 0, Math.PI), e.fill(), e.fillStyle = se, e.beginPath(), e.moveTo(-0.34, v - 0.26), e.lineTo(-0.28, v - 0.58), e.quadraticCurveTo(-0.14, v - 0.52, 0, v - 0.57), e.quadraticCurveTo(0.14, v - 0.52, 0.28, v - 0.58), e.lineTo(0.34, v - 0.26), e.closePath(), e.fill(), e.fillStyle = o, e.beginPath(), e.ellipse(0, v - 0.55, 0.15, 0.05, 0, 0, Math.PI * 2), e.fill(), e.fillStyle = he, e.beginPath(), e.roundRect(-0.35, v - 0.35, 0.7, 0.11, 0.03), e.fill(), e.fillStyle = se, e.beginPath(), e.ellipse(0, v - 0.24, 0.49, 0.14, 0, 0, Math.PI * 2), e.fill(), e.fillStyle = o, e.beginPath(), e.ellipse(0, v - 0.22, 0.48, 0.08, 0, 0, Math.PI), e.fill();
+  let M = S.color, gr = S.out && S.fall > 0.4, fin = S.fin, mv = S.moving, sw = S.sw, armSw = S.armSw, PI2 = Math.PI * 2;
+  let t = Date.now() / 1000 + S.ph * 0.37;
+  let tone = c => {
+    if (!gr) return c;
+    let m = /^#([0-9a-f]{6})$/i.exec(c);
+    if (!m) return "#8d8a98";
+    let n = parseInt(m[1], 16), l = Math.round(0.3 * (n >> 16 & 255) + 0.59 * (n >> 8 & 255) + 0.11 * (n & 255)) * 0.8 + 30;
+    return "rgb(" + (l | 0) + "," + ((l - 2) | 0) + "," + ((l + 8) | 0) + ")";
+  };
+  let FUR = tone("#ff9f43"), FURD = tone("#e8772e"), CREAM = tone("#fff2df"), HOOD = tone("#2a2f6e"), HOODL = tone("#3a4192"),
+      HOODD = tone("#1f2250"), PINK = tone("#ff9db5"), DARK = tone("#2a1d3a"), ACC = tone(M), ACCD = tone("#101020");
+  if (!gr && /^#[0-9a-f]{6}$/i.test(M)) {
+    let n = parseInt(M.slice(1), 16);
+    ACCD = "rgb(" + ((n >> 16 & 255) * 0.62 | 0) + "," + ((n >> 8 & 255) * 0.62 | 0) + "," + ((n & 255) * 0.62 | 0) + ")";
+  }
+  let fillP = (c) => { e.fillStyle = c; e.fill(); };
+  /* --- kuyruk (arkada) --- */
+  let tail = fin ? Math.sin(t * 9) * 0.28 : (mv ? Math.sin(S.walk * 2) * 0.3 : Math.sin(t * 2) * 0.12);
+  e.save(); e.translate(0.3, -0.74 - S.bob); e.rotate(tail);
+  e.beginPath(); e.ellipse(0.4, -0.12, 0.46, 0.2, -0.7, 0, PI2); fillP(FUR);
+  e.beginPath(); e.ellipse(0.3, -0.04, 0.26, 0.09, -0.7, 0, PI2); fillP(FURD);
+  if (!gr) {
+    e.globalAlpha *= 0.32; e.beginPath(); e.arc(0.72, -0.4, 0.23, 0, PI2); fillP(ACC); e.globalAlpha /= 0.32;
+  }
+  e.beginPath(); e.arc(0.72, -0.4, 0.115, 0, PI2); fillP(gr ? CREAM : ACC);
+  e.beginPath(); e.arc(0.69, -0.43, 0.04, 0, PI2); fillP("rgba(255,255,255,.85)");
+  e.restore();
+  /* --- bacaklar --- */
+  let lq = Math.max(0, sw) * 0.14, rq = Math.max(0, -sw) * 0.14;
+  e.fillStyle = HOODD; e.beginPath(); e.roundRect(-0.34, -0.62 - lq, 0.26, 0.62 + lq, 0.1); e.fill();
+  e.beginPath(); e.roundRect(0.08, -0.62 - rq, 0.26, 0.62 + rq, 0.1); e.fill();
+  for (let [sx, q] of [[-0.38, lq], [0.05, rq]]) {
+    e.fillStyle = tone("#f4f6ff"); e.beginPath(); e.roundRect(sx, -0.16 - q, 0.33, 0.16, [0.09, 0.1, 0.04, 0.04]); e.fill();
+    e.fillStyle = ACC; e.fillRect(sx + 0.04, -0.12 - q, 0.17, 0.035);
+    e.fillStyle = HOOD; e.fillRect(sx, -0.04 - q, 0.33, 0.04);
+  }
+  e.translate(0, -S.bob - (mv || fin ? 0 : Math.sin(t * 2.2) * 0.012));
+  /* --- kollar --- */
+  let ay = fin ? -1.65 - Math.abs(Math.sin(S.walk * 0.6)) * 0.2 : -1.1 + armSw, by = fin ? -1.65 - Math.abs(Math.sin(S.walk * 0.6 + 1)) * 0.2 : -1.1 - armSw,
+      ar = fin ? -0.4 : 0.15 + armSw * 0.3, br = fin ? 0.4 : -0.15 - armSw * 0.3;
+  for (let [px, py, rot] of [[-0.54, ay, ar], [0.54, by, br]]) {
+    e.save(); e.translate(px, py); e.rotate(rot);
+    e.fillStyle = HOOD; e.beginPath(); e.roundRect(-0.13, -0.16, 0.26, 0.5, 0.11); e.fill();
+    e.fillStyle = ACC; e.fillRect(-0.13, 0.22, 0.26, 0.05);
+    e.fillStyle = CREAM; e.beginPath(); e.arc(0, 0.41, 0.105, 0, PI2); e.fill();
+    e.fillStyle = PINK; e.beginPath(); e.arc(0, 0.43, 0.04, 0, PI2); e.fill();
+    e.restore();
+  }
+  /* --- gövde (kapüşonlu) --- */
+  e.fillStyle = HOOD; e.beginPath(); e.roundRect(-0.44, -1.34, 0.88, 0.8, [0.26, 0.26, 0.1, 0.1]); e.fill();
+  e.fillStyle = HOODL; e.beginPath(); e.roundRect(-0.27, -0.84, 0.54, 0.24, 0.09); e.fill();
+  e.fillStyle = "rgba(255,255,255,0.1)"; e.beginPath(); e.ellipse(-0.2, -1.2, 0.12, 0.06, -0.4, 0, PI2); e.fill();
+  /* göğüste yıldız */
+  e.fillStyle = tone("#ffd84d"); e.beginPath();
+  for (let i = 0; i < 10; i++) {
+    let r = i % 2 ? 0.045 : 0.1, a = -Math.PI / 2 + i * Math.PI / 5;
+    i ? e.lineTo(Math.cos(a) * r, -1.04 + Math.sin(a) * r) : e.moveTo(Math.cos(a) * r, -1.04 + Math.sin(a) * r);
+  }
+  e.closePath(); e.fill();
+  /* atkı */
+  e.save(); e.translate(0.2, -1.3); e.rotate(mv ? -sw * 0.2 : Math.sin(t * 2.2) * 0.04);
+  e.fillStyle = ACCD; e.beginPath(); e.roundRect(-0.09, 0, 0.19, 0.46, 0.07); e.fill();
+  e.restore();
+  e.fillStyle = ACC; e.beginPath(); e.roundRect(-0.38, -1.44, 0.76, 0.22, 0.11); e.fill();
+  e.fillStyle = "rgba(255,255,255,0.22)"; e.fillRect(-0.28, -1.4, 0.22, 0.035);
+  /* --- kafa --- */
+  let z = -1.72, ear = mv ? sw * 0.025 : Math.sin(t * 1.7) * 0.012;
+  for (let k of [-1, 1]) {
+    let tw = (k > 0 && Math.sin(t * 0.9) > 0.97) ? -0.05 : 0;
+    e.fillStyle = FUR; e.beginPath(); e.moveTo(k * 0.4, z - 0.1); e.lineTo(k * 0.37, z - 0.66 + ear + tw); e.lineTo(k * 0.08, z - 0.32); e.closePath(); e.fill();
+    e.fillStyle = DARK; e.beginPath(); e.moveTo(k * 0.37, z - 0.66 + ear + tw); e.lineTo(k * 0.28, z - 0.46 + ear * 0.6); e.lineTo(k * 0.44, z - 0.4 + ear * 0.6); e.closePath(); e.fill();
+    e.fillStyle = PINK; e.beginPath(); e.moveTo(k * 0.33, z - 0.2); e.lineTo(k * 0.32, z - 0.45 + ear); e.lineTo(k * 0.17, z - 0.29); e.closePath(); e.fill();
+  }
+  e.fillStyle = HOODL; e.fillRect(-0.15, z + 0.26, 0.3, 0.16);
+  e.fillStyle = FUR; e.beginPath(); e.ellipse(0, z, 0.43, 0.39, 0, 0, PI2); e.fill();
+  e.fillStyle = CREAM;
+  for (let k of [-1, 1]) {
+    e.beginPath(); e.moveTo(k * 0.44, z + 0.08); e.lineTo(k * 0.54, z + 0.17); e.lineTo(k * 0.4, z + 0.2); e.closePath(); e.fill();
+    e.beginPath(); e.ellipse(k * 0.19, z + 0.14, 0.23, 0.2, k * 0.2, 0, PI2); e.fill();
+  }
+  e.beginPath(); e.ellipse(0, z + 0.2, 0.17, 0.13, 0, 0, PI2); e.fill();
+  e.fillStyle = "rgba(255,255,255,0.22)"; e.beginPath(); e.ellipse(-0.18, z - 0.3, 0.14, 0.05, -0.3, 0, PI2); e.fill();
+  /* gözlük (alında) */
+  e.fillStyle = HOODD; e.beginPath(); e.roundRect(-0.43, z - 0.28, 0.86, 0.08, 0.04); e.fill();
+  for (let k of [-1, 1]) {
+    e.fillStyle = ACC; e.beginPath(); e.arc(k * 0.16, z - 0.28, 0.12, 0, PI2); e.fill();
+    e.fillStyle = tone("#c4f7ff"); e.beginPath(); e.arc(k * 0.16, z - 0.28, 0.082, 0, PI2); e.fill();
+    e.fillStyle = "rgba(255,255,255,0.9)"; e.beginPath(); e.arc(k * 0.16 - 0.025, z - 0.31, 0.025, 0, PI2); e.fill();
+  }
+  /* yüz */
+  let ey = z - 0.01;
+  if (gr) {
+    e.strokeStyle = DARK; e.lineWidth = 0.045;
+    for (let k of [-0.17, 0.17]) {
+      e.beginPath(); e.moveTo(k - 0.06, ey - 0.06); e.lineTo(k + 0.06, ey + 0.06); e.moveTo(k + 0.06, ey - 0.06); e.lineTo(k - 0.06, ey + 0.06); e.stroke();
+    }
+  } else if (fin) {
+    e.strokeStyle = DARK; e.lineWidth = 0.05;
+    for (let k of [-0.17, 0.17]) { e.beginPath(); e.arc(k, ey + 0.03, 0.075, Math.PI * 1.1, Math.PI * 1.9); e.stroke(); }
+  } else {
+    let bl = (t % 3.8) < 0.11 ? 0.12 : 1;
+    for (let k of [-0.17, 0.17]) {
+      e.fillStyle = DARK; e.beginPath(); e.ellipse(k, ey, 0.075, 0.1 * bl, 0, 0, PI2); e.fill();
+      if (bl === 1) {
+        e.fillStyle = "#4de1d0"; e.beginPath(); e.ellipse(k, ey + 0.04, 0.052, 0.05, 0, 0, PI2); e.fill();
+        e.fillStyle = "#fff"; e.beginPath(); e.arc(k - 0.025, ey - 0.04, 0.03, 0, PI2); e.arc(k + 0.03, ey + 0.045, 0.015, 0, PI2); e.fill();
+      }
+    }
+  }
+  if (!gr) { e.fillStyle = "rgba(255,110,150,0.45)"; for (let k of [-1, 1]) { e.beginPath(); e.ellipse(k * 0.3, z + 0.11, 0.055, 0.035, 0, 0, PI2); e.fill(); } }
+  e.fillStyle = DARK; e.beginPath(); e.ellipse(0, z + 0.12, 0.05, 0.034, 0, 0, PI2); e.fill();
+  if (fin && !gr) {
+    e.fillStyle = DARK; e.beginPath(); e.ellipse(0, z + 0.25, 0.075, 0.06, 0, 0, Math.PI); e.fill();
+    e.fillStyle = PINK; e.beginPath(); e.ellipse(0, z + 0.275, 0.04, 0.026, 0, 0, Math.PI); e.fill();
+  } else {
+    e.strokeStyle = DARK; e.lineWidth = 0.028; e.beginPath();
+    if (gr) { e.moveTo(-0.06, z + 0.26); e.quadraticCurveTo(0, z + 0.22, 0.06, z + 0.26); }
+    else { e.moveTo(-0.08, z + 0.2); e.quadraticCurveTo(-0.04, z + 0.26, 0, z + 0.2); e.quadraticCurveTo(0.04, z + 0.26, 0.08, z + 0.2); }
+    e.stroke();
+  }
 }
 var ln = 8, V = 16, $ = 80, Un = $ + 16, rn = 7.4, Yn = 28, Zn = 9.2, Vn = 4000, Jn = 3500, Qn = 10000, ge = [
     "#ff5a5f",
@@ -1119,9 +1082,9 @@ function et() {
         col: null,
         oc: null,
         ot: null,
-        cp: null,
-        char: localStorage.getItem("antics_royale_char") || "char1"
+        cp: null
       }, he = -1000000000, ne = !1, te = 0, z = 0, F = null, U = new Set();
+    try { localStorage.removeItem("antics_royale_char"); } catch (_) {}
     function ee(n) {
       for (let a in n)
         a in o && (o[a] = n[a]);
@@ -2786,16 +2749,6 @@ function et() {
     }, e("nameIn").addEventListener("keydown", n => {
       n.key === "Enter" && wn();
     }), e("nameIn").value = /^Guest \d+$/.test(p.name) ? "" : p.name;
-    let An = e("charBtn1"), Tn = e("charBtn2");
-    An && Tn && (An.onclick = () => Rn("char1"), Tn.onclick = () => Rn("char2"));
-    function Rn(n) {
-      de(), O("pop"), o.char = n, localStorage.setItem("antics_royale_char", n), ee({ char: n }), Cn(), fe(o.x, 1, o.z, n === "char1" ? "#ffb020" : "#4a90ff", 12, 3);
-    }
-    function Cn() {
-      let n = e("charBtn1"), a = e("charBtn2");
-      !n || !a || (o.char === "char1" ? (n.classList.add("selected"), a.classList.remove("selected")) : (a.classList.add("selected"), n.classList.remove("selected")));
-    }
-    Cn();
 
     function Qe() {
       return o.st === "spec" || o.st === "out" && performance.now() - z > 1800;
@@ -3470,7 +3423,7 @@ function et() {
           continue;
         let A = g.k;
         (!(i.void && a !== "lobby" && t) || !!i.support(b.x, b.z, l, n, t)) && b.y > -0.3 && (s.fillStyle = "rgba(0,0,0,.22)", s.beginPath(), s.ellipse(g.x, g.y, 0.62 * A * (1 - K(b.y, 0, 3) * 0.15), 0.2 * A, 0, 0, 7), s.fill());
-        let B = Math.hypot(b.vx, b.vz) > 0.6 && b.y < 0.05, le = h.id === p.id ? o.oc : h.state.oc, Z = (h.id === p.id ? o.char : h.state && h.state.char) || "char1";
+        let B = Math.hypot(b.vx, b.vz) > 0.6 && b.y < 0.05, le = h.id === p.id ? o.oc : h.state.oc;
         an(s, {
           sx: k.x,
           sy: k.y,
@@ -3482,7 +3435,7 @@ function et() {
           out: m === "out" && le !== "f",
           fin: m === "fin" || h.id === f,
           alpha: m === "out" && le !== "f" ? 0.9 : 1,
-          charType: Z
+          ph: on(String(h.id)) % 1000
         }), b.fall < 0.6 && b.y > -6 && u.push({
           p: h,
           r: b,
@@ -3712,8 +3665,7 @@ function et() {
       let a = y.host;
       updateRoomBox();
       X(ae.plist, y.players.map(l => {
-        let c = ((l.id === p.id ? o.char : l.state && l.state.char) || "char1") === "char1" ? "\uD83E\uDDD4 Sakallı" : "\uD83C\uDFA9 Fötr Şapkalı";
-        return "<div class=\"pl" + (l.id === p.id ? " me" : "") + "\"><i style=\"background:" + x(l) + "\"></i><span class=\"n\">" + W(l.name) + (l.id === p.id ? " (sen)" : "") + "</span><span class=\"cbadge\">" + c + "</span>" + (a && l.id === a.id ? "<em>host</em>" : "") + (n.creatorId && l.id === n.creatorId ? "<em style=\"background:var(--mint)\">kurucu</em>" : "") + "</div>";
+        return "<div class=\"pl" + (l.id === p.id ? " me" : "") + "\"><i style=\"background:" + x(l) + "\"></i><span class=\"n\">" + W(l.name) + (l.id === p.id ? " (sen)" : "") + "</span>" + (a && l.id === a.id ? "<em>host</em>" : "") + (n.creatorId && l.id === n.creatorId ? "<em style=\"background:var(--mint)\">kurucu</em>" : "") + "</div>";
       }).join(""));
       let st = n || w();
       // Kurucu sabit kalır; çıkmış kurucu yerine başkası atanmaz
@@ -4002,7 +3954,6 @@ function et() {
     }), y.players.length && (w().phase || "lobby") !== "lobby" && (o.st = "spec"), p.setState({
       st: o.st,
       rdy: !1,
-      char: o.char,
       x: 0,
       y: 0,
       z: 0,
