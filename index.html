@@ -2281,12 +2281,30 @@ function et() {
     function isRealHost() {
       // Offline test mode: always host
       if (T) return !0;
-      // SDK: host object matches me, or isHost flag without conflicting host
+      // Server-authoritative: isHost / host from mp-client (set on join/create ack)
+      if (y.isHost === true) return !0;
       if (y.host && y.host.id === p.id) return !0;
-      if (y.isHost && (!y.host || y.host.id === p.id)) return !0;
-      // Fallback: alone in room or no host assigned yet
+      // Solo room: only player present must be host (covers brief hostId race)
+      if (y.players && y.players.length === 1 && y.players[0] && y.players[0].id === p.id) return !0;
       if (!y.host && y.players.length <= 1) return !0;
       return !1;
+    }
+    // Claim creatorId immediately on enter — no hostTick wait
+    (function claimCreatorNow() {
+      try {
+        let st = w() || {};
+        if (!st.creatorId && isRealHost()) {
+          y.setState({ creatorId: p.id });
+        }
+      } catch (_) {}
+    })();
+    if (typeof y.onHostChange === "function") {
+      y.onHostChange(() => {
+        try {
+          let st = w() || {};
+          if (!st.creatorId && isRealHost()) y.setState({ creatorId: p.id });
+        } catch (_) {}
+      });
     }
     function playerReady(pl) {
       if (!pl) return !1;
@@ -3592,9 +3610,11 @@ function et() {
       if (T) return true;
       let st = w() || {};
       let cid = st.creatorId;
-      // Kurucu id atanmışsa sadece o kişi kurucu görünümü alır (çıkmış olsa bile başkası almaz)
+      // Server host alone in room → always host view (no wait for creatorId)
+      if (isRealHost() && y.players.length <= 1) return true;
+      // Kurucu id atanmışsa sadece o kişi kurucu görünümü alır
       if (cid) return cid === p.id;
-      // Henüz kurucu yok: yalnız / SDK host ilk giren olabilir
+      // Henüz kurucu yok: yalnız / gerçek host
       if (y.players.length <= 1) return true;
       return isRealHost();
     }
