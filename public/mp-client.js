@@ -124,6 +124,7 @@ export function joinRoom(opts = {}) {
 
 function buildRoom(socket, res) {
   const playersMap = new Map();
+  // Host is authoritative from server ack — apply immediately, no client delay
   let hostId = res.hostId || null;
   let roomState = res.state ? { ...res.state } : { phase: "lobby" };
   let myId = res.playerId;
@@ -150,10 +151,32 @@ function buildRoom(socket, res) {
     return p;
   }
 
+  function setHostId(next, notify) {
+    const prev = hostId;
+    if (next === undefined) return;
+    hostId = next || null;
+    if (notify && prev !== hostId) {
+      hostChangeListeners.forEach((fn) => {
+        try {
+          fn(hostId ? playersMap.get(hostId) || null : null);
+        } catch (_) {}
+      });
+    }
+  }
+
   // seed players
   (res.players || []).forEach((pl) => upsertPlayer(pl));
   if (!playersMap.has(myId)) {
     upsertPlayer({ id: myId, name: res.name || "Sen", state: {} });
+  }
+
+  // Guarantee host for solo room on join/create response
+  if (!hostId && playersMap.size === 1 && playersMap.has(myId)) {
+    hostId = myId;
+  }
+  // Mirror host into room state.creatorId when missing so lobby UI is instant
+  if (hostId && !roomState.creatorId) {
+    roomState.creatorId = hostId;
   }
 
   const me = playersMap.get(myId);
@@ -179,18 +202,19 @@ function buildRoom(socket, res) {
       if (!ids.has(id) && id !== myId) playersMap.delete(id);
     }
     (msg.players || []).forEach((pl) => {
-      const existed = playersMap.has(pl.id);
       const p = upsertPlayer(pl);
       // full state replace on roster sync if provided
       if (pl.state) p.state = { ...pl.state };
     });
-    if (msg.hostId) hostId = msg.hostId;
+    if ("hostId" in msg) setHostId(msg.hostId, true);
+    if (msg.creatorId && roomState) roomState.creatorId = msg.creatorId;
   });
 
   socket.on("player_join", (msg) => {
     if (!msg || !msg.player) return;
     const p = upsertPlayer(msg.player);
-    if (msg.hostId) hostId = msg.hostId;
+    if ("hostId" in msg) setHostId(msg.hostId, true);
+    if (msg.creatorId && roomState) roomState.creatorId = msg.creatorId;
     joinListeners.forEach((fn) => {
       try {
         fn(p);
@@ -202,7 +226,8 @@ function buildRoom(socket, res) {
     if (!msg || !msg.id) return;
     const p = playersMap.get(msg.id);
     playersMap.delete(msg.id);
-    if (msg.hostId) hostId = msg.hostId;
+    if ("hostId" in msg) setHostId(msg.hostId, true);
+    if (msg.creatorId && roomState) roomState.creatorId = msg.creatorId;
     leaveListeners.forEach((fn) => {
       try {
         fn(p || { id: msg.id, name: msg.name || "Oyuncu", state: {} });
@@ -245,10 +270,11 @@ function buildRoom(socket, res) {
 
   socket.on("host_change", (msg) => {
     if (!msg) return;
-    if (msg.hostId) hostId = msg.hostId;
+    if ("hostId" in msg) setHostId(msg.hostId, false);
+    if (msg.creatorId && roomState) roomState.creatorId = msg.creatorId;
     hostChangeListeners.forEach((fn) => {
       try {
-        fn(playersMap.get(hostId) || null);
+        fn(hostId ? playersMap.get(hostId) || null : null);
       } catch (_) {}
     });
   });
