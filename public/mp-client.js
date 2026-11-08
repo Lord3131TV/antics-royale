@@ -50,7 +50,60 @@ function makePlayer(data, socket, isMe) {
 }
 
 /**
- * Join or create a room. Returns a room object compatible with the game.
+ * Create an empty room on the server and return its code.
+ * Does NOT seat a player — caller should navigate to ?room=CODE then joinRoom.
+ * @param {{ name?: string }} opts
+ * @returns {Promise<{ code: string }>}
+ */
+export function createRoom(opts = {}) {
+  return new Promise((resolve, reject) => {
+    const nameHint =
+      opts.name ||
+      (typeof sessionStorage !== "undefined" && sessionStorage.getItem("antics_name")) ||
+      "";
+
+    const socket = io(SERVER_URL, {
+      transports: ["websocket", "polling"],
+      reconnection: false,
+      timeout: 12000,
+    });
+
+    let settled = false;
+    const fail = (err) => {
+      if (settled) return;
+      settled = true;
+      try {
+        socket.disconnect();
+      } catch (_) {}
+      reject(err instanceof Error ? err : new Error(String(err)));
+    };
+
+    const timeout = setTimeout(() => fail(new Error("Bağlantı zaman aşımı")), 15000);
+
+    socket.on("connect_error", (e) => {
+      console.warn("[mp] connect_error", e && e.message);
+    });
+
+    socket.once("connect", () => {
+      socket.emit("create_room", { name: nameHint || "Oyuncu" }, (res) => {
+        clearTimeout(timeout);
+        try {
+          socket.disconnect();
+        } catch (_) {}
+        if (!res || !res.ok || !res.code) {
+          fail(new Error((res && res.error) || "create_failed"));
+          return;
+        }
+        settled = true;
+        resolve({ code: String(res.code) });
+      });
+    });
+  });
+}
+
+/**
+ * Join an existing room (or create+join only if no room code and createAndJoin).
+ * Normal game path: always pass { room: CODE } after createRoom + redirect.
  * @param {{ room?: string, name?: string }} opts
  */
 export function joinRoom(opts = {}) {
@@ -66,6 +119,22 @@ export function joinRoom(opts = {}) {
           .replace(/[^A-Z0-9]/g, "")
           .slice(0, 8) || null
       : null;
+
+    // Creating a room must not seat a player here — use createRoom() instead.
+    // Guard: if someone calls joinRoom({}) without a code, still create empty
+    // room server-side then reject so UI redirects via createRoom path.
+    if (!wantCode) {
+      createRoom({ name: nameHint })
+        .then((r) => {
+          // Signal caller to redirect rather than treating this as a seated session
+          const err = new Error("ROOM_CREATED_REDIRECT");
+          err.code = r.code;
+          err.redirect = true;
+          reject(err);
+        })
+        .catch(reject);
+      return;
+    }
 
     const socket = io(SERVER_URL, {
       transports: ["websocket", "polling"],
@@ -93,11 +162,9 @@ export function joinRoom(opts = {}) {
     });
 
     socket.once("connect", () => {
-      const payload = { name: nameHint || "Oyuncu" };
-      const event = wantCode ? "join_room" : "create_room";
-      if (wantCode) payload.code = wantCode;
+      const payload = { name: nameHint || "Oyuncu", code: wantCode };
 
-      socket.emit(event, payload, (res) => {
+      socket.emit("join_room", payload, (res) => {
         clearTimeout(timeout);
         if (!res || !res.ok) {
           const errKey = (res && res.error) || "join_failed";
@@ -390,4 +457,4 @@ function buildRoom(socket, res) {
 }
 
 /** Default export shape similar to sdk module */
-export default { joinRoom, setServerUrl, getServerUrl };
+export default { joinRoom, createRoom, setServerUrl, getServerUrl };
