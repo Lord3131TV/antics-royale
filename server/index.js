@@ -261,30 +261,27 @@ io.on("connection", (socket) => {
 
   socket.on("create_room", (payload, ack) => {
     try {
-      const name = String((payload && payload.name) || "Oyuncu").slice(0, 16);
+      // Create an EMPTY room only. Do NOT seat a player here.
+      // Client flow: create_room → redirect ?room=CODE → single join_room.
+      // Seating on create caused a duplicate ghost when the page reloaded
+      // before the create socket finished disconnecting.
       const code = genCode();
-      const room = new Room(code, socket.id, name);
-      const playerId = genId();
-      const player = new Player(playerId, name, socket.id);
-      // First player is host + creator immediately (no deferred election).
-      room.hostId = playerId;
-      room.state.creatorId = playerId;
-      room.addPlayer(player);
-      room.hostId = playerId;
-      room.state.creatorId = playerId;
+      const room = new Room(code, socket.id, String((payload && payload.name) || "Oyuncu").slice(0, 16));
+      room.emptyAt = now();
+      room.hostId = null;
+      room.state.creatorId = null;
       rooms.set(code, room);
-      socketIndex.set(socket.id, { roomCode: code, playerId });
-      socket.join(code);
 
-      const snap = room.snapshot(playerId);
       if (typeof ack === "function") {
         ack({
           ok: true,
-          playerId,
-          name: player.name,
-          hostId: playerId,
-          isHost: true,
-          ...snap,
+          code: room.code,
+          playerId: null,
+          hostId: null,
+          isHost: false,
+          players: [],
+          state: { ...room.state },
+          serverNow: now(),
         });
       }
     } catch (err) {
