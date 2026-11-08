@@ -120,15 +120,18 @@ class Room {
   addPlayer(player) {
     this.players.set(player.id, player);
     this.emptyAt = null;
+    const prevHost = this.hostId;
+    // Host is always a connected player. Assign immediately when missing.
     if (!this.hostId || !this.players.has(this.hostId)) {
       this.hostId = player.id;
     }
-    // Creator may have left during create→redirect; reclaim if missing
+    // Creator is sticky while still in the room; reclaim only when missing.
     if (!this.state.creatorId || !this.players.has(this.state.creatorId)) {
       this.state.creatorId = player.id;
     }
     this.touch();
     this.ensureHostTick();
+    return { hostChanged: prevHost !== this.hostId, hostId: this.hostId };
   }
 
   removePlayer(playerId) {
@@ -263,7 +266,12 @@ io.on("connection", (socket) => {
       const room = new Room(code, socket.id, name);
       const playerId = genId();
       const player = new Player(playerId, name, socket.id);
+      // First player is host + creator immediately (no deferred election).
+      room.hostId = playerId;
+      room.state.creatorId = playerId;
       room.addPlayer(player);
+      room.hostId = playerId;
+      room.state.creatorId = playerId;
       rooms.set(code, room);
       socketIndex.set(socket.id, { roomCode: code, playerId });
       socket.join(code);
@@ -274,6 +282,8 @@ io.on("connection", (socket) => {
           ok: true,
           playerId,
           name: player.name,
+          hostId: playerId,
+          isHost: true,
           ...snap,
         });
       }
@@ -304,7 +314,8 @@ io.on("connection", (socket) => {
 
       const playerId = genId();
       const player = new Player(playerId, name, socket.id);
-      room.addPlayer(player);
+      const wasEmpty = room.players.size === 0;
+      const addResult = room.addPlayer(player);
       // Always index/join with the room's canonical code
       const roomCode = room.code;
       socketIndex.set(socket.id, { roomCode, playerId });
@@ -314,16 +325,35 @@ io.on("connection", (socket) => {
       emitRoom(
         room,
         "player_join",
-        { player: player.public(), hostId: room.hostId },
+        {
+          player: player.public(),
+          hostId: room.hostId,
+          creatorId: room.state.creatorId || null,
+        },
         socket.id
       );
       broadcastPlayers(room);
+
+      // Real-time host sync when host is (re)assigned on join (e.g. empty room after create→redirect)
+      if ((addResult && addResult.hostChanged) || wasEmpty) {
+        emitRoom(room, "host_change", {
+          hostId: room.hostId,
+          creatorId: room.state.creatorId || null,
+        });
+        emitRoom(room, "room_state", {
+          state: { creatorId: room.state.creatorId },
+          full: false,
+          serverNow: now(),
+        });
+      }
 
       if (typeof ack === "function") {
         ack({
           ok: true,
           playerId,
           name: player.name,
+          hostId: room.hostId,
+          isHost: playerId === room.hostId,
           ...room.snapshot(playerId),
         });
       }
