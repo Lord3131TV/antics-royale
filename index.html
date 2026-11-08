@@ -865,7 +865,9 @@ function et() {
   }
   function createNewRoom() {
     de();
-    // Standalone: sunucuda oda oluştur, kod ile yönlendir
+    // 1) createRoom → boş oda (oyuncu eklenmez)
+    // 2) ?room=CODE ile yönlendir
+    // 3) Sayfa yüklenince tek join_room → tek oyuncu + host
     import("./mp-client.js").then(async mod => {
       try {
         let su = localStorage.getItem("antics_mp_server");
@@ -874,11 +876,20 @@ function et() {
       let nm = "";
       try { nm = (e("nameIn") && e("nameIn").value) || sessionStorage.getItem("antics_name") || ""; } catch (_) {}
       try {
-        let room = await mod.joinRoom({ name: nm || "Oyuncu" });
-        let code = room && room.code;
-        // Do not leave() here — keep the room occupied until page navigation
-        // disconnects. Server also keeps empty rooms for EMPTY_ROOM_MS so
-        // create→redirect→join and friends joining by code still work.
+        const createFn = mod.createRoom || null;
+        let code = null;
+        if (typeof createFn === "function") {
+          let created = await createFn({ name: nm || "Oyuncu" });
+          code = created && created.code;
+        } else {
+          // Eski client: joinRoom({}) boş oda + redirect sinyali
+          try {
+            await mod.joinRoom({ name: nm || "Oyuncu" });
+          } catch (err) {
+            if (err && err.redirect && err.code) code = err.code;
+            else throw err;
+          }
+        }
         if (code) {
           goToRoomCode(code);
           return;
@@ -888,7 +899,6 @@ function et() {
         let note = e("lobbyNote");
         if (note) note.textContent = "Oda açılamadı: " + (err && err.message ? err.message : "sunucu hatası");
       }
-      // fallback: menu kal
     }).catch(() => {
       let note = e("lobbyNote");
       if (note) note.textContent = "mp-client yüklenemedi.";
